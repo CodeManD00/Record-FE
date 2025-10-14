@@ -12,8 +12,8 @@ export type ReviewOptionsScreenProps = NativeStackScreenProps<RootStackParamList
 export type AddReviewScreenProps = NativeStackScreenProps<RootStackParamList, 'AddReview'>;
 // 이미지 추가 방법 props
 export type ImageOptionsScreenProps = NativeStackScreenProps<RootStackParamList, 'ImageOptions'>;
-// AI 이미지 조건 props
-export type AIImageSettingsScreenProps = NativeStackScreenProps<RootStackParamList, 'AIImageSettings'>;
+// AI 이미지 결과 props
+export type AIImageResultsScreenProps = NativeStackScreenProps<RootStackParamList, 'AIImageResults'>;
 // 티켓 완성 props
 export type TicketCompleteScreenProps = NativeStackScreenProps<RootStackParamList, 'TicketComplete'>;
 
