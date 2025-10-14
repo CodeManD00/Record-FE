@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import PagerView from 'react-native-pager-view';
+import PagerView, { PagerViewOnPageSelectedEvent } from 'react-native-pager-view';
 import TicketDetailModal from './TicketDetailModal';
 import CustomCalendar from './CustomCalendar';
 import EventsList from './EventsList';
@@ -32,6 +32,7 @@ const dummyTickets: Ticket[] = [
     status: TicketStatus.PUBLIC,
     place: '홍대 롤링홀',
     artist: '라쿠나',
+    genre: '밴드',
     userId: 'friend_1',
     createdAt: new Date('2025-08-01T10:00:00'),
     updatedAt: new Date('2025-08-01T10:00:00'),
@@ -43,6 +44,7 @@ const dummyTickets: Ticket[] = [
     status: TicketStatus.PUBLIC,
     place: '블루스퀘어 인터파크홀',
     artist: '뮤지컬 배우들',
+    genre: '뮤지컬',
     userId: 'friend_1',
     createdAt: new Date('2025-08-05T10:00:00'),
     updatedAt: new Date('2025-08-05T10:00:00'),
@@ -54,6 +56,7 @@ const dummyTickets: Ticket[] = [
     status: TicketStatus.PUBLIC,
     place: '예술의전당 오페라극장',
     artist: '친구와 함께',
+    genre: '오페라',
     userId: 'friend_2',
     createdAt: new Date('2025-08-10T10:00:00'),
     updatedAt: new Date('2025-08-10T10:00:00'),
@@ -105,6 +108,7 @@ const convertToTicket = (
     status: TicketStatus.PUBLIC,
     place: performance.location,
     artist: '친구와 함께',
+    genre: null,
     userId: 'friend_current',
     createdAt: new Date(),
     updatedAt: new Date(),

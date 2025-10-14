@@ -53,6 +53,7 @@ export const createEmptyTicket = (): Partial<Ticket> => ({
   place: '',
   artist: '',
   bookingSite: '',
+  genre: null,
   userId: '',
   createdAt: new Date(),
   updatedAt: new Date(),

@@ -140,6 +140,7 @@ export const createTicketAtom = atom(
     place: string;
     artist: string;
     bookingSite?: string;
+    genre?: string | null;
     status: TicketStatus;
     review?: {
       reviewText: string;
@@ -156,6 +157,7 @@ export const createTicketAtom = atom(
         const optimisticTicket: Ticket = {
           id: `temp_${Date.now()}`,
           ...ticketData,
+          genre: ticketData.genre || null,
           performedAt: ticketData.performedAt,
           userId: 'current_user',
           createdAt: new Date(),

@@ -7,6 +7,7 @@ export { TicketStatus, TicketCategory } from './enums';
 export interface TicketReview {
   reviewText: string;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 /**
@@ -23,6 +24,7 @@ export interface BaseTicket {
   status: TicketStatus;
   readonly userId: string;
   readonly createdAt: Date;
+  updatedAt?: Date;
 }
 
 /**
