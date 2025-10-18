@@ -144,21 +144,18 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
           });
         }}
       />
-      {/* 헤더 */}{' '}
+      {/* 헤더 */}
       <View style={styles.header}>
-        {' '}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          {' '}
-          <Text style={styles.backButtonText}>←</Text>{' '}
-        </TouchableOpacity>{' '}
-        <Text style={styles.headerTitle}>공연 정보 입력하기</Text>{' '}
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>공연 정보 입력하기</Text>
         <TouchableOpacity onPress={handleSubmit}>
-          {' '}
-          <Text style={styles.nextButtonText}>다음</Text>{' '}
-        </TouchableOpacity>{' '}
+          <Text style={styles.nextButtonText}>다음</Text>
+        </TouchableOpacity>
       </View>
       {/* 컨텍스트 메시지 */}
       {(fromEmptyState || fromAddButton) && (
@@ -264,34 +261,34 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
           {/* 공연 날짜 및 시간 */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>공연 일시 *</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={showDateTimePicker}
-              >
-                <Text style={styles.dateButtonText}>
-                  {formData.performedAt.toLocaleDateString('ko-KR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}{' '}
-                  {formData.performedAt.toLocaleTimeString('ko-KR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true,
-                  })}
-                </Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={showDateTimePicker}
+            >
+              <Text style={styles.dateButtonText}>
+                {formData.performedAt.toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}{' '}
+                {formData.performedAt.toLocaleTimeString('ko-KR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true,
+                })}
+              </Text>
+            </TouchableOpacity>
 
-              {showDatePicker && Platform.OS === 'ios' && (
-                <View style={styles.datePickerContainer}>
-                  <DateTimePicker
-                    value={formData.performedAt}
-                    mode="datetime"
-                    display="default"
-                    onChange={handleDateChange}
-                  />
-                </View>
-              )}
+            {showDatePicker && Platform.OS === 'ios' && (
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={formData.performedAt}
+                  mode="datetime"
+                  display="default"
+                  onChange={handleDateChange}
+                />
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>
