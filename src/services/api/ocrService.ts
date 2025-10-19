@@ -29,6 +29,7 @@ export const ocrService = {
    * @returns OCRResult | null - 공연 정보 또는 실패 시 null
    */
   async extractTicketInfo(imageUri: string): Promise<OCRResult | null> {
+    /*
     // 목 데이터 모드: 서버 없이 테스트용
     if (USE_MOCK_DATA) {
       console.log('🧪 목 데이터 모드로 OCR 실행');
@@ -43,7 +44,7 @@ export const ocrService = {
         performedAt: '2024-10-25T19:00:00',
       };
     }
-
+*/
     // 실제 서버 호출
     try {
       // 1. 업로드용 FormData 생성
