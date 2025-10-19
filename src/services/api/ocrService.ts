@@ -13,8 +13,6 @@ export interface OCRResult {
   title?: string;
   artist?: string;
   place?: string;
-  genre?: string;
-  bookingSite?: string;
   performedAt?: string;
 }
 
@@ -52,7 +50,7 @@ export const ocrService = {
       formData.append('file', {
         uri: imageUri,
         type: 'image/jpeg',
-        name: 'ticket.jpg',
+        name: 'ticket.jpeg',
       } as any);
 
       // 2. 백엔드 /ocr/extract 엔드포인트 호출
@@ -70,8 +68,6 @@ export const ocrService = {
         title: data.title || '제목 없음',
         artist: data.artist || '아티스트 미상',
         place: data.venue || '장소 미상',
-        genre: data.genre || '기타',
-        bookingSite: data.bookingSite || '',
         performedAt:
           data.date && data.time ? `${data.date}T${data.time}:00` : undefined,
       };

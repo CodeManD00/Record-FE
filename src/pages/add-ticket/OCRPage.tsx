@@ -103,8 +103,7 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
         performedAt: result.performedAt
           ? new Date(result.performedAt)
           : new Date(),
-        bookingSite: result.bookingSite ?? '',
-        genre: result.genre ?? '밴드',
+        genre: null,
         status: TicketStatus.PUBLIC,
       };
 
@@ -172,7 +171,6 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
               style={styles.imageButton}
               onPress={handleTakePhoto}
             >
-              <Text style={styles.imageButtonIcon}>📷</Text>
               <Text style={styles.imageButtonText}>카메라로 촬영</Text>
             </TouchableOpacity>
 
@@ -180,7 +178,6 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
               style={styles.imageButton}
               onPress={handleSelectFromGallery}
             >
-              <Text style={styles.imageButtonIcon}>🖼️</Text>
               <Text style={styles.imageButtonText}>갤러리에서 선택</Text>
             </TouchableOpacity>
           </View>
@@ -215,10 +212,6 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
                 <View style={styles.resultItem}>
                   <Text style={styles.resultLabel}>공연장:</Text>
                   <Text style={styles.resultValue}>{ocrResult.place}</Text>
-                </View>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>장르:</Text>
-                  <Text style={styles.resultValue}>{ocrResult.genre}</Text>
                 </View>
               </View>
             )}
