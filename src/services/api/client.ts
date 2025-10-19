@@ -1,13 +1,12 @@
 /**
- * HTTP 클라이언트 설정 (React Native Fetch API 기반)
  * API 호출을 위한 기본 설정 및 에러 처리
  */
 
 import { Result, ResultFactory, ErrorFactory } from '../../utils/result';
 
-// API 기본 설정 (React Native용)
-const API_BASE_URL = 'https://api.ticketbook.app'; // 실제 API URL로 변경 필요
-const API_TIMEOUT = 10000; // 10초
+// API 기본 설정
+const API_BASE_URL = 'http://localhost:8080'; // 실제 API URL로 변경 필요
+const API_TIMEOUT = 10000;
 
 /**
  * API 에러 타입
@@ -35,7 +34,6 @@ class ApiClient {
   private authToken: string | null = null;
 
   constructor() {
-    // Fetch API는 별도 초기화가 필요하지 않음
   }
 
   /**
@@ -81,7 +79,7 @@ class ApiClient {
       // 요청 로깅 (개발 환경에서만)
       if (__DEV__) {
         const method = options.method || 'GET';
-        console.log(`🚀 API Request: ${method.toUpperCase()} ${fullUrl}`);
+        console.log(`API Request: ${method.toUpperCase()} ${fullUrl}`);
       }
 
       // 타임아웃 설정
@@ -98,7 +96,7 @@ class ApiClient {
 
       // 응답 로깅 (개발 환경에서만)
       if (__DEV__) {
-        console.log(`✅ API Response: ${response.status} ${fullUrl}`);
+        console.log(`API Response: ${response.status} ${fullUrl}`);
       }
 
       const data: ApiResponse<T> = await response.json();
@@ -188,7 +186,7 @@ class ApiClient {
    */
   private handleError(error: any): Result<any> {
     if (__DEV__) {
-      console.error('❌ API Error:', error.message || error);
+      console.error('API Error:', error.message || error);
     }
 
     if (error.name === 'AbortError') {

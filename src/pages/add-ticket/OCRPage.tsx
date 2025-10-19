@@ -1,10 +1,6 @@
 /**
  * OCRPage.tsx
- * 
- * 티켓 이미지에서 OCR을 통해 공연 정보를 자동으로 추출하는 페이지
- * - 카메라 촬영 또는 갤러리에서 이미지 선택
- * - OCR 처리 (Google Vision API 또는 온디바이스 처리)
- * - 추출된 데이터를 AddTicketPage로 전달
+ * 티켓 이미지에서 공연 정보를 자동으로 추출하는 페이지
  */
 
 import React, { useState } from 'react';
@@ -41,39 +37,26 @@ interface OCRPageProps {
   };
 }
 
-// OCR 결과 타입
-interface OCRResult {
-  title?: string;
-  artist?: string;
-  place?: string;
-  performedAt?: Date;
-  bookingSite?: string;
-  genre?: string;
-}
-
 const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
+  /** 선택된 이미지 경로 (URI) */
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  /** OCR 처리 중 여부 */
   const [isProcessing, setIsProcessing] = useState(false);
-  const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
+  /** OCR 결과 데이터 */
+  const [ocrResult, setOcrResult] = useState<OCRResultType | null>(null);
 
-  // 라우트 파라미터 추출
+  // 라우트 파라미터 (AddTicket 전송 시 사용)
   const isFirstTicket = route?.params?.isFirstTicket || false;
   const fromEmptyState = route?.params?.fromEmptyState || false;
   const fromAddButton = route?.params?.fromAddButton || false;
 
-  /**
-   * 카메라로 촬영
-   * JPG 포맷으로 고품질 이미지 캡처
-   */
+  /* 카메라로 촬영 */
   const handleTakePhoto = async () => {
     try {
       const result = await launchCamera({
         mediaType: 'photo',
-        quality: 0.9, // 높은 품질로 설정 (OCR 정확도 향상)
+        quality: 0.9,
         saveToPhotos: false,
-        includeBase64: false, // Base64는 나중에 RNFS로 변환
-        maxWidth: 2048, // 최대 너비 제한 (너무 크면 처리 느림)
-        maxHeight: 2048, // 최대 높이 제한
       });
 
       if (result.assets && result.assets[0].uri) {
@@ -86,18 +69,12 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
     }
   };
 
-  /**
-   * 갤러리에서 선택
-   * JPG/PNG 이미지 선택 및 처리
-   */
+  /* 갤러리에서 선택 */
   const handleSelectFromGallery = async () => {
     try {
       const result = await launchImageLibrary({
         mediaType: 'photo',
-        quality: 0.9, // 높은 품질로 설정
-        includeBase64: false, // Base64는 나중에 RNFS로 변환
-        maxWidth: 2048, // 최대 너비 제한
-        maxHeight: 2048, // 최대 높이 제한
+        quality: 0.9,
       });
 
       if (result.assets && result.assets[0].uri) {
@@ -110,115 +87,54 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
     }
   };
 
-  /**
-   * OCR 처리 함수
-   * 
-   * 사용 가능한 옵션:
-   * 1. ocrService.extractTicketInfo() - 자체 서버 API (기본)
-   * 2. ocrService.extractWithGoogleVision() - Google Vision API
-   * 3. ocrService.extractWithDeviceOCR() - 온디바이스 OCR
-   */
+  /* OCR 처리 */
   const processOCR = async (imageUri: string) => {
     setIsProcessing(true);
-
     try {
-      // 옵션 1: 자체 서버 API 사용 (권장)
-      const response = await ocrService.extractTicketInfo(imageUri);
+      console.log('OCR 시작:', imageUri);
+      const result = await ocrService.extractTicketInfo(imageUri);
 
-      // 옵션 2: Google Vision API 사용
-      // const GOOGLE_VISION_API_KEY = 'YOUR_API_KEY_HERE';
-      // const response = await ocrService.extractWithGoogleVision(imageUri, GOOGLE_VISION_API_KEY);
+      if (!result) throw new Error('OCR 결과가 없습니다.');
 
-      // 옵션 3: 온디바이스 OCR 사용
-      // const response = await ocrService.extractWithDeviceOCR(imageUri);
+      const formatted: CreateTicketData = {
+        title: result.title ?? '',
+        artist: result.artist ?? '',
+        place: result.place ?? '',
+        performedAt: result.performedAt
+          ? new Date(result.performedAt)
+          : new Date(),
+        genre: null,
+        status: TicketStatus.PUBLIC,
+      };
 
-      if (response.success && response.data) {
-        const apiResult = response.data;
-        
-        // API 결과를 OCRResult 형식으로 변환
-        const ocrResult: OCRResult = {
-          title: apiResult.title,
-          artist: apiResult.artist,
-          place: apiResult.place,
-          performedAt: apiResult.performedAt 
-            ? new Date(apiResult.performedAt) 
-            : new Date(),
-          bookingSite: apiResult.bookingSite,
-          genre: apiResult.genre || '밴드',
-        };
-
-        setOcrResult(ocrResult);
-        Alert.alert(
-          'OCR 완료',
-          '티켓 정보를 추출했습니다.\n확인 후 수정이 필요하면 직접 편집할 수 있습니다.',
-          [
-            {
-              text: '확인',
-              onPress: () => handleConfirmOCR(ocrResult),
-            },
-          ]
-        );
-      } else {
-        // API 실패 시 더미 데이터 사용 (개발 중)
-        console.warn('OCR API failed, using mock data');
-        const mockResult: OCRResult = {
-          title: 'Live Club Day',
-          artist: '실리카겔',
-          place: 'KT&G 상상마당',
-          performedAt: new Date(2025, 9, 15, 19, 0),
-          bookingSite: '인터파크',
-          genre: '밴드',
-        };
-        
-        setOcrResult(mockResult);
-        Alert.alert(
-          'OCR 완료 (테스트)',
-          '티켓 정보를 추출했습니다.\n확인 후 수정이 필요하면 직접 편집할 수 있습니다.',
-          [
-            {
-              text: '확인',
-              onPress: () => handleConfirmOCR(mockResult),
-            },
-          ]
-        );
-      }
+      setOcrResult(result);
+      Alert.alert(
+        'OCR 완료',
+        '티켓 정보를 추출했습니다.\n확인 후 수정이 필요하면 직접 편집할 수 있습니다.',
+        [{ text: '확인', onPress: () => handleConfirmOCR(formatted) }],
+      );
     } catch (error) {
       console.error('OCR error:', error);
       Alert.alert(
         '오류',
-        'OCR 처리 중 오류가 발생했습니다.\n다시 시도해주세요.'
+        'OCR 처리 중 문제가 발생했습니다.\n\n1️⃣ 백엔드 서버 실행 여부\n2️⃣ API URL 확인\n3️⃣ 네트워크 연결 상태를 점검해주세요.',
       );
     } finally {
       setIsProcessing(false);
     }
   };
 
-  /**
-   * OCR 결과 확인 및 AddTicketPage로 이동
-   */
-  const handleConfirmOCR = (result: OCRResult) => {
-    const ocrData: Partial<CreateTicketData> = {
-      title: result.title || '',
-      artist: result.artist || '',
-      place: result.place || '',
-      performedAt: result.performedAt || new Date(),
-      bookingSite: result.bookingSite || '',
-      genre: result.genre || '밴드',
-      status: TicketStatus.PUBLIC,
-    };
-
-    // AddTicketPage로 이동하면서 OCR 결과 전달
+  /* OCR 결과 전달 */
+  const handleConfirmOCR = (formatted: CreateTicketData) => {
     navigation.replace('AddTicket', {
-      ocrData,
+      ocrData: formatted,
       isFirstTicket,
       fromEmptyState,
       fromAddButton,
     });
   };
 
-  /**
-   * 재촬영/재선택
-   */
+  /* 재촬영 / 재선택 */
   const handleRetry = () => {
     setSelectedImage(null);
     setOcrResult(null);
@@ -255,7 +171,6 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
               style={styles.imageButton}
               onPress={handleTakePhoto}
             >
-              <Text style={styles.imageButtonIcon}>📷</Text>
               <Text style={styles.imageButtonText}>카메라로 촬영</Text>
             </TouchableOpacity>
 
@@ -263,7 +178,6 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
               style={styles.imageButton}
               onPress={handleSelectFromGallery}
             >
-              <Text style={styles.imageButtonIcon}>🖼️</Text>
               <Text style={styles.imageButtonText}>갤러리에서 선택</Text>
             </TouchableOpacity>
           </View>
@@ -272,8 +186,11 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
         {/* 선택된 이미지 미리보기 */}
         {selectedImage && (
           <View style={styles.previewContainer}>
-            <Image source={{ uri: selectedImage }} style={styles.previewImage} />
-            
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.previewImage}
+            />
+
             {isProcessing && (
               <View style={styles.processingOverlay}>
                 <ActivityIndicator size="large" color="#B11515" />
@@ -296,15 +213,14 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
                   <Text style={styles.resultLabel}>공연장:</Text>
                   <Text style={styles.resultValue}>{ocrResult.place}</Text>
                 </View>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>장르:</Text>
-                  <Text style={styles.resultValue}>{ocrResult.genre}</Text>
-                </View>
               </View>
             )}
 
             {!isProcessing && (
-              <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={handleRetry}
+              >
                 <Text style={styles.retryButtonText}>다시 선택하기</Text>
               </TouchableOpacity>
             )}

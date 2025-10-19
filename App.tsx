@@ -70,7 +70,7 @@ function MainTabs() {
         
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: 'rgba(95, 255, 36, 1)',
+          backgroundColor: 'rgba(35, 35, 35, 1)',
           paddingBottom: insets.bottom,
           paddingTop: 8,
           height: 60 + insets.bottom,
@@ -79,7 +79,7 @@ function MainTabs() {
           borderTopWidth: 0,
           overflow: 'hidden',
         },
-        tabBarActiveTintColor: '#B11515',
+        tabBarActiveTintColor: '#ffffffff',
         tabBarInactiveTintColor: '#7F8C8D',
         tabBarLabelStyle: {
           fontSize: 12,
