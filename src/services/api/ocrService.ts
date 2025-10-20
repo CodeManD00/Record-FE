@@ -3,7 +3,7 @@
  */
 
 const API_BASE_URL = 'http://localhost:8080'; // 로컬 개발용
-const USE_MOCK_DATA = true; // 서버 없이 테스트할 때 true로 설정
+//const USE_MOCK_DATA = true; // 서버 없이 테스트할 때 true로 설정
 
 /**
  * OCR 결과 타입 정의
@@ -27,6 +27,7 @@ export const ocrService = {
    * @returns OCRResult | null - 공연 정보 또는 실패 시 null
    */
   async extractTicketInfo(imageUri: string): Promise<OCRResult | null> {
+    console.log('extractTicketInfo - 이미지URI:', imageUri);
     /*
     // 목 데이터 모드: 서버 없이 테스트용
     if (USE_MOCK_DATA) {
@@ -53,10 +54,12 @@ export const ocrService = {
         name: 'ticket.jpeg',
       } as any);
 
+      console.log('FormData 생성 완료');
+
       // 2. 백엔드 /ocr/extract 엔드포인트 호출
       const response = await fetch(`${API_BASE_URL}/ocr/extract`, {
         method: 'POST',
-        headers: { 'Content-Type': 'multipart/form-data' },
+        //headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
       });
 

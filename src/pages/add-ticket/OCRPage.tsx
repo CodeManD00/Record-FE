@@ -91,6 +91,7 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
   const processOCR = async (imageUri: string) => {
     setIsProcessing(true);
     try {
+      console.log('이미지 URI: ', imageUri);
       console.log('OCR 시작:', imageUri);
       const result = await ocrService.extractTicketInfo(imageUri);
 
