@@ -8,6 +8,7 @@ export { friendService } from './friendService';
 export { ticketService } from './ticketService';
 export { userService } from './userService';
 export { ocrService } from './ocrService';
+export { imageGenerationService } from './imageGenerationService';
 
 // 타입들도 함께 export
 export type {
@@ -44,3 +45,8 @@ export type {
   OCRResult,
   OCRRequest,
 } from './ocrService';
+
+export type {
+  ImageGenerationRequest,
+  ImageGenerationResponse,
+} from './imageGenerationService';

@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { imageGenerationService, ImageGenerationRequest } from '../../services/api';
 import {
   Colors,
   Typography,
@@ -65,50 +66,54 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({
     setIsGenerating(true);
 
     try {
-      // 설정값을 기반으로 프롬프트 생성
-      let enhancedPrompt = '공연 후기 기반 AI 이미지';
-
-      if (settings?.backgroundColor && settings.backgroundColor !== '자동') {
-        enhancedPrompt += `, ${settings.backgroundColor} 배경`;
+      // 티켓 데이터와 후기 데이터가 있는지 확인
+      if (!ticketData?.title || !reviewData?.reviewText) {
+        Alert.alert('오류', '티켓 정보나 후기 정보가 없습니다.');
+        setIsGenerating(false);
+        return;
       }
 
-      if (settings?.includeText === false) {
-        enhancedPrompt += ', 텍스트나 글자 없이';
+      // 백엔드 API 요청 데이터 구성
+      // 프론트엔드 장르를 백엔드가 이해할 수 있는 형태로 매핑
+      const mapGenreForBackend = (frontendGenre: string): string => {
+        if (frontendGenre?.includes('뮤지컬') || frontendGenre?.includes('연극')) {
+          return '뮤지컬'; // 연극/뮤지컬 → 뮤지컬로 매핑
+        }
+        if (frontendGenre?.includes('밴드')) {
+          return '밴드';
+        }
+        return '뮤지컬'; // 기본값
+      };
+
+      const requestData: ImageGenerationRequest = {
+        title: ticketData.title,
+        review: reviewData.reviewText,
+        genre: mapGenreForBackend(ticketData.genre || ''), // 장르 매핑 적용
+        location: ticketData.place || '', // 공연 장소
+        date: ticketData.performedAt || '', // 공연 날짜
+        cast: [], // 출연진 (현재는 빈 배열)
+      };
+
+      console.log('🔍 이미지 생성 요청 데이터:', requestData);
+
+      // 백엔드 API 호출
+      const result = await imageGenerationService.generateImage(requestData);
+
+      if (result.success && result.data) {
+        console.log('✅ 이미지 생성 성공:', result.data);
+        
+        // 생성된 이미지 URL 설정
+        setGeneratedImage(result.data.imageUrl);
+        setGenerationHistory(prev => [result.data.imageUrl, ...prev]);
+
+        Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
+      } else {
+        console.error('❌ 이미지 생성 실패:', result.error);
+        Alert.alert('오류', result.error?.message || 'AI 이미지 생성에 실패했습니다.');
       }
-
-      if (settings?.imageStyle && settings.imageStyle !== '사실적') {
-        enhancedPrompt += `, ${settings.imageStyle} 스타일`;
-      }
-
-      // 화면 비율에 따른 이미지 크기 설정
-      let imageWidth = 400;
-      let imageHeight = 500;
-
-      if (settings?.aspectRatio === '세로형') {
-        imageWidth = 400;
-        imageHeight = 500;
-      }
-
-      console.log('Enhanced Prompt:', enhancedPrompt);
-
-      // AI 이미지 생성 시뮬레이션
-      await new Promise<void>(resolve => setTimeout(() => resolve(), 3000));
-
-      // 🔹 고정된 시드 값 사용 - 티켓 데이터 기반으로 일관된 이미지 생성
-      const seed = ticketData?.title 
-        ? ticketData.title.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
-        : Math.floor(Math.random() * 10000);
-      
-      const mockGeneratedImageUrl = `https://picsum.photos/seed/${seed}/${imageWidth}/${imageHeight}`;
-      console.log('🖼️ 생성된 이미지 URL:', mockGeneratedImageUrl);
-      console.log('🔑 시드 값:', seed);
-      
-      setGeneratedImage(mockGeneratedImageUrl);
-      setGenerationHistory(prev => [mockGeneratedImageUrl, ...prev]);
-
-      Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
     } catch (error) {
-      Alert.alert('오류', 'AI 이미지 생성에 실패했습니다. 다시 시도해주세요.');
+      console.error('❌ 이미지 생성 중 예외 발생:', error);
+      Alert.alert('오류', 'AI 이미지 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsGenerating(false);
     }
