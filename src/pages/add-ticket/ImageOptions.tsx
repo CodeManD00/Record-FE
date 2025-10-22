@@ -65,37 +65,36 @@ const ImageOptions = () => {
     });
   };
 
-  // 갤러리에서 선택 (데모용)
+  // 갤러리에서 선택
   const handleGallerySelect = () => {
-    /*
-      const options: ImageLibraryOptions = {
-        mediaType: 'photo',
-        includeBase64: false,
-        maxHeight: 2000,
-        maxWidth: 2000,
-        quality: 0.8,
-        selectionLimit: 1,
-      };
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo',
+      includeBase64: false,
+      maxHeight: 2000,
+      maxWidth: 2000,
+      quality: 0.8,
+      selectionLimit: 1,
+    };
 
-      launchImageLibrary(options, response => {
-        if (response.didCancel) return;
-        if (response.errorCode) {
-          console.error(response.errorMessage);
-          return;
-        }
+    launchImageLibrary(options, response => {
+      if (response.didCancel) return;
+      if (response.errorCode) {
+        console.error(response.errorMessage);
+        return;
+      }
 
-        const asset: Asset | undefined = response.assets?.[0];
-        if (asset?.uri) {
-          navigation.navigate('TicketComplete', {
-            ticketData,
-            reviewData: { ...reviewData, image: undefined },
-            images: [asset.uri],
-          });
-        }
-      });
-    */
-    const demoImage = 'https://placekitten.com/800/800'; // 데모 이미지
-    setSelectedImage(demoImage);
+      const asset: Asset | undefined = response.assets?.[0];
+      if (asset?.uri) {
+        console.log('갤러리에서 선택한 이미지:', asset.uri);
+        setSelectedImage(asset.uri);
+        // 바로 TicketComplete로 이동
+        navigation.navigate('TicketComplete', {
+          ticketData,
+          reviewData,
+          images: [asset.uri],
+        });
+      }
+    });
   };
 
   // 카메라 또는 갤러리 선택 UI
@@ -117,8 +116,22 @@ const ImageOptions = () => {
                 quality: 0.8,
               },
               response => {
+                if (response.didCancel) return;
+                if (response.errorCode) {
+                  console.error(response.errorMessage);
+                  return;
+                }
                 const asset: Asset | undefined = response.assets?.[0];
-                if (asset?.uri) setSelectedImage(asset.uri);
+                if (asset?.uri) {
+                  console.log('카메라로 촬영한 이미지:', asset.uri);
+                  setSelectedImage(asset.uri);
+                  // 바로 TicketComplete로 이동
+                  navigation.navigate('TicketComplete', {
+                    ticketData,
+                    reviewData,
+                    images: [asset.uri],
+                  });
+                }
               },
             );
           } else if (buttonIndex === 2) {
@@ -127,6 +140,9 @@ const ImageOptions = () => {
           }
         },
       );
+    } else {
+      // Android - 갤러리만 지원
+      handleGallerySelect();
     }
   };
 
@@ -172,7 +188,7 @@ const ImageOptions = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -385,7 +401,8 @@ const styles = StyleSheet.create({
 
   // 이미지 skip 버튼
   bottomButtonContainer: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 36,
   },
   skipButton: {
     backgroundColor: '#8E8E93',

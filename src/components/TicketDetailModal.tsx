@@ -495,6 +495,15 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       >
                         <Text style={styles.tapHintText}>탭하여 후기 보기</Text>
                       </Animated.View>
+
+                      {/* n회차 관람 뱃지 */}
+                      {viewCount >= 1 && !isEditing && (
+                        <View style={styles.viewCountBadge}>
+                          <Text style={styles.viewCountText}>
+                            {viewCount}회차 관람
+                          </Text>
+                        </View>
+                      )}
                     </Animated.View>
 
                     <Animated.View
@@ -550,15 +559,6 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                         <Text style={styles.tapHintText}>탭하여 티켓 보기</Text>
                       </Animated.View>
                     </Animated.View>
-
-                    {/* n회차 관람 뱃지 */}
-                    {viewCount >= 1 && !isEditing && (
-                      <View style={styles.viewCountBadge}>
-                        <Text style={styles.viewCountText}>
-                          {viewCount}회차 관람
-                        </Text>
-                      </View>
-                    )}
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -576,9 +576,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     textAlign="center"
                   />
                 ) : (
-                  <Text style={[styles.title]}>
-                    {ticket.title}
-                  </Text>
+                  <Text style={[styles.title]}>{ticket.title}</Text>
                 )}
               </View>
             </View>
@@ -686,6 +684,21 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     />
                   ) : (
                     <Text style={styles.detailValue}>{ticket.place}</Text>
+                  )}
+                </View>
+                                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>좌석</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.detailInput}
+                      value={editedTicket.seat ?? ticket.seat }
+                      onChangeText={text =>
+                        setEditedTicket(prev => ({ ...prev, seat: text }))
+                      }
+                      placeholder="좌석"
+                    />
+                  ) : (
+                    <Text style={styles.detailValue}>{ticket.artist}</Text>
                   )}
                 </View>
                 <View style={styles.detailRow}>
@@ -1011,7 +1024,7 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     backgroundColor: 'transparent',
   },
-  
+
   detailInput: {
     ...Typography.subheadline,
     color: Colors.label,
@@ -1050,7 +1063,6 @@ const styles = StyleSheet.create({
     color: Colors.label,
     fontWeight: '500',
   },
-
 
   reviewInput: {
     ...Typography.body,

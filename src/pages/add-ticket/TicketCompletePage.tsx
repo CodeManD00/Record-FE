@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import {
   SafeAreaView,
-  useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
 import { addTicketAtom, TicketStatus } from '../../atoms';
@@ -47,9 +46,17 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
   const reviewData = route?.params?.reviewData;
   const images = route?.params?.images;
   const [, addTicket] = useAtom(addTicketAtom);
-  const insets = useSafeAreaInsets();
 
-  const ticketImage = images && images.length > 0 ? images[0] : null;
+  // 이미지 우선순위: route params images > ticketData images
+  const ticketImage = 
+    (images && images.length > 0) ? images[0] : 
+    (ticketData?.images && ticketData.images.length > 0) ? ticketData.images[0] : 
+    null;
+
+  console.log('=== TicketCompletePage 이미지 디버깅 ===');
+  console.log('route.params.images:', images);
+  console.log('ticketData.images:', ticketData?.images);
+  console.log('최종 표시할 이미지:', ticketImage);
 
   useEffect(() => {
     // Save the complete ticket with review and images
@@ -112,13 +119,13 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
-
-      <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
+      
+      <View style={styles.content}>
         {/* Title */}
-        <Text style={styles.title}>새로운 티켓 생성 완료~!</Text>
-        <Text style={styles.subtitle}>하나의 추억을 저장했어요.</Text>
+        <Text style={styles.title}>새로운 티켓 생성 완료</Text>
+        <Text style={styles.subtitle}>하나의 추억을 저장했어요</Text>
 
         {/* Ticket Card */}
         <View style={styles.ticketCard}>
@@ -134,10 +141,17 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
                 source={{ uri: ticketImage }}
                 style={styles.ticketImage}
                 resizeMode="cover"
+                onError={(error) => {
+                  console.error('이미지 로드 실패:', error.nativeEvent.error);
+                }}
+                onLoad={() => {
+                  console.log('이미지 로드 성공:', ticketImage);
+                }}
               />
             ) : (
               <View style={styles.ticketPlaceholder}>
                 <Text style={styles.placeholderText}>🎫</Text>
+                <Text style={styles.noImageText}>이미지 없음</Text>
               </View>
             )}
           </View>
@@ -158,7 +172,7 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
           </View>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -189,7 +203,7 @@ const styles = StyleSheet.create({
   ticketCard: {
     width: width - 60,
     height: height * 0.6,
-    backgroundColor: '#8FBC8F',
+    backgroundColor: '#ffffff',
     borderRadius: 20,
     position: 'relative',
     overflow: 'hidden',
@@ -232,7 +246,12 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 48,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: '#BDC3C7',
+  },
+  noImageText: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginTop: 8,
   },
   ticketFooter: {
     padding: 20,

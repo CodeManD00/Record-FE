@@ -19,6 +19,7 @@ export interface BaseTicket {
   performedAt: Date;
   place?: string;
   artist?: string;
+  seat?: string;
   bookingSite?: string;
   genre: string | null;
   status: TicketStatus;

@@ -60,6 +60,7 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
     title: '',
     artist: '',
     place: '',
+    seat: '',
     performedAt: getDefaultPerformanceTime(),
     bookingSite: '',
     genre: '밴드',
@@ -77,6 +78,7 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
         title: ocrData.title || prev.title,
         artist: ocrData.artist || prev.artist,
         place: ocrData.place || prev.place,
+        seat: ocrData.seat || prev.seat,
         performedAt: ocrData.performedAt || prev.performedAt,
         bookingSite: ocrData.bookingSite || prev.bookingSite,
         genre: ocrData.genre || prev.genre,
@@ -129,7 +131,7 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* 입력 방법 선택 모달 */}
       <InputMethodModal
         visible={showInputMethodModal}
@@ -188,6 +190,18 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
               value={formData.artist}
               onChangeText={value => handleInputChange('artist', value)}
               placeholder="예: 실리카겔"
+              placeholderTextColor="#BDC3C7"
+            />
+          </View>
+
+          {/* 좌석 */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>좌석</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.seat}
+              onChangeText={value => handleInputChange('seat', value)}
+              placeholder="예: D열 8번"
               placeholderTextColor="#BDC3C7"
             />
           </View>
@@ -409,8 +423,8 @@ const styles = StyleSheet.create({
   },
   datePickerContainer: {
   borderRadius: BorderRadius.sm,
-  marginTop: 6, // 버튼과 picker 사이 간격
-  paddingVertical: 4, // picker 주변 패딩
+  marginTop: 6,
+  paddingVertical: 4,
   paddingHorizontal: 6,
   backgroundColor: Colors.systemBackground,
   borderWidth: 1,
