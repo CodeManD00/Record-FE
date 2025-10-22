@@ -4,9 +4,13 @@
 
 import { Result, ResultFactory, ErrorFactory } from '../../utils/result';
 
-// API 기본 설정
-const API_BASE_URL = 'http://localhost:8080'; // 실제 API URL로 변경 필요
-const API_TIMEOUT = 10000;
+// API 기본 설정 (React Native용)
+// 개발 환경에서는 로컬 백엔드 서버 사용
+// iOS 시뮬레이터에서는 127.0.0.1을 사용하는 것이 더 안정적
+const API_BASE_URL = __DEV__ 
+  ? 'http://127.0.0.1:8080'  // 로컬 개발 서버 (iOS 시뮬레이터 호환)
+  : 'https://api.ticketbook.app'; // 프로덕션 API URL
+const API_TIMEOUT = 10000; // 10초
 
 /**
  * API 에러 타입

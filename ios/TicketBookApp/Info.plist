@@ -39,10 +39,8 @@
 	<string>This app uses the microphone for voice search and voice commands to enhance your ticket booking experience.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to let you select and update your profile picture.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>This app needs access to your camera to let you take and update your profile picture.</string>
 	<key>RCTNewArchEnabled</key>
-	<true/>
+	<false/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

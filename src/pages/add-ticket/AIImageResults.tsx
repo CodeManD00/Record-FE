@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { imageGenerationService, ImageGenerationRequest } from '../../services/api';
 import {
   Colors,
   Typography,
@@ -87,9 +88,14 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
       setGeneratedImage(mockGeneratedImageUrl);
       setGenerationHistory((prev) => [mockGeneratedImageUrl, ...prev]);
 
-      Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
+        Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
+      } else {
+        console.error('❌ 이미지 생성 실패:', result.error);
+        Alert.alert('오류', result.error?.message || 'AI 이미지 생성에 실패했습니다.');
+      }
     } catch (error) {
-      Alert.alert('오류', 'AI 이미지 생성에 실패했습니다. 다시 시도해주세요.');
+      console.error('❌ 이미지 생성 중 예외 발생:', error);
+      Alert.alert('오류', 'AI 이미지 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsGenerating(false);
     }
