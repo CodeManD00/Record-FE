@@ -29,6 +29,8 @@ export const ocrService = {
    * @returns OCRResult | null - 공연 정보 또는 실패 시 null
    */
   async extractTicketInfo(imageUri: string): Promise<OCRResult | null> {
+    console.log('extractTicketInfo - 이미지URI:', imageUri);
+    /*
     // 목 데이터 모드: 서버 없이 테스트용
     if (USE_MOCK_DATA) {
       console.log('🧪 목 데이터 모드로 OCR 실행');
@@ -62,11 +64,12 @@ export const ocrService = {
       
       formData.append('file', fileData);
 
-      // 백엔드 OCR API 호출 (/ocr/extract 엔드포인트 사용)
-      // React Native에서는 fetch를 직접 사용하여 FormData 전송
-      // iOS 시뮬레이터에서는 127.0.0.1을 사용하는 것이 더 안정적
-      const response = await fetch('http://127.0.0.1:8080/ocr/extract', {
+      console.log('FormData 생성 완료');
+
+      // 2. 백엔드 /ocr/extract 엔드포인트 호출
+      const response = await fetch(`${API_BASE_URL}/ocr/extract`, {
         method: 'POST',
+        //headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
         // FormData 사용 시 Content-Type 헤더를 설정하지 않음 (자동으로 boundary 설정됨)
       });

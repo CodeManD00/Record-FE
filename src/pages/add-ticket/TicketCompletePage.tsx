@@ -49,7 +49,6 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
   const [, addTicket] = useAtom(addTicketAtom);
   const insets = useSafeAreaInsets();
 
-  // Get the first image (likely AI generated) to display on ticket
   const ticketImage = images && images.length > 0 ? images[0] : null;
 
   useEffect(() => {
@@ -59,8 +58,8 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
       console.log('ticketData:', ticketData);
       console.log('reviewData:', reviewData);
       console.log('images:', images);
-      console.log('🖼️ 전달받은 이미지 배열:', images);
-      console.log('🖼️ 첫 번째 이미지 (표시될 이미지):', images?.[0]);
+      console.log('전달받은 이미지 배열:', images);
+      console.log('첫 번째 이미지 (표시될 이미지):', images?.[0]);
 
       // ReviewData를 TicketReview 형식으로 변환
       const ticketReview = reviewData?.reviewText || reviewData?.text 
@@ -78,20 +77,20 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
       };
 
       console.log('최종 티켓 데이터:', ticketToAdd);
-      console.log('🖼️ 최종 티켓의 이미지 배열:', ticketToAdd.images);
+      console.log('최종 티켓의 이미지 배열:', ticketToAdd.images);
 
       const result = addTicket(ticketToAdd);
 
       // Result 패턴 처리
       if (!result.success) {
-        console.error('❌ 티켓 추가 실패:', result.error);
+        console.error('티켓 추가 실패:', result.error);
         // 에러 발생 시에도 홈으로 이동 (사용자 경험 개선)
       } else {
-        console.log('✅ 티켓 추가 성공:', result.data);
-        console.log('🖼️ 저장된 티켓의 이미지:', result.data?.images);
+        console.log('티켓 추가 성공:', result.data);
+        console.log('저장된 티켓의 이미지:', result.data?.images);
       }
     } else {
-      console.warn('⚠️ ticketData가 없습니다!');
+      console.warn('ticketData가 없습니다!');
     }
 
     // Auto-navigate to home after 3 seconds
@@ -116,7 +115,6 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
 
-      {/* Main Content */}
       <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
         {/* Title */}
         <Text style={styles.title}>새로운 티켓 생성 완료~!</Text>
@@ -202,7 +200,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 8,
   },
   ticketHeader: {
     padding: 20,

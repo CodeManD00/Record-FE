@@ -23,12 +23,12 @@ type AddReviewPageProps = NativeStackScreenProps<RootStackParamList, 'AddReview'
 const { width } = Dimensions.get('window');
 
 const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
-  const { ticketData } = route.params; // ImageOptions로 전달할 티켓 데이터
+  const { ticketData } = route.params;
 
   const [reviewText, setReviewText] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(false); // ✅ 로컬 상태로 관리
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [questions, setQuestions] = useState<string[]>([
     '이 공연을 보게 된 계기는?',
     '가장 인상 깊었던 순간은?',
@@ -63,7 +63,6 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     };
   }, []);
 
-  // ✅ 녹음 토글 함수
   const toggleRecording = async () => {
     if (isRecording) {
       await voiceManager.stopRecording();
@@ -79,7 +78,6 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     }
   };
 
-  // ✅ 제출
   const handleSubmit = () => {
     navigation.navigate('ImageOptions', {
       ticketData,
@@ -100,12 +98,13 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         </TouchableOpacity>
       </View>
 
-      {/* 추천 질문 스와이프 카드 */}
+      {/* 질문 카드 스와이프 */}
       <View style={styles.questionSection}>
         <Animated.ScrollView
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
+          snapToInterval={width}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { x: scrollX } } }],
             { useNativeDriver: false }
@@ -117,13 +116,15 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
           scrollEventThrottle={16}
         >
           {questions.map((question, idx) => (
-            <View key={idx} style={styles.questionCard}>
-              <Text style={styles.questionText}>{question}</Text>
+            <View key={idx} style={styles.questionCardWrapper}>
+              <View style={styles.questionCard}>
+                <Text style={styles.questionText}>{question}</Text>
+              </View>
             </View>
           ))}
         </Animated.ScrollView>
 
-        {/* 인디케이터 */}
+        {/* 페이지 인디케이터 */}
         <View style={styles.dots}>
           {questions.map((_, i) => {
             const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
@@ -137,20 +138,15 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
               outputRange: ['#BDC3C7', '#2C3E50', '#BDC3C7'],
               extrapolate: 'clamp',
             });
-            return (
-              <Animated.View
-                key={i}
-                style={[styles.dot, { width: dotWidth, backgroundColor: dotColor }]}
-              />
-            );
+            return <Animated.View key={i} style={[styles.dot, { width: dotWidth, backgroundColor: dotColor }]} />;
           })}
         </View>
       </View>
 
-      {/* 후기 작성 영역 */}
+      {/* 후기 입력 영역 */}
       <ScrollView style={styles.reviewContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.reviewHeaderRow}>
-          <Text style={styles.sectionTitle}>Your Review *</Text>
+          <Text style={styles.sectionTitle}> </Text>
           <View style={styles.toggleRow}>
             <Text style={styles.statusLabel}>{isPublic ? '공개' : '비공개'}</Text>
             <Switch
@@ -164,7 +160,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
 
         <TextInput
           style={styles.reviewInput}
-          placeholder="Share your experience about this performance..."
+          placeholder="후기 작성하기..."
           placeholderTextColor="#BDC3C7"
           multiline
           numberOfLines={8}
@@ -182,11 +178,9 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
             styles.recordButton,
             isRecording ? styles.recordButtonActive : styles.recordButtonInactive,
           ]}
-          onPress={toggleRecording} // 토글 방식
+          onPress={toggleRecording}
         >
-          <Text style={styles.recordButtonText}>
-            {isRecording ? '녹음 중' : '녹음 시작'}
-          </Text>
+          <Text style={styles.recordButtonText}>{isRecording ? '녹음 중' : '녹음시작'}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -196,7 +190,6 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
 
-  // 헤더
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -215,22 +208,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Shadows.small,
   },
-  backButtonText: {
-    ...Typography.title3,
-    color: Colors.label,
-    fontWeight: '500',
-  },
+  backButtonText: { ...Typography.title3, color: Colors.label, fontWeight: '500' },
   headerTitle: { ...Typography.headline, color: Colors.label },
-  nextButtonText: {
-    ...Typography.body,
-    color: '#B11515',
-  },
+  nextButtonText: { ...Typography.body, color: '#B11515' },
 
-  // 추천 질문 카드
-  questionSection: { marginVertical: 16, alignItems: 'center'},
+  questionSection: { marginVertical: 16, alignItems: 'center' },
+  questionCardWrapper: { width, justifyContent: 'center', alignItems: 'center' },
   questionCard: {
-    width: width * 0.85, // 화면의 85%만 차지
-    marginHorizontal: width * 0.025, // 카드 간 간격 확보
+    width: width * 0.9,
+    marginHorizontal: width * 0.025,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
@@ -238,20 +224,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   questionText: { fontSize: 16, color: '#2C3E50', fontWeight: '500' },
+  dots: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
+  dot: { height: 6, borderRadius: 3, backgroundColor: '#BDC3C7', marginHorizontal: 3 },
 
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 8,
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#BDC3C7',
-    marginHorizontal: 3,
-  },
-
-  // 후기 입력 영역
   reviewContainer: {
     flex: 1,
     backgroundColor: '#fff',
@@ -260,11 +235,7 @@ const styles = StyleSheet.create({
     padding: 20,
     ...Shadows.small,
   },
-  reviewHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
+  reviewHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   sectionTitle: { fontWeight: '500', fontSize: 17 },
   toggleRow: { flexDirection: 'row', alignItems: 'center' },
   statusLabel: { fontSize: 14, marginRight: 8 },
@@ -275,14 +246,8 @@ const styles = StyleSheet.create({
     minHeight: 450,
     textAlignVertical: 'top',
   },
-  characterCount: {
-    textAlign: 'right',
-    color: '#7F8C8D',
-    fontSize: 12,
-    marginTop: 6,
-  },
+  characterCount: { textAlign: 'right', color: '#7F8C8D', fontSize: 12, marginTop: 6 },
 
-  // 하단 플로팅 녹음 버튼
   floatingContainer: {
     position: 'absolute',
     bottom: 50,
@@ -290,16 +255,10 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
-  recordButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  recordButton: { width: 70, height: 70, borderRadius: 40, justifyContent: 'center', alignItems: 'center' },
   recordButtonActive: { backgroundColor: '#B11515' },
   recordButtonInactive: { backgroundColor: '#E0E0E0' },
-  recordButtonText: { fontSize: 16, fontWeight: '600', color: '#000000ff' },
+  recordButtonText: { fontSize: 12, fontWeight: '600', color: '#000000ff' },
 });
 
 export default AddReviewPage;

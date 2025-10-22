@@ -108,7 +108,7 @@ const InputMethodModal: React.FC<InputMethodModalProps> = ({
               style={styles.methodButton}
               onPress={() => handleInputMethodSelect('manual')}
             >
-              <Text style={styles.methodButtonText}>직접{'\n'}선택</Text>
+              <Text style={styles.methodButtonText}>직접{'\n'}입력</Text>
             </TouchableOpacity>
           </View>
 
