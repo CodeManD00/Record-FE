@@ -101,6 +101,7 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
         title: result.title ?? '',
         artist: result.artist ?? '',
         place: result.place ?? '',
+        seat: result.seat ?? '',
         performedAt: result.performedAt
           ? new Date(result.performedAt)
           : new Date(),

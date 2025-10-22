@@ -11,6 +11,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  PanResponder,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../styles/designSystem';
@@ -37,6 +38,91 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const scrollX = useRef(new Animated.Value(0)).current;
+  const pan = useRef(new Animated.ValueXY()).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+  const currentIndexRef = useRef(0);
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex;
+  }, [currentIndex]);
+
+  const resetCardPosition = () => {
+    Animated.parallel([
+      Animated.spring(pan, {
+        toValue: { x: 0, y: 0 },
+        useNativeDriver: false,
+        tension: 100,
+        friction: 8,
+      }),
+      Animated.spring(opacity, { toValue: 1, useNativeDriver: false }),
+    ]).start();
+  };
+
+  const createBounceEffect = (direction: 'left' | 'right') => {
+    const bounceDistance = direction === 'left' ? -30 : 30;
+    Animated.sequence([
+      Animated.timing(pan, {
+        toValue: { x: bounceDistance, y: 0 },
+        duration: 150,
+        useNativeDriver: false,
+      }),
+      Animated.spring(pan, {
+        toValue: { x: 0, y: 0 },
+        tension: 300,
+        friction: 8,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dx) > 10,
+      onPanResponderMove: (_, gestureState) =>
+        pan.setValue({ x: gestureState.dx, y: 0 }),
+      onPanResponderRelease: (_, gestureState) => {
+        const swipeThreshold = 80;
+        const velocityThreshold = 0.3;
+        const totalCards = questions.length;
+        const currentIdx = currentIndexRef.current;
+
+        const shouldSwipeRight =
+          gestureState.dx > swipeThreshold ||
+          (gestureState.dx > 30 && gestureState.vx > velocityThreshold);
+        const shouldSwipeLeft =
+          gestureState.dx < -swipeThreshold ||
+          (gestureState.dx < -30 && gestureState.vx < -velocityThreshold);
+
+        if (shouldSwipeRight) {
+          if (currentIdx === 0) createBounceEffect('left');
+          else {
+            const newIndex = currentIdx - 1;
+            setCurrentIndex(newIndex);
+            Animated.timing(scrollX, {
+              toValue: newIndex * width,
+              duration: 200,
+              useNativeDriver: false,
+            }).start();
+            resetCardPosition();
+          }
+        } else if (shouldSwipeLeft) {
+          if (currentIdx === totalCards - 1) createBounceEffect('right');
+          else {
+            const newIndex = currentIdx + 1;
+            setCurrentIndex(newIndex);
+            Animated.timing(scrollX, {
+              toValue: newIndex * width,
+              duration: 200,
+              useNativeDriver: false,
+            }).start();
+            resetCardPosition();
+          }
+        } else resetCardPosition();
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     let isMounted = true;
@@ -86,10 +172,13 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>공연 후기 작성하기</Text>
@@ -100,55 +189,57 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
 
       {/* 질문 카드 스와이프 */}
       <View style={styles.questionSection}>
-        <Animated.ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={width}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false }
-          )}
-          onMomentumScrollEnd={(e) => {
-            const index = Math.round(e.nativeEvent.contentOffset.x / width);
-            setCurrentIndex(index);
-          }}
-          scrollEventThrottle={16}
+        {/* Animated 질문 카드 */}
+        <Animated.View
+          style={[
+            styles.animatedCard,
+            { transform: pan.getTranslateTransform(), opacity },
+          ]}
+          {...panResponder.panHandlers}
         >
-          {questions.map((question, idx) => (
-            <View key={idx} style={styles.questionCardWrapper}>
-              <View style={styles.questionCard}>
-                <Text style={styles.questionText}>{question}</Text>
-              </View>
-            </View>
-          ))}
-        </Animated.ScrollView>
-
-        {/* 페이지 인디케이터 */}
-        <View style={styles.dots}>
-          {questions.map((_, i) => {
-            const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-            const dotWidth = scrollX.interpolate({
-              inputRange,
-              outputRange: [6, 12, 6],
-              extrapolate: 'clamp',
-            });
-            const dotColor = scrollX.interpolate({
-              inputRange,
-              outputRange: ['#BDC3C7', '#2C3E50', '#BDC3C7'],
-              extrapolate: 'clamp',
-            });
-            return <Animated.View key={i} style={[styles.dot, { width: dotWidth, backgroundColor: dotColor }]} />;
-          })}
-        </View>
+          <View style={styles.questionCard}>
+            <Text style={styles.questionText}>{questions[currentIndex]}</Text>
+          </View>
+        </Animated.View>
+      </View>
+      
+      {/* 페이지 인디케이터 */}
+      <View style={styles.dots}>
+        {questions.map((_, i) => {
+          const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
+          const dotWidth = scrollX.interpolate({
+            inputRange,
+            outputRange: [6, 12, 6],
+            extrapolate: 'clamp',
+          });
+          const dotColor = scrollX.interpolate({
+            inputRange,
+            outputRange: ['#BDC3C7', '#2C3E50', '#BDC3C7'],
+            extrapolate: 'clamp',
+          });
+          return (
+            <Animated.View
+              key={i}
+              style={[
+                styles.dot,
+                { width: dotWidth, backgroundColor: dotColor },
+              ]}
+            />
+          );
+        })}
       </View>
 
       {/* 후기 입력 영역 */}
-      <ScrollView style={styles.reviewContainer} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.reviewContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.reviewHeaderRow}>
           <Text style={styles.sectionTitle}> </Text>
           <View style={styles.toggleRow}>
-            <Text style={styles.statusLabel}>{isPublic ? '공개' : '비공개'}</Text>
+            <Text style={styles.statusLabel}>
+              {isPublic ? '공개' : '비공개'}
+            </Text>
             <Switch
               value={isPublic}
               onValueChange={setIsPublic}
@@ -168,7 +259,9 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
           value={reviewText}
           onChangeText={setReviewText}
         />
-        <Text style={styles.characterCount}>{reviewText.length}/1000 characters</Text>
+        <Text style={styles.characterCount}>
+          {reviewText.length}/1000 characters
+        </Text>
       </ScrollView>
 
       {/* 하단 플로팅 녹음 버튼 */}
@@ -176,11 +269,15 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         <TouchableOpacity
           style={[
             styles.recordButton,
-            isRecording ? styles.recordButtonActive : styles.recordButtonInactive,
+            isRecording
+              ? styles.recordButtonActive
+              : styles.recordButtonInactive,
           ]}
           onPress={toggleRecording}
         >
-          <Text style={styles.recordButtonText}>{isRecording ? '녹음 중' : '녹음시작'}</Text>
+          <Text style={styles.recordButtonText}>
+            {isRecording ? '녹음 중' : '녹음시작'}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -213,10 +310,11 @@ const styles = StyleSheet.create({
   nextButtonText: { ...Typography.body, color: '#B11515' },
 
   questionSection: { marginVertical: 16, alignItems: 'center' },
-  questionCardWrapper: { width, justifyContent: 'center', alignItems: 'center' },
+  dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 12 },
+  dot: { height: 6, borderRadius: 3, backgroundColor: '#BDC3C7', marginHorizontal: 3 },
+  animatedCard: { alignItems: 'center' },
   questionCard: {
     width: width * 0.9,
-    marginHorizontal: width * 0.025,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
@@ -224,8 +322,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   questionText: { fontSize: 16, color: '#2C3E50', fontWeight: '500' },
-  dots: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
-  dot: { height: 6, borderRadius: 3, backgroundColor: '#BDC3C7', marginHorizontal: 3 },
 
   reviewContainer: {
     flex: 1,

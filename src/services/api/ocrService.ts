@@ -15,6 +15,7 @@ export interface OCRResult {
   title?: string;
   artist?: string;
   place?: string;
+  seat?: string;
   performedAt?: string;
 }
 
@@ -86,6 +87,7 @@ export const ocrService = {
       const ocrResult: OCRResult = {
         title: result.title || '',
         place: result.venue || '',
+        seat: result.seat || '',
         performedAt: result.date && result.time 
           ? `${result.date}T${result.time}:00` 
           : undefined,
