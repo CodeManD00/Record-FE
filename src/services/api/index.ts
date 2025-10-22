@@ -43,7 +43,6 @@ export type {
 
 export type {
   OCRResult,
-  OCRRequest,
 } from './ocrService';
 
 export type {

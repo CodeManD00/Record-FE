@@ -19,6 +19,14 @@ export interface OCRResult {
 }
 
 /**
+ * OCR 요청 타입 정의
+ */
+export interface OCRRequest {
+  imageUri: string;
+  apiKey?: string;
+}
+
+/**
  * OCR 서비스 객체
  * - 백엔드 OCR API를 호출하는 비동기 함수 포함
  */
@@ -30,19 +38,7 @@ export const ocrService = {
    */
   async extractTicketInfo(imageUri: string): Promise<OCRResult | null> {
     console.log('extractTicketInfo - 이미지URI:', imageUri);
-    /*
-    // 목 데이터 모드: 서버 없이 테스트용
-    if (USE_MOCK_DATA) {
-      console.log('🧪 목 데이터 모드로 OCR 실행');
-      await new Promise<void>(resolve => setTimeout(() => resolve(), 1500)); // 로딩 시뮬레이션
-      
-      return {
-        title: '2024 밴드 페스티벌',
-        artist: '혁오',
-        place: '올림픽공원 88잔디마당',
-        performedAt: '2024-10-25T19:00:00',
-      };
-    }
+
     // 실제 서버 호출
     try {
       // 디버깅: 이미지 URI 확인
