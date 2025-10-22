@@ -23,8 +23,19 @@ import {
 } from 'react-native-image-picker';
 import { useAtom } from 'jotai';
 import { addTicketAtom, TicketStatus } from '../../atoms';
-import { ImageOptionsScreenNavigationProp, ImageOptionsRouteProp } from '../../types/reviewTypes';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
+import {
+  ImageOptionsScreenNavigationProp,
+  ImageOptionsRouteProp,
+} from '../../types/reviewTypes';
+import {
+  Colors,
+  Typography,
+  Spacing,
+  BorderRadius,
+  Shadows,
+  ComponentStyles,
+  Layout,
+} from '../../styles/designSystem';
 import { Ticket, CreateTicketData } from '../../types/ticket';
 
 // Types are now imported from reviewTypes
@@ -87,7 +98,7 @@ const ImageOptions = () => {
     setSelectedImage(demoImage);
   };
 
-  // 카메라 또는 갤러리 선택 UI (iOS ActionSheet, Android는 갤러리 바로)
+  // 카메라 또는 갤러리 선택 UI
   const handleGalleryOrCameraSelect = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -140,25 +151,21 @@ const ImageOptions = () => {
         createdAt: new Date(),
         images: [], // 빈 배열로 설정
       };
-      
+
       addTicket(ticketToSave);
-      
-      Alert.alert(
-        '티켓 저장 완료',
-        '티켓이 성공적으로 저장되었습니다.',
-        [
-          {
-            text: '확인',
-            onPress: () => {
-              // Navigate back to main screen (reset navigation stack)
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'MainTabs' as never }],
-              });
-            },
+
+      Alert.alert('티켓 저장 완료', '티켓이 성공적으로 저장되었습니다.', [
+        {
+          text: '확인',
+          onPress: () => {
+            // Navigate back to main screen (reset navigation stack)
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' as never }],
+            });
           },
-        ]
-      );
+        },
+      ]);
     } catch (error) {
       Alert.alert('오류', '티켓 저장 중 오류가 발생했습니다.');
     }
@@ -177,67 +184,57 @@ const ImageOptions = () => {
         <Text style={styles.headerTitle}>티켓 이미지 선택하기</Text>
         <View style={styles.placeholder} />
       </View>
-      
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.content}
-      >
-        <Text style={styles.subtitle}>
-          기억에 남는 장면을 이미지로 표현해보세요!
-        </Text>
+
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.contextMessage}>
+          <Text style={styles.contextSubtitle}>
+            기억에 남는 장면을 이미지로 표현해보세요
+          </Text>
+        </View>
 
         <View style={styles.optionsContainer}>
           {/* AI 이미지 */}
-          <TouchableOpacity style={styles.generateButton} onPress={handleAIImageSelect}>
-            <Image
-              source={require('../../assets/mic.png')}
-              style={styles.buttonIcon}
-            />
-            <View style={styles.textContainer}>
-              <Text style={styles.optionButtonText}>AI 이미지</Text>
-              <Text style={styles.optionButtonSubText}>
-                AI가 만들어주는 나만의 티켓 이미지 ~
-              </Text>
+          <TouchableOpacity
+            style={styles.generateButton}
+            onPress={handleAIImageSelect}
+          >
+            <View style={styles.buttonContent}>
+              <View style={styles.textContainer}>
+                <Text style={styles.optionButtonText}>AI 이미지</Text>
+                <Text style={styles.optionButtonSubText}>
+                  AI가 만들어주는 나만의 티켓 이미지 ~
+                </Text>
+              </View>
+              <Image
+                source={require('../../assets/mic.png')}
+                style={styles.buttonIcon}
+              />
             </View>
           </TouchableOpacity>
 
-          {/* 직접 선택하기 (갤러리/카메라 선택) */}
+          {/* 직접 선택하기 */}
           <TouchableOpacity
-            style={[styles.optionButton, styles.GalleryButton]}
+            style={[styles.optionButton]}
             onPress={handleGalleryOrCameraSelect}
           >
-            <Image
-              source={require('../../assets/mic.png')}
-              style={styles.buttonIcon}
-            />
-            <View style={styles.textContainer}>
-              <Text style={[styles.optionButtonText, { color: '#000000' }]}>
-                직접 선택하기
-              </Text>
-              <Text style={[styles.optionButtonSubText, { color: '#8E8E93' }]}>
-                사진 찍기 또는 사진 보관함에서 선택하세요.
-              </Text>
+            <View style={styles.buttonContent}>
+              <View style={styles.textContainer}>
+                <Text style={[styles.optionButtonText, { color: '#000000' }]}>
+                  직접 선택하기
+                </Text>
+                <Text
+                  style={[styles.optionButtonSubText, { color: '#8E8E93' }]}
+                >
+                  사진 찍기 또는 사진 보관함에서 선택하세요.
+                </Text>
+              </View>
+              <Image
+                source={require('../../assets/mic.png')}
+                style={styles.buttonIcon}
+              />
             </View>
           </TouchableOpacity>
         </View>
-
-        {/* 선택된 이미지 미리보기 */}
-        {selectedImage && (
-          <View style={styles.previewContainer}>
-            <Text style={styles.previewText}>선택된 이미지:</Text>
-            <Image
-              source={{ uri: selectedImage }}
-              style={styles.previewImage}
-            />
-          </View>
-        )}
-
-        {/* 다음 버튼 */}
-        {selectedImage && (
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Text style={styles.nextButtonText}>다음으로</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
 
       {/* 이미지 스킵 버튼 */}
@@ -296,10 +293,9 @@ const styles = StyleSheet.create({
 
   scrollView: {
     flex: 1,
+    paddingHorizontal: Spacing.screenPadding,
   },
-  content: {
-    padding: 24,
-  },
+
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -315,85 +311,79 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  optionsContainer: { width: '100%', gap: 16 },
-  optionButton: {
+  // 안내 문구
+  contextMessage: {
+    backgroundColor: Colors.secondarySystemBackground,
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.systemGray5,
+  },
+  contextSubtitle: {
+    ...Typography.footnote,
+    color: Colors.secondaryLabel,
+    textAlign: 'left',
+    lineHeight: 20,
+  },
+
+  // 선택 버튼
+  optionsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: 20,
-    borderRadius: 16,
+    justifyContent: 'center',
+    marginVertical: 16,
+  },
+
+  optionButton: {
+    flex: 1,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    marginHorizontal: 4,
   },
-  buttonIcon: { width: 80, height: 80, marginRight: 16 },
-  AIImageButton: { backgroundColor: '#B11515', height: 120 },
-  GalleryButton: {
-    backgroundColor: '#FFFFFF',
-    height: 120,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
+  generateButton: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: '#B11515',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    marginHorizontal: 4,
   },
-  textContainer: { flexDirection: 'column', flex: 1 },
 
   optionButtonText: {
     fontSize: 17,
     fontWeight: '600',
     color: '#FFFFFF',
+    marginTop: 16,
     marginBottom: 8,
   },
-  optionButtonSubText: { fontSize: 15, fontWeight: '400', color: '#FFFFFF' },
-
-  previewContainer: {
-    marginTop: 24,
-    alignItems: 'center',
-    width: '100%',
+  optionButtonSubText: { 
+    fontSize: 15, 
+    fontWeight: '400', 
+    color: '#FFFFFF' 
   },
-  previewText: {
-    fontSize: 17,
-    color: '#000000',
+
+  buttonContent: {
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+  },
+
+  buttonIcon: {
+    width: 50,
+    height: 90,
+    marginTop: 32,
     marginBottom: 16,
-    fontWeight: '600',
-  },
-  previewImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 16,
-  },
-  nextButton: {
-    backgroundColor: '#B11515',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  nextButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 17,
   },
 
-    generateButton: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: '#B11515', 
-    height: 120,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  textContainer: { 
+    flexDirection: 'column', 
   },
 
-
+  // 이미지 skip 버튼
   bottomButtonContainer: {
     padding: 24,
   },

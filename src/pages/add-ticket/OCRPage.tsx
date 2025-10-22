@@ -157,11 +157,10 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 안내 메시지 */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoTitle}>📸 티켓을 스캔해보세요</Text>
-          <Text style={styles.infoText}>
-            티켓 이미지에서 공연 정보를 자동으로 추출합니다.{'\n'}
-            추출 후 수정이 가능합니다.
+        <View style={styles.contextMessage}>
+          <Text style={styles.contextSubtitle}>
+            OCR이 정확하지 않나요?{'\n'}
+            다음 단계에서 직접 수정할 수 있습니다.
           </Text>
         </View>
 
@@ -199,23 +198,6 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
               </View>
             )}
 
-            {!isProcessing && ocrResult && (
-              <View style={styles.resultContainer}>
-                <Text style={styles.resultTitle}>✅ 추출 완료</Text>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>공연 제목:</Text>
-                  <Text style={styles.resultValue}>{ocrResult.title}</Text>
-                </View>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>아티스트:</Text>
-                  <Text style={styles.resultValue}>{ocrResult.artist}</Text>
-                </View>
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>공연장:</Text>
-                  <Text style={styles.resultValue}>{ocrResult.place}</Text>
-                </View>
-              </View>
-            )}
 
             {!isProcessing && (
               <TouchableOpacity
@@ -227,14 +209,6 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
             )}
           </View>
         )}
-
-        {/* 직접 입력 안내 */}
-        <View style={styles.manualInputHint}>
-          <Text style={styles.manualInputText}>
-            OCR이 정확하지 않나요?{'\n'}
-            다음 단계에서 직접 수정할 수 있습니다.
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -275,29 +249,24 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  infoContainer: {
-    backgroundColor: Colors.systemBackground,
-    margin: Spacing.sectionSpacing,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    ...Shadows.small,
+  contextMessage: {
+    backgroundColor: Colors.secondarySystemBackground,
+    paddingHorizontal: Spacing.sectionSpacing,
+    paddingVertical: Spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.systemGray5,
   },
-  infoTitle: {
-    ...Typography.title3,
-    fontWeight: '600',
-    color: Colors.label,
-    marginBottom: Spacing.sm,
-  },
-  infoText: {
-    ...Typography.body,
+  contextSubtitle: {
+    ...Typography.footnote,
     color: Colors.secondaryLabel,
-    lineHeight: 22,
+    textAlign: 'left',
+    lineHeight: 20,
   },
   buttonContainer: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.sectionSpacing,
     gap: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginVertical: Spacing.lg,
   },
   imageButton: {
     flex: 1,
