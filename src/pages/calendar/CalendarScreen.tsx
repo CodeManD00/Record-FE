@@ -1,9 +1,3 @@
-/**
- * 캘린더 화면
- * 월별 달력 뷰에서 티켓들을 날짜별로 확인할 수 있는 페이지
- * 특정 날짜 선택 시 해당 날짜의 공연 목록을 하단에 표시
- * 스크롤 시 월간 캘린더에서 주간 캘린더로 전환되는 애니메이션 포함
- */
 import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, StatusBar, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -159,7 +153,6 @@ const CalendarScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
-      {/* 캘린더 상단 헤더 - 총 티켓 개수 표시 (항상 고정) */}
       <CalendarHeader totalTickets={totalTickets} />
       
       {isWeeklyView && (
@@ -217,7 +210,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.systemBackground,
   },
   weeklyCalendarContainer: {
-    // CalendarHeader 바로 아래에 고정되도록 변경
     backgroundColor: Colors.systemBackground,
     zIndex: 10,
   },
@@ -226,7 +218,7 @@ const styles = StyleSheet.create({
   },
   eventsContainer: {
     flex: 1,
-    minHeight: 400, // 스크롤을 위한 최소 높이 보장
+    minHeight: 450,
   },
 });
 

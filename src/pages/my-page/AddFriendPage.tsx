@@ -6,9 +6,18 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
+import {
+  Colors,
+  Typography,
+  Spacing,
+  BorderRadius,
+  Shadows,
+  ComponentStyles,
+  Layout,
+} from '../../styles/designSystem';
 import { useAtom } from 'jotai';
 import { friendsAtom } from '../../atoms';
 import { Friend } from '../../types/friend';
@@ -27,7 +36,13 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [sentRequests, setSentRequests] = useState<string[]>([]);
   const [friends] = useAtom(friendsAtom);
 
-  const myProfile: User = { id: '1', name: 'Re:cord 프로필 공유', username: '@9rmmy', avatar: '👩🏻‍💼', isMyProfile: true };
+  const myProfile: User = {
+    id: '1',
+    name: 'Re:cord 프로필 공유',
+    username: '@9rmmy',
+    avatar: '👩🏻‍💼',
+    isMyProfile: true,
+  };
 
   const mockUsers: User[] = [
     { id: '2', name: '9RMMY', username: '@9rmmy', avatar: '👩🏻‍💼' },
@@ -45,8 +60,8 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
           user =>
             user.id.includes(query) ||
             user.name.toLowerCase().includes(query) ||
-            user.username.toLowerCase().includes(query)
-        )
+            user.username.toLowerCase().includes(query),
+        ),
       );
     }
   }, [searchQuery]);
@@ -62,7 +77,7 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
   const navigateToFriendProfile = (friend: Friend) => {
     // 먼저 현재 모달을 닫기
     navigation.goBack();
-    
+
     // 모달 닫기 애니메이션이 완료된 후 풀스크린 열기
     setTimeout(() => {
       navigation.navigate('FriendProfile', { friend });
@@ -70,10 +85,13 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>친구 추가</Text>
@@ -82,32 +100,21 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       {/* 검색창 */}
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="사용자 검색"
-          placeholderTextColor="#8E8E93"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={styles.searchBox}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="사용자 검색"
+            placeholderTextColor="#8E8E93"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
       </View>
 
       {/* 검색 결과 */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content}>
         {/* 항상 표시되는 내 프로필 */}
-        <View style={styles.userItem}>
-          <View style={styles.userInfo}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{myProfile.avatar}</Text>
-            </View>
-            <View style={styles.userDetails}>
-              <Text style={styles.userName}>{myProfile.name}</Text>
-              <Text style={styles.userHandle}>{myProfile.username}</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.shareButton}>
-            <Text style={styles.shareText}>공유</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* 검색 결과 */}
         {searchResults.map(user => (
@@ -145,30 +152,46 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
         {/* 기존 친구들 섹션 */}
         {!searchQuery && friends.length > 0 && (
           <>
+            <View style={styles.userItem}>
+              <View style={styles.userInfo}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{myProfile.avatar}</Text>
+                </View>
+                <View style={styles.userDetails}>
+                  <Text style={styles.userName}>{myProfile.name}</Text>
+                  <Text style={styles.userHandle}>{myProfile.username}</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.shareButton}
+                onPress={() => Alert.alert('공유 기능은 준비 중입니다.')}
+              >
+                <Text style={styles.shareText}>↗</Text>
+              </TouchableOpacity>
+            </View>
+
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>내 친구들 ({friends.length})</Text>
+              <Text style={styles.sectionTitle}>
+                내 친구들 ({friends.length})
+              </Text>
             </View>
             {friends.map(friend => (
-              <TouchableOpacity 
-                key={friend.id} 
+              <TouchableOpacity
+                key={friend.id}
                 style={styles.userItem}
                 onPress={() => navigateToFriendProfile(friend)}
                 activeOpacity={0.7}
               >
                 <View style={styles.userInfo}>
                   <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{friend.avatar || friend.name.charAt(0)}</Text>
+                    <Text style={styles.avatarText}>
+                      {friend.avatar || friend.name.charAt(0)}
+                    </Text>
                   </View>
                   <View style={styles.userDetails}>
                     <Text style={styles.userName}>{friend.name}</Text>
                     <Text style={styles.userHandle}>{friend.username}</Text>
                   </View>
-                </View>
-                <View style={styles.friendBadgeContainer}>
-                  <View style={styles.friendBadge}>
-                    <Text style={styles.friendBadgeText}>친구</Text>
-                  </View>
-                  <Text style={styles.tapHint}>탭하여 프로필 보기</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -186,34 +209,48 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.secondarySystemBackground,
+  },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    height: Layout.navigationBarHeight,
+    justifyContent: 'space-between',
+    padding: Spacing.lg,
     backgroundColor: Colors.systemBackground,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.separator,
     position: 'relative',
   },
+
+  // 뒤로가기 버튼
   backButton: {
-    position: 'absolute',
-    left: Spacing.lg,
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.secondarySystemBackground,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    ...Shadows.small,
+    zIndex: 2,
   },
-  backButtonText: { ...Typography.body, color: Colors.systemBlue, fontWeight: '400' },
+  backButtonText: {
+    ...Typography.title3,
+    color: Colors.label,
+    fontWeight: 'bold',
+  },
+
   headerTitle: {
     ...Typography.headline,
     color: Colors.label,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
   },
+
   placeholder: {
     position: 'absolute',
     right: Spacing.lg,
@@ -221,41 +258,55 @@ const styles = StyleSheet.create({
     height: 44,
   },
 
+  // 본문
   searchContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  searchBox: {
+    width: '89%', // 부모 SafeAreaView 기준
+    flexDirection: 'row', // 아이콘 + 입력창 가로 배치
+    alignItems: 'center', // 수직 가운데 정렬
     backgroundColor: '#FFFFFF',
-    margin: 20,
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
+    padding: Spacing.cardPadding,
+    borderWidth: 0.5,
     borderColor: '#DEE2E6',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2,
+    marginTop: 16,
   },
-  searchInput: { color: '#2C3E50', fontSize: 16 },
+  searchIcon: {
+    marginRight: 8,
+    fontSize: 18,
+  },
+  searchInput: {
+    flex: 1, // 나머지 공간 차지
+    color: '#2C3E50',
+    fontSize: 16,
+  },
 
-  content: { flex: 1 },
+  content: {
+    flex: 1,
+    padding: Spacing.screenPadding,
+  },
 
   userItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    padding: Spacing.cardPadding,
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginBottom: 8,
+    marginBottom: 12,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  userInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   avatar: {
     width: 50,
     height: 50,
@@ -266,8 +317,14 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   avatarText: { fontSize: 24 },
+
   userDetails: { flex: 1 },
-  userName: { fontSize: 16, fontWeight: '500', color: '#2C3E50', marginBottom: 2 },
+  userName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#2C3E50',
+    marginBottom: 4,
+  },
   userHandle: { fontSize: 14, color: '#6C757D' },
 
   addButton: {
@@ -281,16 +338,23 @@ const styles = StyleSheet.create({
   sentButton: { backgroundColor: '#6C757D' },
   sentButtonText: { color: '#FFFFFF' },
 
+
   shareButton: {
-    backgroundColor: '#28A745',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+    backgroundColor: '#9c9c9cff',
+    width: 40,
+    height: 40,
     borderRadius: 8,
+    opacity: 0.5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  shareText: { color: '#FFFFFF', fontWeight: '600' },
+  shareText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: 16,
+  },
 
   sectionHeader: {
-    paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.lg,
     backgroundColor: Colors.secondarySystemBackground,
   },
@@ -299,28 +363,7 @@ const styles = StyleSheet.create({
     color: Colors.label,
     fontWeight: '600',
   },
-  friendBadgeContainer: {
-    alignItems: 'flex-end',
-  },
-  friendBadge: {
-    backgroundColor: Colors.systemGreen + '20',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.systemGreen + '40',
-    marginBottom: 2,
-  },
-  friendBadgeText: {
-    ...Typography.caption1,
-    color: Colors.systemGreen,
-    fontWeight: '600',
-  },
-  tapHint: {
-    ...Typography.caption2,
-    color: Colors.tertiaryLabel,
-    fontSize: 10,
-  },
+
   emptyState: {
     padding: Spacing.xl,
     alignItems: 'center',

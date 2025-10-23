@@ -87,16 +87,15 @@ const TicketGrid: React.FC<TicketGridProps> = ({
 const styles = StyleSheet.create({
   gridContainer: {
     flex: 1,
-    paddingTop: 0,
     paddingBottom: Spacing.xl,
+    alignItems: 'center',
   },
   gridContent: {
-    //paddingHorizontal: Spacing.screenPadding,
     paddingBottom: Spacing.sectionSpacing,
   },
   gridRow: {
     justifyContent: 'flex-start',
-    gap: 5,
+    gap: 3,
   },
   ticketCard: {
     backgroundColor: Colors.systemBackground,
