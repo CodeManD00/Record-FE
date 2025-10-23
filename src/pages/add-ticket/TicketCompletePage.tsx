@@ -150,7 +150,6 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
               />
             ) : (
               <View style={styles.ticketPlaceholder}>
-                <Text style={styles.placeholderText}>🎫</Text>
                 <Text style={styles.noImageText}>이미지 없음</Text>
               </View>
             )}

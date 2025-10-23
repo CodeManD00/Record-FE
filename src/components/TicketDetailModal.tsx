@@ -357,6 +357,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             >
               <Text style={styles.backButtonText}>‹</Text>
             </TouchableOpacity>
+
             <View style={styles.headerActions}>
               {isEditing && isMine ? (
                 <>
@@ -379,6 +380,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   >
                     <Text style={styles.actionButtonText}>↗</Text>
                   </TouchableOpacity>
+
                   <View style={styles.dropdownContainer}>
                     <TouchableOpacity
                       style={styles.actionButton}
@@ -389,6 +391,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     >
                       <Text style={styles.actionButtonText}>⋯</Text>
                     </TouchableOpacity>
+                    
                     {showDropdown && (
                       <View style={styles.dropdown}>
                         <TouchableOpacity
