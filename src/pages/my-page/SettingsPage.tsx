@@ -104,7 +104,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -190,43 +190,52 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
   },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    height: Layout.navigationBarHeight,
+    justifyContent: 'space-between',
+    padding: Spacing.lg,
     backgroundColor: Colors.systemBackground,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.separator,
     position: 'relative',
   },
-  backButton: {
-    position: 'absolute',
-    left: Spacing.lg,
-    width: 44,
-    height: 44,
+
+  // 뒤로가기 버튼
+    backButton: {
+    width: 40,
+    height: 40,
     borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.secondarySystemBackground,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    ...Shadows.small,
+    zIndex: 2,
   },
   backButtonText: {
-    ...Typography.body,
-    color: Colors.systemBlue,
-    fontWeight: '400',
+    ...Typography.title3,
+    color: Colors.label,
+    fontWeight: 'bold',
   },
+
   headerTitle: {
     ...Typography.headline,
     color: Colors.label,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
   },
+
   placeholder: {
     position: 'absolute',
     right: Spacing.lg,
     width: 44,
     height: 44,
   },
+
+  // 본문
   content: {
     flex: 1,
   },

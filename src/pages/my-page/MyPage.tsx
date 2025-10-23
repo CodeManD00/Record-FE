@@ -131,9 +131,12 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
         ]}
       >
         {/* 왼쪽 앱 타이틀 */}
-        <Animated.Text style={[styles.appTitle, { opacity: headerOpacity }]}>
-          Re:cord
-        </Animated.Text>
+        <Animated.Image
+          source={require('../../assets/logo.png')}
+          style={[
+            styles.headerLogo,
+          ]}
+        />
 
         {/* 중앙 사용자 아이디 (스크롤 시 나타남) */}
         <Animated.View
@@ -184,9 +187,10 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
           { paddingBottom: tabBarHeight },
         ]}
       >
+
         {/* 사용자 프로필 섹션 - 아바타, 통계, 사용자 정보 */}
         <View
-          style={[styles.profileSection, { paddingTop: HEADER_HEIGHT + 32 }]}
+          style={[styles.profileSection, { paddingTop: HEADER_HEIGHT + 8 }]}
         >
           <View style={styles.avatarContainer}>
             {actualProfile.profileImage ? (
@@ -276,12 +280,8 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
     zIndex: 10,
   },
-  appTitle: {
-    ...Typography.title2,
-    fontWeight: '700',
-    color: Colors.label,
-    flex: 1,
-  },
+  headerLogo: { width: 80, height: 22, resizeMode: 'contain' },
+  
   centerIdContainer: {
     position: 'absolute',
     left: 0,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     ...Shadows.small,
   },
   iconText: {
-    ...Typography.callout,
+    ...Typography.footnote,
   },
 
   // 프로필 섹션 스타일 - 수정됨
@@ -317,39 +317,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.xxxl,
-    paddingBottom: Spacing.xl, // 하단 패딩 조정
-    backgroundColor: 'transparent', // 배경색 제거
-    // ...Shadows.large, // 그림자 제거
+    paddingBottom: Spacing.xxxl,
+    borderBottomColor: Colors.systemGray5,
+    borderBottomWidth: 0.5,
   },
   
-  // 티켓 그리드 섹션 추가
-  ticketGridSection: {
-    flex: 1,
-    backgroundColor: Colors.systemBackground,
-    paddingTop: Spacing.lg,
-  },
 
   avatarContainer: {
-    marginBottom: Spacing.xl,
   },
   avatarImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
     backgroundColor: Colors.systemGray5,
-    shadowColor: Colors.label,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
   },
+
   badgeWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 0.5,
+    borderColor: Colors.systemGray5,
     backgroundColor: Colors.systemBackground,
     borderRadius: BorderRadius.xl,
     height: 32,
     paddingHorizontal: Spacing.md,
-    top: -16,
+    top: -20,
     ...Shadows.medium,
   },
   badgeEmoji: {
@@ -361,6 +353,7 @@ const styles = StyleSheet.create({
     ...Typography.caption1,
     fontWeight: 'bold',
   },
+
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -381,6 +374,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.label,
   },
+
   username: {
     ...Typography.title1,
     fontWeight: 'bold',
@@ -395,6 +389,14 @@ const styles = StyleSheet.create({
     fontSize: 48,
     color: Colors.secondaryLabel,
   },
+
+  // 티켓 그리드 섹션 추가
+  ticketGridSection: {
+    flex: 1,
+    backgroundColor: Colors.systemBackground,
+    paddingTop: Spacing.xs,
+  },
+
 });
 
 export default MyPage;
