@@ -143,7 +143,7 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -199,14 +199,15 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
               </View>
             )}
 
-
             {!isProcessing && (
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={handleRetry}
-              >
-                <Text style={styles.retryButtonText}>다시 선택하기</Text>
-              </TouchableOpacity>
+              <View style={styles.retryButtonContainer}>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={handleRetry}
+                >
+                  <Text style={styles.retryButtonText}>다시 선택하기</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         )}
@@ -269,6 +270,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     marginVertical: Spacing.lg,
   },
+
   imageButton: {
     flex: 1,
     backgroundColor: Colors.systemBackground,
@@ -289,8 +291,10 @@ const styles = StyleSheet.create({
     color: Colors.label,
     textAlign: 'center',
   },
+
+  // 사진 미리보기
   previewContainer: {
-    margin: Spacing.sectionSpacing,
+    margin: 28,
   },
   previewImage: {
     width: '100%',
@@ -298,6 +302,8 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     backgroundColor: Colors.systemGray6,
   },
+
+  // 로딩화면
   processingOverlay: {
     position: 'absolute',
     top: 0,
@@ -315,6 +321,8 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     fontWeight: '600',
   },
+
+  // 결과
   resultContainer: {
     backgroundColor: Colors.systemBackground,
     marginTop: Spacing.md,
@@ -343,16 +351,25 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
+
+  // 다시 선택하기 버튼
+  retryButtonContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 36,
+    alignItems: 'center',
+  },
+
   retryButton: {
-    backgroundColor: Colors.secondarySystemBackground,
-    marginTop: Spacing.md,
-    padding: Spacing.md,
-    borderRadius: BorderRadius.md,
+    width: '116%',
+    backgroundColor: '#8E8E93',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     alignItems: 'center',
   },
   retryButtonText: {
-    ...Typography.body,
-    color: Colors.label,
+    color: '#FFFFFF',
+    fontSize: 17,
     fontWeight: '600',
   },
   manualInputHint: {

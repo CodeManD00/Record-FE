@@ -341,6 +341,13 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     >
       <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
         <View style={styles.container}>
+        
+          {showDropdown && (
+            <TouchableWithoutFeedback onPress={() => setShowDropdown(false)}>
+              <View style={styles.overlay} />
+            </TouchableWithoutFeedback>
+          )}
+
           <StatusBar barStyle="dark-content" />
 
           {/* Header */}
@@ -386,14 +393,15 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       style={styles.actionButton}
                       onPress={e => {
                         e.stopPropagation(); // 드롭다운을 열 때 외부 터치 이벤트 방지
+                        console.log('드롭다운 버튼 눌림');
                         setShowDropdown(!showDropdown);
                       }}
                     >
                       <Text style={styles.actionButtonText}>⋯</Text>
                     </TouchableOpacity>
-                    
+
                     {showDropdown && (
-                      <View style={styles.dropdown}>
+                      <View style={[styles.dropdown]}>
                         <TouchableOpacity
                           style={styles.dropdownItem}
                           onPress={handleEdit}
@@ -405,7 +413,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                           onPress={handleTogglePrivacy}
                         >
                           <Text style={styles.dropdownText}>
-                            후기 공개범위 변경
+                            공개범위 변경
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -413,23 +421,20 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                           onPress={handleAddToPhoto}
                         >
                           <Text style={styles.dropdownText}>
-                            사진 앨범에 저장
+                            앨범에 저장
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={[
                             styles.dropdownItem,
-                            styles.dropdownItemDanger,
                           ]}
                           onPress={handleDelete}
                         >
                           <Text
                             style={[
-                              styles.dropdownText,
-                              styles.dropdownTextDanger,
-                            ]}
+                              styles.dropdownTextDanger]}
                           >
-                            내 티켓 삭제하기
+                            티켓 삭제하기
                           </Text>
                         </TouchableOpacity>
                       </View>
@@ -689,12 +694,12 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     <Text style={styles.detailValue}>{ticket.place}</Text>
                   )}
                 </View>
-                                <View style={styles.detailRow}>
+                <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>좌석</Text>
                   {isEditing ? (
                     <TextInput
                       style={styles.detailInput}
-                      value={editedTicket.seat ?? ticket.seat }
+                      value={editedTicket.seat ?? ticket.seat}
                       onChangeText={text =>
                         setEditedTicket(prev => ({ ...prev, seat: text }))
                       }
@@ -823,6 +828,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: Spacing.xl,
     backgroundColor: Colors.systemBackground,
+    overflow: 'visible',
+    zIndex: 10000,
   },
 
   backButton: {
@@ -838,7 +845,11 @@ const styles = StyleSheet.create({
     color: Colors.label,
     fontWeight: Typography.headline.fontWeight,
   },
-  headerActions: { flexDirection: 'row', gap: Spacing.md },
+  headerActions: { 
+    flexDirection: 'row', 
+    gap: Spacing.md,
+    overflow: 'visible',
+  },
   actionButton: {
     width: 40,
     height: 40,
@@ -1078,18 +1089,29 @@ const styles = StyleSheet.create({
   },
 
   // 드롭다운 메뉴 스타일
+  overlay: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 9998, // 드롭다운보다 낮게
+},
+
   dropdownContainer: {
     position: 'relative',
+    zIndex: 10001,
   },
   dropdown: {
     position: 'absolute',
-    top: 45,
-    right: 0,
+    top: 58,
+    right: 4,
     backgroundColor: Colors.systemBackground,
+    opacity: 0.9,
     borderRadius: BorderRadius.lg,
-    minWidth: 180,
+    minWidth: 140,
     ...Shadows.large,
-    zIndex: 1000,
+    zIndex: 10002,
   },
   dropdownItem: {
     paddingHorizontal: Spacing.lg,
@@ -1097,16 +1119,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.systemGray5,
   },
-  dropdownItemDanger: {
-    borderBottomWidth: 0,
-  },
   dropdownText: {
     ...Typography.subheadline,
     color: Colors.label,
     fontWeight: '500',
   },
   dropdownTextDanger: {
-    color: Colors.systemRed,
+    ...Typography.subheadline,
+    color: '#b11515',
+    fontWeight: '500',
   },
 
   // 장르 선택 스타일
