@@ -157,7 +157,6 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
 
           {/* Ticket Footer */}
           <View style={styles.ticketFooter}>
-            <Text style={styles.footerText}>{ticketData?.title}</Text>
             <Text style={styles.footerSubtext}>
               {ticketData?.place} •{' '}
               {ticketData?.performedAt
@@ -254,7 +253,7 @@ const styles = StyleSheet.create({
   },
   ticketFooter: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   footerText: {
     fontSize: 14,
