@@ -18,6 +18,7 @@ import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-pick
 import { useAtom } from 'jotai';
 import { userProfileAtom, updateUserProfileAtom } from '../../atoms/userAtoms';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
+import ModalHeader from '../../components/ModalHeader';
 
 interface PersonalInfoEditPageProps {
   navigation: any;
@@ -29,9 +30,6 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
   const [userProfile] = useAtom(userProfileAtom);
   const [, updateUserProfile] = useAtom(updateUserProfileAtom);
   
-  // 프로필 수정 폼의 각 입력 필드와 연결된 로컬 상태 
-  // useState로 선언한 값들은 해당 컴포넌트 안에서만 유효함
-  // 컴포넌트가 사라지면 이 값들도 없어짐
 
   //현재 프로필 이미지의 경로
   const [profileImage, setProfileImage] = useState<string | null>(userProfile.profileImage || null);
@@ -184,29 +182,23 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>개인정보 수정</Text>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={handleSave}
-        >
-          <Text style={styles.saveButtonText}>저장</Text>
-        </TouchableOpacity>
-      </View>
+      <ModalHeader
+        title="개인정보 수정"
+        onBack={() => navigation.goBack()}
+        rightAction={{
+          text: '저장',
+          onPress: handleSave,
+        }}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 프로필 이미지 섹션 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>프로필 사진</Text>
-          <View style={styles.profileImageContainer}>
+        <View style={styles.formContainer}>
+          {/* 프로필 이미지 섹션 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>프로필 사진</Text>
+            <View style={styles.profileImageContainer}>
             <TouchableOpacity
               style={styles.profileImageWrapper}
               onPress={handleProfileImagePick}
@@ -219,16 +211,17 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
                 </View>
               )}
               <View style={styles.editImageOverlay}>
-                <Text style={styles.editImageText}>📷</Text>
+                <Text style={styles.editImageText}>✏️</Text>
               </View>
             </TouchableOpacity>
+            </View>
           </View>
-        </View>
 
-        {/* 기본 정보 섹션 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>기본 정보</Text>
-          <View style={styles.fieldContainer}>
+          {/* 기본 정보 섹션 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>기본 정보</Text>
+            
+            <View style={styles.fieldContainer}>
             {editFields.map((field) => (
               <View key={field.id} style={styles.fieldItem}>
                 <Text style={styles.fieldLabel}>{field.title}</Text>
@@ -239,17 +232,17 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
                   placeholder={field.placeholder}
                   keyboardType={field.keyboardType}
                   secureTextEntry={field.secureTextEntry}
-                  placeholderTextColor="#ADB5BD"
+                  placeholderTextColor={Colors.tertiaryLabel}
                 />
               </View>
             ))}
+            </View>
           </View>
-        </View>
 
-        {/* 계정 설정 섹션 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>계정 설정</Text>
-          <View style={styles.privacyContainer}>
+          {/* 계정 설정 섹션 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>계정 설정</Text>
+            <View style={styles.privacyContainer}>
             <View style={styles.privacyItem}>
               <View style={styles.privacyLeft}>
                 <Text style={styles.privacyTitle}>계정 공개 설정</Text>
@@ -262,20 +255,20 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
               <Switch
                 value={isAccountPrivate}
                 onValueChange={setIsAccountPrivate}
-                trackColor={{ false: Colors.systemGray4, true: Colors.systemGreen }}
+                trackColor={{ false: Colors.systemGray4, true: Colors.primary }}
                 thumbColor={Colors.systemBackground}
               />
             </View>
+            </View>
           </View>
-        </View>
 
-        {/* 비밀번호 섹션 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>비밀번호 변경</Text>
-          <Text style={styles.sectionSubtitle}>
-            비밀번호를 변경하지 않으려면 비워두세요
-          </Text>
-          <View style={styles.fieldContainer}>
+          {/* 비밀번호 섹션 */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>비밀번호 변경</Text>
+            <Text style={styles.sectionSubtitle}>
+              비밀번호를 변경하지 않으려면 비워두세요
+            </Text>
+            <View style={styles.fieldContainer}>
             {passwordFields.map((field) => (
               <View key={field.id} style={styles.fieldItem}>
                 <Text style={styles.fieldLabel}>{field.title}</Text>
@@ -285,19 +278,20 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
                   onChangeText={field.onChangeText}
                   placeholder={field.placeholder}
                   secureTextEntry={field.secureTextEntry}
-                  placeholderTextColor="#ADB5BD"
+                  placeholderTextColor={Colors.tertiaryLabel}
                 />
               </View>
             ))}
+            </View>
           </View>
-        </View>
 
-        {/* 비밀번호 가이드라인 */}
-        <View style={styles.guidelinesContainer}>
-          <Text style={styles.guidelinesTitle}>비밀번호 설정 가이드</Text>
-          <Text style={styles.guidelineText}>• 8자 이상 입력해주세요</Text>
-          <Text style={styles.guidelineText}>• 영문, 숫자, 특수문자를 포함해주세요</Text>
-          <Text style={styles.guidelineText}>• 개인정보와 관련된 내용은 피해주세요</Text>
+          {/* 비밀번호 가이드라인 */}
+          <View style={styles.guidelinesContainer}>
+            <Text style={styles.guidelinesTitle}>비밀번호 설정 가이드</Text>
+            <Text style={styles.guidelineText}>• 8자 이상 입력해주세요</Text>
+            <Text style={styles.guidelineText}>• 영문, 숫자, 특수문자를 포함해주세요</Text>
+            <Text style={styles.guidelineText}>• 개인정보와 관련된 내용은 피해주세요</Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -309,149 +303,102 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    height: Layout.navigationBarHeight,
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
-    position: 'relative',
-  },
-  backButton: {
-    position: 'absolute',
-    left: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  backButtonText: {
-    ...Typography.body,
-    color: Colors.systemBlue,
-    fontWeight: '400',
-  },
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
-  },
-  saveButton: {
-    position: 'absolute',
-    right: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.systemBlue,
-    borderRadius: BorderRadius.md,
-    minWidth: 44,
-    minHeight: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    ...Typography.headline,
-    color: Colors.systemBackground,
-  },
   content: {
     flex: 1,
   },
+  formContainer: {
+    padding: Spacing.screenPadding,
+  },
   section: {
-    ...ComponentStyles.card,
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.sectionSpacing,
+    marginBottom: Spacing.xxl,
   },
   sectionTitle: {
     ...Typography.title3,
     fontWeight: '600',
     color: Colors.label,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.lg,
   },
   sectionSubtitle: {
     ...Typography.footnote,
     color: Colors.tertiaryLabel,
-    marginBottom: Spacing.xl,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   fieldContainer: {
-    gap: 16,
+    gap: Spacing.xl,
   },
   fieldItem: {
-    gap: 8,
+    gap: Spacing.xs,
   },
   fieldLabel: {
-    ...Typography.footnote,
+    ...Typography.callout,
     fontWeight: '500',
-    color: Colors.secondaryLabel,
+    color: Colors.label,
+    marginBottom: Spacing.xs,
   },
   textInput: {
     ...ComponentStyles.input,
-    borderColor: Colors.systemGray4,
-    backgroundColor: Colors.systemBackground,
   },
   guidelinesContainer: {
-    backgroundColor: Colors.secondarySystemBackground,
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.sectionSpacing,
-    marginBottom: Spacing.xxxl,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.separator,
+    backgroundColor: Colors.systemGray6,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.lg,
+    marginTop: Spacing.md,
   },
   guidelinesTitle: {
     ...Typography.callout,
     fontWeight: '600',
-    color: Colors.secondaryLabel,
-    marginBottom: Spacing.md,
+    color: Colors.label,
+    marginBottom: Spacing.sm,
   },
   guidelineText: {
     ...Typography.footnote,
-    color: Colors.tertiaryLabel,
+    color: Colors.secondaryLabel,
     marginBottom: Spacing.xs,
+    lineHeight: 18,
   },
   profileImageContainer: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: Spacing.lg,
   },
   profileImageWrapper: {
     position: 'relative',
-    marginBottom: 16,
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   defaultProfileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: Colors.systemGray5,
     justifyContent: 'center',
     alignItems: 'center',
   },
   defaultProfileImageText: {
-    fontSize: 40,
+    fontSize: 48,
+    color: Colors.secondaryLabel,
   },
+
   editImageOverlay: {
     position: 'absolute',
     bottom: 0,
     right: 0,
     width: 32,
     height: 32,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.primary,
+    borderRadius: 16,
+    backgroundColor: Colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: Colors.systemBackground,
   },
   editImageText: {
-    fontSize: 16,
+    fontSize: 12,
   },
+
   changeImageButton: {
     ...ComponentStyles.secondaryButton,
     paddingHorizontal: Spacing.xl,
@@ -463,17 +410,17 @@ const styles = StyleSheet.create({
     color: Colors.secondaryLabel,
   },
   privacyContainer: {
-    marginTop: 16,
+    marginTop: Spacing.sm,
   },
   privacyItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: Spacing.sm,
   },
   privacyLeft: {
     flex: 1,
-    marginRight: 16,
+    marginRight: Spacing.md,
   },
   privacyTitle: {
     ...Typography.callout,

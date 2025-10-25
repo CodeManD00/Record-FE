@@ -14,7 +14,10 @@ import {
 } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
 import { userProfileAtom } from '../../atoms/userAtoms';
+import { ticketsAtom } from '../../atoms/ticketAtoms';
+import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
+import ModalHeader from '../../components/ModalHeader';
 
 interface SettingsPageProps {
   navigation: any;
@@ -23,6 +26,10 @@ interface SettingsPageProps {
 const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [userProfile] = useAtom(userProfileAtom);
+  const [tickets] = useAtom(ticketsAtom);
+  
+  // 실제 티켓 개수 계산
+  const realTickets = tickets.filter(ticket => !isPlaceholderTicket(ticket));
 
   //로그아웃
   const handleLogout = () => {
@@ -106,48 +113,31 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>설정</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ModalHeader
+        title="설정"
+        onBack={() => navigation.goBack()}
+      />
       
       {/* 화면 구성 */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        
         {/* 사용자 프로필 */}
         <View style={styles.userSection}>
-          {/* 사용자 프로필 수정 */}
           <TouchableOpacity 
-            style={styles.userAvatarContainer}
+            style={styles.avatarContainer}
             onPress={() => navigation.navigate('PersonalInfoEdit')}
           >
             {userProfile.profileImage ? (
-              <Image source={{ uri: userProfile.profileImage }} style={styles.userAvatar} />
+              <Image source={{ uri: userProfile.profileImage }} style={styles.avatarImage} />
             ) : (
-              <View style={styles.userAvatar}>
-                <Text style={styles.avatarText}>👤</Text>
+              <View style={[styles.avatarImage, styles.defaultAvatar]}>
+                <Text style={styles.defaultAvatarText}>👤</Text>
               </View>
             )}
-            
-            <View style={styles.editProfileOverlay}>
-              <Text style={styles.editProfileText}>✏️</Text>
-            </View>
           </TouchableOpacity>
-          <Text style={styles.userName}>{userProfile.name}</Text>
-          <Text style={styles.userId}>{userProfile.userId}</Text>
-          <Text style={styles.userEmail}>{userProfile.email}</Text>
-          
-          {/* 공개/비공개 계정 설정 */}
-          {userProfile.isAccountPrivate && (
-            <View style={styles.privateAccountBadge}>
-              <Text style={styles.privateAccountText}>🔒 비공개 계정</Text>
-            </View>
-          )}
+
+          {/* 사용자 이름 */}
+          <Text style={styles.username}>{userProfile.name || userProfile.username || '사용자'}</Text>
         </View>
 
         {/* 설정 리스트 */}
@@ -191,121 +181,41 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondarySystemBackground,
   },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
-    position: 'relative',
-  },
-
-  // 뒤로가기 버튼
-    backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.secondarySystemBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.small,
-    zIndex: 2,
-  },
-  backButtonText: {
-    ...Typography.title3,
-    color: Colors.label,
-    fontWeight: 'bold',
-  },
-
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-  },
-
-  placeholder: {
-    position: 'absolute',
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
-  },
-
-  // 본문
   content: {
     flex: 1,
   },
   userSection: {
     backgroundColor: Colors.systemBackground,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: Spacing.xxxl,
+    paddingBottom: Spacing.xxxl,
+    borderBottomColor: Colors.systemGray5,
+    borderBottomWidth: 0.5,
     marginBottom: Spacing.sectionSpacing,
-    ...Shadows.small,
   },
-  userAvatarContainer: {
-    position: 'relative',
-    marginBottom: 16,
+  avatarContainer: {},
+  avatarImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.systemGray5,
   },
-  userAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  defaultAvatar: {
     backgroundColor: Colors.systemGray5,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarText: {
-    fontSize: 32,
-  },
-  editProfileOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 24,
-    height: 24,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: Colors.systemBackground,
-  },
-  editProfileText: {
-    fontSize: 12,
-  },
-  userName: {
-    ...Typography.title2,
-    fontWeight: '700',
-    color: Colors.label,
-    marginBottom: Spacing.xs,
-  },
-  userId: {
-    ...Typography.callout,
-    fontWeight: '500',
+  defaultAvatarText: {
+    fontSize: 48,
     color: Colors.secondaryLabel,
-    marginBottom: Spacing.xs,
   },
-  userEmail: {
-    ...Typography.footnote,
-    color: Colors.tertiaryLabel,
-    marginBottom: Spacing.sm,
-  },
-  privateAccountBadge: {
-    backgroundColor: Colors.systemYellow + '20',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.systemYellow + '40',
-  },
-  privateAccountText: {
-    ...Typography.caption1,
-    fontWeight: '500',
-    color: Colors.systemYellow,
+
+  username: {
+    ...Typography.title1,
+    fontWeight: 'bold',
+    color: Colors.label,
+    paddingVertical: 12,
   },
   optionsContainer: {
     ...ComponentStyles.card,

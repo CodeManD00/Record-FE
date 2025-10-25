@@ -18,6 +18,7 @@ import { useAtom } from 'jotai';
 import { ticketsAtom, TicketStatus } from '../../atoms';
 import { Ticket } from '../../types/ticket';
 import TicketDetailModal from '../../components/TicketDetailModal';
+import GNB from '../../components/GNB';
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import {
   Colors,
@@ -215,55 +216,53 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
   ).current;
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {/* 헤더 */}
-        <View style={styles.header}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.headerLogo}
-          />
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={styles.filterButton}
-              onPress={e => {
-                e.stopPropagation();
-                setShowFilterDropdown(!showFilterDropdown);
-              }}
-            >
-              <Text style={styles.filterButtonText}>{selectedFilter}</Text>
-              <Text style={styles.filterArrow}>▼</Text>
-            </TouchableOpacity>
-            {showFilterDropdown && (
-              <View style={styles.filterDropdown}>
-                {['전체', '밴드', '연극/뮤지컬'].map(option => (
-                  <TouchableOpacity
-                    key={option}
-                    style={[
-                      styles.filterOption,
-                      selectedFilter === option && {
-                        backgroundColor: Colors.secondarySystemBackground,
-                      },
-                    ]}
-                    onPress={() => handleFilterSelect(option as any)}
-                  >
-                    <Text
+        <GNB
+          rightContent={
+            <View style={styles.headerRight}>
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={e => {
+                  e.stopPropagation();
+                  setShowFilterDropdown(!showFilterDropdown);
+                }}
+              >
+                <Text style={styles.filterButtonText}>{selectedFilter}</Text>
+                <Text style={styles.filterArrow}>▼</Text>
+              </TouchableOpacity>
+              {showFilterDropdown && (
+                <View style={styles.filterDropdown}>
+                  {['전체', '밴드', '연극/뮤지컬'].map(option => (
+                    <TouchableOpacity
+                      key={option}
                       style={[
-                        styles.filterOptionText,
+                        styles.filterOption,
                         selectedFilter === option && {
-                          color: Colors.primary,
-                          fontWeight: '600',
+                          backgroundColor: Colors.secondarySystemBackground,
                         },
                       ]}
+                      onPress={() => handleFilterSelect(option as any)}
                     >
-                      {option}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
+                      <Text
+                        style={[
+                          styles.filterOptionText,
+                          selectedFilter === option && {
+                            color: Colors.primary,
+                            fontWeight: '600',
+                          },
+                        ]}
+                      >
+                        {option}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          }
+        />
 
         {/* 서브 헤더 */}
         <View style={styles.subHeader}>
@@ -379,30 +378,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.systemBackground },
   safeArea: { flex: 1 },
 
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.lg,
-    backgroundColor: Colors.systemBackground,
-    zIndex: 1,
-  },
-  headerLogo: { width: 80, height: 22, resizeMode: 'contain' },
   headerRight: { position: 'relative' },
 
   // 헤더 티켓 필터링
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.secondarySystemBackground,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.lg,
     borderWidth: 0.5,
     borderColor: Colors.systemGray5,
-    ...Shadows.small,
+    transform: [{ translateY: 10 }],
   },
   filterButtonText: {
     ...Typography.subheadline,

@@ -16,6 +16,7 @@ import { addTicketAtom, TicketStatus, CreateTicketData } from '../../atoms';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import InputMethodModal from '../../components/InputMethodModal';
+import ModalHeader from '../../components/ModalHeader';
 import {
   Colors,
   Typography,
@@ -147,18 +148,14 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
         }}
       />
       {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>공연 정보 입력하기</Text>
-        <TouchableOpacity onPress={handleSubmit}>
-          <Text style={styles.nextButtonText}>다음</Text>
-        </TouchableOpacity>
-      </View>
+      <ModalHeader
+        title="공연 정보 입력하기"
+        onBack={() => navigation.goBack()}
+        rightAction={{
+          text: '다음',
+          onPress: handleSubmit,
+        }}
+      />
       {/* 컨텍스트 메시지 */}
       {(fromEmptyState || fromAddButton) && (
         <View style={styles.contextMessage}>
@@ -312,35 +309,6 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    backgroundColor: Colors.systemBackground,
-    ...Shadows.small,
-    zIndex: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.secondarySystemBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.small,
-  },
-  backButtonText: {
-    ...Typography.title3,
-    color: Colors.label,
-    fontWeight: '500',
-  },
-  headerTitle: { ...Typography.headline, color: Colors.label },
-  nextButtonText: {
-    ...Typography.body,
-    color: '#B11515',
-  },
 
   contextMessage: {
     backgroundColor: Colors.secondarySystemBackground,

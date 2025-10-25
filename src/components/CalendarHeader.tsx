@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image,} from 'react-native';
-import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../styles/designSystem';
+import { View, Text, StyleSheet } from 'react-native';
+import { Colors, Typography, Spacing, BorderRadius } from '../styles/designSystem';
+import GNB from './GNB';
 
 interface CalendarHeaderProps {
   totalTickets: number;
@@ -10,18 +11,13 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({ totalTickets }) => {
   return (
     <>
       {/* Header */}
-      <View style={styles.header}>
-        <Image
-          source={require('../assets/logo.png')}
-          style={styles.headerLogo}
-        />
-      </View>
+      <GNB />
 
       {/* Calendar Title and Count */}
       <View style={styles.titleSection}>
         <Text style={styles.calendarTitle}>캘린더</Text>
         <View style={styles.ticketCountBadge}>
-          <Text style={styles.ticketCountText}>🎟️ {totalTickets}개</Text>
+          <Text style={styles.ticketCountText}>🎟️  {totalTickets}개</Text>
         </View>
       </View>
     </>
@@ -29,14 +25,6 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({ totalTickets }) => {
 };
 
 const styles = StyleSheet.create({
-  // Header
-  header: {
-    paddingHorizontal: Spacing.screenPadding,
-    paddingVertical: Spacing.lg,
-    backgroundColor: Colors.systemBackground,
-  },
-  headerLogo: { width: 80, height: 22, resizeMode: 'contain' },
-
   // Title Section
   titleSection: {
     flexDirection: 'row',

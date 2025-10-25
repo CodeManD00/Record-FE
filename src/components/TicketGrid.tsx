@@ -28,7 +28,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
   cardAspectRatio = 1.4
 }) => {
   const { width } = Dimensions.get('window');
-  const defaultCardWidth = (width-10) / 3; // 3 columns with padding (20px * 2 + 20px gaps)
+  const defaultCardWidth = (width - 10) / 3; // 3 columns with padding (20px * 2 + 20px gaps)
   const cardWidth = customCardWidth || defaultCardWidth;
   const cardHeight = cardWidth * cardAspectRatio;
   const renderTicketCard = ({ item }: { item: Ticket }) => {
@@ -50,9 +50,6 @@ const TicketGrid: React.FC<TicketGridProps> = ({
             <Text style={styles.ticketTitle} numberOfLines={2}>
               {item.title}
             </Text>
-            <Text style={styles.ticketArtist} numberOfLines={1}>
-              {item.artist}
-            </Text>
           </View>
         )}
       </TouchableOpacity>
@@ -73,7 +70,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
         data={tickets}
         renderItem={renderTicketCard}
         keyExtractor={(item, index) => item.id || `ticket-${index}`}
-        extraData={tickets.length} // 티켓 개수 변경 시 재렌더링 보장
+        extraData={tickets.length}
         numColumns={3}
         scrollEnabled={false}
         contentContainerStyle={styles.gridContent}
@@ -97,17 +94,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
     gap: 3,
   },
+  
   ticketCard: {
     backgroundColor: Colors.systemBackground,
-    borderRadius: BorderRadius.xl,
-    marginBottom: 5,
+    borderRadius: BorderRadius.md,
+    marginBottom: 4,
     overflow: 'hidden',
-    ...Shadows.large,
   },
   ticketCardNoImage: {
-    backgroundColor: '#FFEBEE',
     borderWidth: 0.5,
-    borderColor: Colors.systemRed,
+    borderColor: Colors.tertiaryLabel,
   },
   ticketImage: {
     width: '100%',
@@ -117,15 +113,13 @@ const styles = StyleSheet.create({
   ticketImagePlaceholder: {
     flex: 1,
     padding: Spacing.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: Colors.secondarySystemBackground,
+    alignItems: 'flex-start',
+    backgroundColor: Colors.white,
   },
   ticketTitle: {
     ...Typography.caption1,
     fontWeight: 'bold',
     color: Colors.label,
-    textAlign: 'center',
     marginBottom: Spacing.xs,
   },
   ticketArtist: {
@@ -133,6 +127,7 @@ const styles = StyleSheet.create({
     color: Colors.secondaryLabel,
     textAlign: 'center',
   },
+
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
