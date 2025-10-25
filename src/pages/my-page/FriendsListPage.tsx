@@ -13,6 +13,7 @@ import { useAtom } from 'jotai';
 import { friendsMapAtom, removeFriendAtom, receivedFriendRequestsAtom, respondToFriendRequestAtom } from '../../atoms';
 import { Friend, FriendRequest } from '../../types/friend';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
+import ModalHeader from '../../components/ModalHeader';
 
 interface FriendsListPageProps {
   navigation: any;
@@ -99,22 +100,22 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
 
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>친구</Text>
-        <TouchableOpacity
-          style={styles.addFriendButton}
-          onPress={() => navigation.navigate('AddFriend')}
-        >
-          <Text style={styles.addFriendIcon}>👥+</Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <ModalHeader
+        title="친구"
+        onBack={() => navigation.goBack()}
+        rightContent={
+            <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => navigation.navigate('AddFriend')}
+            >
+              <Image
+                source={require('../../assets/person_add.png')}
+                style={styles.iconImage}
+              />
+            </TouchableOpacity>
+        }
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 친구 요청 섹션 */}
@@ -207,44 +208,19 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    height: Layout.navigationBarHeight,
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
-    position: 'relative',
-  },
-  backButton: {
-    position: 'absolute',
-    left: Spacing.lg,
-    width: 44,
-    height: 44,
+  iconButton: {
+    width: 40,
+    height: 40,
     borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  backButtonText: { ...Typography.body, color: Colors.systemBlue, fontWeight: '400' },
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
-  },
-  addFriendButton: {
-    position: 'absolute',
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
+    backgroundColor: `${Colors.secondarySystemBackground}CC`,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  addFriendIcon: { ...Typography.headline, color: Colors.systemBlue, fontWeight: '600' },
+  iconImage: {
+    width: 24,
+    height: 24,
+    resizeMode: 'contain',
+  },
   content: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
   placeholder: {
     width: 44,
