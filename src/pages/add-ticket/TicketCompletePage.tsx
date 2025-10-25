@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
     color: '#2C3E50',
     letterSpacing: 2,
   },
+  
   ticketMain: {
     flex: 1,
     justifyContent: 'center',

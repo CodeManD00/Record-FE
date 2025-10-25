@@ -151,7 +151,7 @@ const CalendarScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+            <StatusBar barStyle="dark-content" />
       
       <CalendarHeader totalTickets={totalTickets} />
       

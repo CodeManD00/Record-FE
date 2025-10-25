@@ -184,14 +184,14 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Text style={styles.backButtonText}>‹</Text>
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{friend.name}</Text>
         <View style={styles.placeholder} />
@@ -221,7 +221,7 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
                 currentPage === 0 && styles.activeTabText,
               ]}
             >
-              피드
+              티켓
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -247,7 +247,7 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
         >
           {/* 피드 탭 */}
           <View key="feed" style={styles.pageContainer}>
-            <ScrollView 
+            <ScrollView
               style={styles.feedScrollView}
               contentContainerStyle={styles.feedContent}
               showsVerticalScrollIndicator={false}
@@ -256,7 +256,7 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
                 tickets={realFriendTickets}
                 onTicketPress={handleTicketPress}
                 containerStyle={styles.friendGridContainer}
-                cardWidth={(width - 70) / 3}
+                cardWidth={(width - 15) / 3}
                 cardAspectRatio={1.4}
               />
             </ScrollView>
@@ -264,7 +264,7 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
 
           {/* 캘린더 탭 */}
           <View key="calendar" style={styles.pageContainer}>
-            <ScrollView 
+            <ScrollView
               style={styles.calendarScrollView}
               contentContainerStyle={styles.calendarContent}
               showsVerticalScrollIndicator={false}
@@ -297,108 +297,129 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
+  container: { flex: 1, backgroundColor: Colors.systemBackground },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    height: Layout.navigationBarHeight,
+    justifyContent: 'space-between',
+    padding: Spacing.lg,
     backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
-    position: 'relative',
-  },
-  backButton: {
-    position: 'absolute',
-    left: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...Shadows.small,
     zIndex: 1,
   },
-  backButtonText: { ...Typography.body, color: Colors.systemBlue, fontWeight: '400' },
-  headerTitle: { ...Typography.headline, color: Colors.label },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.round,
+    backgroundColor: Colors.secondarySystemBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.small,
+    zIndex: 2,
+  },
+  backButtonText: {
+    ...Typography.title3,
+    color: Colors.label,
+    fontWeight: 'bold',
+  },
+  headerTitle: {
+    ...Typography.headline,
+    color: Colors.label,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+  },
   placeholder: {
     position: 'absolute',
     right: Spacing.lg,
     width: 44,
     height: 44,
   },
-  mainContent: { flex: 1 },
+
+
+  mainContent: { flex: 1, },
+
   profileSection: {
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    padding : 20,
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    marginBottom: 8,
   },
   profileAvatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 8,
-    backgroundColor: '#EEE',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: Colors.systemGray5,
   },
   profileName: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#2C3E50',
-    marginBottom: 2,
+    ...Typography.title1,
+    fontWeight: 'bold',
+    color: Colors.label,
   },
   profileUsername: {
-    fontSize: 15,
+    fontSize: 16,
     color: '#6C757D',
-    marginBottom: 12,
+    marginVertical: 4,
   },
+  
+  // 뱃지
   badgeWrapper: {
-    position: 'absolute',
-    top: 75,
-    right: '38%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderWidth: 1.5,
-    borderColor: '#F1F3F5',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 0.5,
+    borderColor: Colors.systemGray5,
+    backgroundColor: Colors.systemBackground,
+    borderRadius: BorderRadius.xl,
+    height: 32,
+    paddingHorizontal: Spacing.md,
+    top: -20,
+    ...Shadows.medium,
   },
-  badgeEmoji: { fontSize: 14, marginRight: 4 },
-  badgeText: { color: '#FF3B30', fontSize: 12, fontWeight: 'bold' },
+  badgeEmoji: {
+    ...Typography.footnote,
+    marginRight: Spacing.xs,
+  },
+  badgeText: {
+    color: Colors.primary,
+    ...Typography.caption1,
+    fontWeight: 'bold',
+  },
+
   tabContainer: {
     flexDirection: 'row',
+    paddingVertical: 8,
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 8,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E9ECEF',
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
-  activeTab: { borderBottomColor: '#B11515' },
+  activeTab: { 
+    borderBottomColor: '#B11515',
+  },
   tabText: { fontSize: 16, fontWeight: '500', color: '#6C757D' },
   activeTabText: { color: '#B11515', fontWeight: '600' },
-  pager: { flex: 1 },
-  pageContainer: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
+  
+  pager: { 
+    flex: 1,
+    alignItems: 'center',
+  },
+  pageContainer: { 
+    flex: 1, 
+    backgroundColor: '#26282B', 
+  },
+
   feedScrollView: {
     flex: 1,
   },
@@ -407,16 +428,16 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     alignItems: 'center',
   },
+
   friendGridContainer: {
-    paddingTop: 8,
-    paddingBottom: 16,
+    padding: 4,
   },
   calendarScrollView: {
     flex: 1,
   },
   calendarContent: {
-    flexGrow: 1,
-    paddingBottom: 20,
+    paddingHorizontal: 4,
+    paddingVertical: 24,
   },
 });
 
