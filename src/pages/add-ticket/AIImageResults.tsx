@@ -62,36 +62,46 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
     setIsGenerating(true);
 
     try {
-      let enhancedPrompt = '공연 후기 기반 AI 이미지';
-      if (settings?.backgroundColor && settings.backgroundColor !== '자동') {
-        enhancedPrompt += `, ${settings.backgroundColor} 배경`;
+      // 백엔드 API 요청 데이터 구성
+      const requestData: ImageGenerationRequest = {
+        title: ticketData?.title || '공연',
+        review: reviewData?.reviewText || '',
+        genre: ticketData?.genre,
+        location: ticketData?.location,
+        date: ticketData?.date,
+        cast: ticketData?.cast,
+      };
+
+      console.log('🚀 AI 이미지 생성 요청:', requestData);
+
+      // 백엔드 API 호출
+      const response = await imageGenerationService.generateImage(requestData);
+
+      if (response.success && response.data) {
+        const { imageUrl, prompt } = response.data;
+        console.log('✅ 이미지 생성 성공:', imageUrl);
+        console.log('📝 생성된 프롬프트:', prompt);
+
+        setGeneratedImage(imageUrl);
+        setGenerationHistory((prev) => [imageUrl, ...prev]);
+
+        Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
+      } else {
+        throw new Error(response.error?.message || '이미지 생성 실패');
       }
-      if (settings?.includeText === false) {
-        enhancedPrompt += ', 텍스트나 글자 없이';
-      }
-      if (settings?.imageStyle && settings.imageStyle !== '사실적') {
-        enhancedPrompt += `, ${settings.imageStyle} 스타일`;
-      }
-
-      console.log('Enhanced Prompt:', enhancedPrompt);
-
-      await new Promise<void>((resolve) => setTimeout(() => resolve(), 3000));
-
-      const seed = ticketData?.title
-        ? ticketData.title.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
-        : Math.floor(Math.random() * 10000);
-
-      const mockGeneratedImageUrl = `https://picsum.photos/seed/${seed}/${Math.floor(cardWidth)}/${Math.floor(cardHeight)}`;
-      console.log('생성된 이미지 URL:', mockGeneratedImageUrl);
-      console.log('시드 값:', seed);
-
-      setGeneratedImage(mockGeneratedImageUrl);
-      setGenerationHistory((prev) => [mockGeneratedImageUrl, ...prev]);
-
-      Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
     } catch (error) {
       console.error('❌ 이미지 생성 중 예외 발생:', error);
-      Alert.alert('오류', 'AI 이미지 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+      Alert.alert(
+        '오류',
+        'AI 이미지 생성 중 오류가 발생했습니다.\n\n백엔드 서버가 실행 중인지 확인해주세요.\n(http://localhost:8080)',
+        [
+          { text: '확인' },
+          {
+            text: '테스트 이미지 사용',
+            onPress: handleGenerateTestImage,
+          },
+        ]
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -110,6 +120,40 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
   const handleRegenerateImage = () => {
     setGeneratedImage(null);
     handleGenerateAIImage();
+  };
+
+  // 테스트 이미지 생성 (백엔드 연결 실패 시 대체)
+  const handleGenerateTestImage = async () => {
+    setIsGenerating(true);
+
+    try {
+      const requestData: ImageGenerationRequest = {
+        title: ticketData?.title || '공연',
+        review: reviewData?.reviewText || '',
+        genre: ticketData?.genre,
+        location: ticketData?.location,
+        date: ticketData?.date,
+        cast: ticketData?.cast,
+      };
+
+      console.log('🧪 테스트 이미지 생성 요청:', requestData);
+
+      const response = await imageGenerationService.generateTestImage(requestData);
+
+      if (response.success && response.data) {
+        const { imageUrl } = response.data;
+        setGeneratedImage(imageUrl);
+        setGenerationHistory((prev) => [imageUrl, ...prev]);
+        Alert.alert('테스트 모드', '테스트 이미지가 생성되었습니다.');
+      } else {
+        throw new Error(response.error?.message || '테스트 이미지 생성 실패');
+      }
+    } catch (error) {
+      console.error('❌ 테스트 이미지 생성 실패:', error);
+      Alert.alert('오류', '테스트 이미지 생성도 실패했습니다.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSelectFromHistory = (imageUrl: string) => {
