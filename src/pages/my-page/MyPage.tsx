@@ -42,8 +42,8 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   const actualTickets = myTickets || [];
   const actualFriends = friendsList || [];
 
-  // 더미 사용자 (임시 로그인 상태)
-  const actualProfile = {
+  // 더미 사용자 (임시 로그인 상태) - userProfileAtom 사용으로 변경
+  const actualProfile = profile || {
     id: 'dummy',
     name: '구름',
     username: '@9RMMY',
