@@ -95,21 +95,29 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
       console.log('OCR 시작:', imageUri);
       const result = await ocrService.extractTicketInfo(imageUri);
 
-      if (!result) throw new Error('OCR 결과가 없습니다.');
+      console.log('🔍 OCR 서비스 응답:', result);
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error?.message || 'OCR 결과가 없습니다.');
+      }
+
+      const ocrData = result.data;
+      console.log('📋 추출된 OCR 데이터:', ocrData);
 
       const formatted: CreateTicketData = {
-        title: result.title ?? '',
-        artist: result.artist ?? '',
-        place: result.place ?? '',
-        seat: result.seat ?? '',
-        performedAt: result.performedAt
-          ? new Date(result.performedAt)
+        title: ocrData.title ?? '',
+        artist: '', // OCR에서는 아티스트 정보를 추출하지 않음
+        place: ocrData.place ?? '',
+        performedAt: ocrData.performedAt
+          ? new Date(ocrData.performedAt)
           : new Date(),
         genre: null,
         status: TicketStatus.PUBLIC,
       };
 
-      setOcrResult(result);
+      console.log('📝 포맷된 티켓 데이터:', formatted);
+
+      setOcrResult(ocrData);
       Alert.alert(
         'OCR 완료',
         '티켓 정보를 추출했습니다.\n확인 후 수정이 필요하면 직접 편집할 수 있습니다.',

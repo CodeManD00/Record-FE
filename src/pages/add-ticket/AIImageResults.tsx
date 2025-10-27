@@ -62,46 +62,54 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
     setIsGenerating(true);
 
     try {
+      // 티켓 데이터와 후기 데이터가 있는지 확인
+      if (!ticketData?.title || !reviewData?.reviewText) {
+        Alert.alert('오류', '티켓 정보나 후기 정보가 없습니다.');
+        setIsGenerating(false);
+        return;
+      }
+
       // 백엔드 API 요청 데이터 구성
-      const requestData: ImageGenerationRequest = {
-        title: ticketData?.title || '공연',
-        review: reviewData?.reviewText || '',
-        genre: ticketData?.genre,
-        location: ticketData?.location,
-        date: ticketData?.date,
-        cast: ticketData?.cast,
+      // 프론트엔드 장르를 백엔드가 이해할 수 있는 형태로 매핑
+      const mapGenreForBackend = (frontendGenre: string): string => {
+        if (frontendGenre?.includes('뮤지컬') || frontendGenre?.includes('연극')) {
+          return '뮤지컬'; // 연극/뮤지컬 → 뮤지컬로 매핑
+        }
+        if (frontendGenre?.includes('밴드')) {
+          return '밴드';
+        }
+        return '뮤지컬'; // 기본값
       };
 
-      console.log('🚀 AI 이미지 생성 요청:', requestData);
+      const requestData: ImageGenerationRequest = {
+        title: ticketData.title,
+        review: reviewData.reviewText,
+        genre: mapGenreForBackend(ticketData.genre || ''), // 매핑 함수 적용
+        location: ticketData.place || '', // 공연 장소
+        date: ticketData.performedAt || '', // 공연 날짜
+        cast: [], // 출연진 (현재는 빈 배열)
+      };
+
+      console.log('🔍 이미지 생성 요청 데이터:', requestData);
 
       // 백엔드 API 호출
-      const response = await imageGenerationService.generateImage(requestData);
+      const result = await imageGenerationService.generateImage(requestData);
 
-      if (response.success && response.data) {
-        const { imageUrl, prompt } = response.data;
-        console.log('✅ 이미지 생성 성공:', imageUrl);
-        console.log('📝 생성된 프롬프트:', prompt);
-
-        setGeneratedImage(imageUrl);
-        setGenerationHistory((prev) => [imageUrl, ...prev]);
+      if (result.success && result.data) {
+        console.log('✅ 이미지 생성 성공:', result.data);
+        
+        // 생성된 이미지 URL 설정
+        setGeneratedImage(result.data.imageUrl);
+        setGenerationHistory(prev => [result.data.imageUrl, ...prev]);
 
         Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
       } else {
-        throw new Error(response.error?.message || '이미지 생성 실패');
+        console.error('❌ 이미지 생성 실패:', result.error);
+        Alert.alert('오류', result.error?.message || 'AI 이미지 생성에 실패했습니다.');
       }
     } catch (error) {
       console.error('❌ 이미지 생성 중 예외 발생:', error);
-      Alert.alert(
-        '오류',
-        'AI 이미지 생성 중 오류가 발생했습니다.\n\n백엔드 서버가 실행 중인지 확인해주세요.\n(http://localhost:8080)',
-        [
-          { text: '확인' },
-          {
-            text: '테스트 이미지 사용',
-            onPress: handleGenerateTestImage,
-          },
-        ]
-      );
+      Alert.alert('오류', 'AI 이미지 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsGenerating(false);
     }

@@ -12,11 +12,11 @@ const USE_MOCK_DATA = false; // 서버 없이 테스트할 때 true로 설정
  * 백엔드에서 반환하는 주요 공연 정보 필드
  */
 export interface OCRResult {
-  title?: string;
-  artist?: string;
-  place?: string;
-  seat?: string;
-  performedAt?: string;
+  title: string;
+  place: string;
+  performedAt?: string; // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)
+  rawText?: string; // 원본 OCR 텍스트 (디버깅용)
+  confidence?: number; // OCR 정확도 (0.0 ~ 1.0)
 }
 
 /**
@@ -35,11 +35,26 @@ export const ocrService = {
   /**
    * 티켓 이미지에서 공연 정보를 추출
    * @param imageUri - React Native의 이미지 URI
-   * @returns OCRResult | null - 공연 정보 또는 실패 시 null
+   * @returns ApiResponse<OCRResult> - 공연 정보 또는 에러 응답
    */
-  async extractTicketInfo(imageUri: string): Promise<OCRResult | null> {
+  async extractTicketInfo(imageUri: string): Promise<ApiResponse<OCRResult>> {
     console.log('extractTicketInfo - 이미지URI:', imageUri);
-
+    
+    // 목 데이터 모드: 서버 없이 테스트용
+    if (USE_MOCK_DATA) {
+      console.log('🧪 목 데이터 모드로 OCR 실행');
+      await new Promise<void>(resolve => setTimeout(() => resolve(), 1500)); // 로딩 시뮬레이션
+      
+      return {
+        success: true,
+        data: {
+          title: '2024 밴드 페스티벌',
+          place: '올림픽공원 88잔디마당',
+          performedAt: '2024-10-25T19:00:00',
+        },
+      };
+    }
+    
     // 실제 서버 호출
     try {
       // 디버깅: 이미지 URI 확인
@@ -58,13 +73,14 @@ export const ocrService = {
       
       // 디버깅: FormData 구성 확인
       console.log('📁 FormData 파일 정보:', fileData);
+      console.log('📁 이미지 URI:', imageUri);
       
       formData.append('file', fileData);
 
       console.log('FormData 생성 완료');
 
       // 2. 백엔드 /ocr/extract 엔드포인트 호출
-      const response = await fetch(`${API_BASE_URL}/ocr/extract`, {
+      const response = await fetch('http://127.0.0.1:8080/ocr/extract', {
         method: 'POST',
         //headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
@@ -91,13 +107,24 @@ export const ocrService = {
         performedAt: result.date && result.time 
           ? `${result.date}T${result.time}:00` 
           : undefined,
+        rawText: '',
+        confidence: 0.8,
       };
 
-      return ocrResult;
+      return {
+        success: true,
+        data: ocrResult,
+      };
 
     } catch (error) {
       console.error('OCR extraction error:', error);
-      return null;
+      return {
+        success: false,
+        error: {
+          code: 'OCR_ERROR',
+          message: 'OCR 처리 중 오류가 발생했습니다.',
+        },
+      };
     }
   },
 
