@@ -4,7 +4,7 @@
 
 import { ApiResponse } from './client';
 
-const API_BASE_URL = 'http://localhost:8080'; // 로컬 개발용
+const API_BASE_URL = 'http://127.0.0.1:8080'; // 로컬 개발용 (iOS 시뮬레이터 호환)
 const USE_MOCK_DATA = false; // 서버 없이 테스트할 때 true로 설정
 
 /**
@@ -14,6 +14,7 @@ const USE_MOCK_DATA = false; // 서버 없이 테스트할 때 true로 설정
 export interface OCRResult {
   title: string;
   place: string;
+  seat?: string; // 좌석 정보 (예: C열 8번)
   performedAt?: string; // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)
   rawText?: string; // 원본 OCR 텍스트 (디버깅용)
   confidence?: number; // OCR 정확도 (0.0 ~ 1.0)
@@ -80,7 +81,7 @@ export const ocrService = {
       console.log('FormData 생성 완료');
 
       // 2. 백엔드 /ocr/extract 엔드포인트 호출
-      const response = await fetch('http://127.0.0.1:8080/ocr/extract', {
+      const response = await fetch(`${API_BASE_URL}/ocr/extract`, {
         method: 'POST',
         //headers: { 'Content-Type': 'multipart/form-data' },
         body: formData,
@@ -103,7 +104,7 @@ export const ocrService = {
       const ocrResult: OCRResult = {
         title: result.title || '',
         place: result.venue || '',
-        seat: result.seat || '',
+        seat: result.seat || undefined, // 좌석 정보가 있으면 사용, 없으면 undefined
         performedAt: result.date && result.time 
           ? `${result.date}T${result.time}:00` 
           : undefined,

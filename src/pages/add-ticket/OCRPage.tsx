@@ -108,6 +108,7 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
         title: ocrData.title ?? '',
         artist: '', // OCR에서는 아티스트 정보를 추출하지 않음
         place: ocrData.place ?? '',
+        seat: ocrData.seat ?? '', // OCR에서 추출한 좌석 정보
         performedAt: ocrData.performedAt
           ? new Date(ocrData.performedAt)
           : new Date(),
