@@ -85,9 +85,9 @@ const styles = StyleSheet.create({
   gridContainer: {
     flex: 1,
     paddingBottom: Spacing.xl,
-    alignItems: 'center',
   },
   gridContent: {
+    paddingHorizontal: 2,
     paddingBottom: Spacing.sectionSpacing,
   },
   gridRow: {
