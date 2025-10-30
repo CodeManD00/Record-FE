@@ -706,7 +706,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       placeholder="좌석"
                     />
                   ) : (
-                    <Text style={styles.detailValue}>{ticket.artist}</Text>
+                    <Text style={styles.detailValue}>{ticket.seat}</Text>
                   )}
                 </View>
                 <View style={styles.detailRow}>
