@@ -5752,6 +5752,11 @@ react-is@^19.1.0:
   resolved "https://registry.npmjs.org/react-is/-/react-is-19.2.0.tgz"
   integrity sha512-x3Ax3kNSMIIkyVYhWPyO09bu0uttcAIoecO/um/rKGQ4EltYWVYtyiGkS/3xMynrbVQdS69Jhlv8FXUEZehlzA==
 
+react-native-audio-recorder-player@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.npmjs.org/react-native-audio-recorder-player/-/react-native-audio-recorder-player-4.5.0.tgz"
+  integrity sha512-+XhF/vTcp/Igzulhk+aL/XPGDjTkZPHKcjMQP9KGFXBVRvYYYoMQxwqqNCAVN0IK7FyTK+jYS9Ouy6kngQLgeQ==
+
 react-native-calendars@*, react-native-calendars@^1.1313.0:
   version "1.1313.0"
   resolved "https://registry.npmjs.org/react-native-calendars/-/react-native-calendars-1.1313.0.tgz"
@@ -5808,6 +5813,11 @@ react-native-modal-selector@^2.1.2:
   integrity sha512-+Cvoz/yNUFmfIkJ7xkmlLR2nhJOUhx00S6BPqp2Ruy8LkmaiNr7WMZ4BzsgzylyEgZ84Q+42HQ0v0QzJYobviA==
   dependencies:
     prop-types "^15.5.10"
+
+react-native-nitro-modules@*:
+  version "0.31.4"
+  resolved "https://registry.npmjs.org/react-native-nitro-modules/-/react-native-nitro-modules-0.31.4.tgz"
+  integrity sha512-VIOD4lDMivexP6cqG6V3TyhAAGbnAVcBCv2LxWYHN5rQmRHgJHQ3fT2d/zbNChP5Be0ajR9QYF1xXEDDxbQT3w==
 
 react-native-pager-view@^6.9.1:
   version "6.9.1"

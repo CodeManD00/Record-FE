@@ -9,6 +9,7 @@ export { ticketService } from './ticketService';
 export { userService } from './userService';
 export { ocrService } from './ocrService';
 export { imageGenerationService } from './imageGenerationService';
+export { sttService } from './sttService';
 
 // 타입들도 함께 export
 export type {
@@ -49,3 +50,8 @@ export type {
   ImageGenerationRequest,
   ImageGenerationResponse,
 } from './imageGenerationService';
+
+export type {
+  TranscriptionResponse,
+  SummaryResponse,
+} from './sttService';
