@@ -13,6 +13,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 
+// Auth pages
+import LoginPage from './src/pages/auth/LoginPage';
+import SignupPage from './src/pages/auth/SignupPage';
+import FindIdPage from './src/pages/auth/recovery/FindIdPage';
+import FindPasswordPage from './src/pages/auth/recovery/FindPasswordPage';
 // Home pages
 import MainPage from './src/pages/home/MainPage';
 
@@ -162,7 +167,36 @@ function App(): React.JSX.Element {
         screenOptions={{
           headerShown: false,
         }}
+        initialRouteName="Login"
       >
+        <Stack.Screen 
+          name="Login" 
+          component={LoginPage}
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="Signup" 
+          component={SignupPage}
+          options={{
+            headerShown: false,
+          }}
+        />
+                <Stack.Screen 
+          name="FindId" 
+          component={FindIdPage}
+          options={{
+            headerShown: false,
+          }}
+        />
+                <Stack.Screen 
+          name="FindPassword" 
+          component={FindPasswordPage}
+          options={{
+            headerShown: false,
+          }}
+        />
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Screen
           name="AddTicket"

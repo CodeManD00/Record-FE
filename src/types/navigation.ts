@@ -6,6 +6,8 @@ import { TicketData, ReviewData } from './reviewTypes';
 
 // Root Stack Navigator Types
 export type RootStackParamList = {
+  Login: undefined;
+  Signup: undefined;
   MainTabs: undefined;
   AddTicket: undefined;
   AddTicketMusical: undefined;
