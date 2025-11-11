@@ -1,10 +1,11 @@
 /**
  * Authentication Service
- * Handles user authentication including Google Sign-In
+ * Handles user authentication with email and password
  */
 
 import { Result, ResultFactory, ErrorFactory } from '../../utils/result';
 import { apiClient } from '../api/client';
+import { Platform } from 'react-native';
 
 /**
  * User authentication data
@@ -14,50 +15,30 @@ export interface AuthUser {
   email: string;
   name: string;
   profileImage?: string;
-  provider: 'google' | 'apple' | 'email';
+  provider: 'email';
 }
 
 /**
  * Authentication response from backend
  */
 export interface AuthResponse {
-  user: AuthUser;
+  id: AuthUser;
   accessToken: string;
   refreshToken: string;
 }
-
-/**
- * Google Sign-In configuration
- */
-const GOOGLE_WEB_CLIENT_ID = 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com';
 
 class AuthService {
   private currentUser: AuthUser | null = null;
 
   constructor() {
-    this.configureGoogleSignIn();
-  }
-
-  /**
-   * Configure Google Sign-In
-   */
-  private configureGoogleSignIn() {
-    try {
-      GoogleSignin.configure({
-        webClientId: GOOGLE_WEB_CLIENT_ID,
-        offlineAccess: true,
-        forceCodeForRefreshToken: true,
-      });
-    } catch (error) {
-      console.error('Failed to configure Google Sign-In:', error);
-    }
+    // Initialize any required services here
   }
 
   /**
    * Sign up with username, password, email, and nickname
    */
   async signUp(
-    username: string,
+    id: string,
     password: string,
     email: string,
     nickname: string
@@ -65,9 +46,9 @@ class AuthService {
     try {
       // Send registration data to backend
       const result = await apiClient.post<AuthResponse>('/auth/signup', {
-        username,
-        password,
+        id,
         email,
+        password,
         nickname,
       });
 
@@ -76,7 +57,7 @@ class AuthService {
         apiClient.setAuthToken(result.data.accessToken);
         
         // Store current user
-        this.currentUser = result.data.user;
+        this.currentUser = result.data.id;
 
         return result;
       }
@@ -106,7 +87,7 @@ class AuthService {
         apiClient.setAuthToken(result.data.accessToken);
         
         // Store current user
-        this.currentUser = result.data.user;
+        this.currentUser = result.data.id;
 
         return result;
       }
@@ -121,64 +102,16 @@ class AuthService {
   }
 
   /**
-   * Sign in with Google
+   * Handle password reset request
    */
-  async signInWithGoogle(): Promise<Result<AuthResponse>> {
+  async requestPasswordReset(email: string): Promise<Result<{ message: string }>> {
     try {
-      // Check if Google Play Services are available
-      await GoogleSignin.hasPlayServices();
-
-      // Get user info from Google
-      const userInfo = await GoogleSignin.signIn();
-
-      if (!userInfo.data?.user) {
-        return ResultFactory.failure(
-          ErrorFactory.validation('Google 로그인 정보를 가져올 수 없습니다')
-        );
-      }
-
-      const googleUser = userInfo.data.user;
-      const idToken = userInfo.data.idToken;
-
-      // Send token to backend for verification and user creation/login
-      const result = await apiClient.post<AuthResponse>('/auth/google', {
-        idToken,
-        email: googleUser.email,
-        name: googleUser.name,
-        profileImage: googleUser.photo,
-      });
-
-      if (result.success && result.data) {
-        // Store auth token
-        apiClient.setAuthToken(result.data.accessToken);
-        
-        // Store current user
-        this.currentUser = result.data.user;
-
-        return result;
-      }
-
+      const result = await apiClient.post<{ message: string }>('/auth/request-password-reset', { email });
       return result;
     } catch (error: any) {
-      console.error('Google Sign-In error:', error);
-
-      // Handle specific Google Sign-In errors
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        return ResultFactory.failure(
-          ErrorFactory.validation('로그인이 취소되었습니다')
-        );
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        return ResultFactory.failure(
-          ErrorFactory.validation('로그인이 진행 중입니다')
-        );
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        return ResultFactory.failure(
-          ErrorFactory.validation('Google Play Services를 사용할 수 없습니다')
-        );
-      }
-
+      console.error('Password reset request error:', error);
       return ResultFactory.failure(
-        ErrorFactory.unknown('Google 로그인 중 오류가 발생했습니다')
+        ErrorFactory.unknown('비밀번호 재설정 요청 중 오류가 발생했습니다')
       );
     }
   }
@@ -188,12 +121,6 @@ class AuthService {
    */
   async signOut(): Promise<Result<void>> {
     try {
-      // Sign out from Google
-      const isSignedIn = await GoogleSignin.isSignedIn();
-      if (isSignedIn) {
-        await GoogleSignin.signOut();
-      }
-
       // Clear auth token
       apiClient.clearAuthToken();
 
@@ -214,8 +141,9 @@ class AuthService {
    */
   async isAuthenticated(): Promise<boolean> {
     try {
-      const isSignedIn = await GoogleSignin.isSignedIn();
-      return isSignedIn;
+      // Check if we have a valid access token
+      const token = await this.getAccessToken();
+      return !!token;
     } catch (error) {
       return false;
     }
@@ -226,6 +154,15 @@ class AuthService {
    */
   getCurrentUser(): AuthUser | null {
     return this.currentUser;
+  }
+
+  /**
+   * Get access token
+   */
+  async getAccessToken(): Promise<string | null> {
+    // In a real implementation, you would get this from secure storage
+    // For now, we'll return null and let the API client handle it
+    return null;
   }
 
   /**
