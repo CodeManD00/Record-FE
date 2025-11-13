@@ -13,8 +13,9 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
-import { userProfileAtom } from '../../atoms/userAtoms';
+import { userProfileAtom, resetUserDataAtom } from '../../atoms/userAtoms';
 import { ticketsAtom } from '../../atoms/ticketAtoms';
+import { logoutAtom } from '../../atoms/userAtomsApi';
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
@@ -41,8 +42,12 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   // 실제 티켓 개수 계산
   const realTickets = tickets.filter(ticket => !isPlaceholderTicket(ticket));
 
+  // 로그아웃 atom
+  const [, logout] = useAtom(logoutAtom);
+  const [, resetUserData] = useAtom(resetUserDataAtom);
+
   //로그아웃
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       '로그아웃',
       '정말 로그아웃 하시겠습니까?',
@@ -54,9 +59,23 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
         {
           text: '로그아웃',
           style: 'destructive',
-          onPress: () => {
-            // 로그아웃 로직 구현
-            console.log('로그아웃 처리');
+          onPress: async () => {
+            try {
+              // 로그아웃 실행 (토큰 제거, 상태 초기화)
+              await logout();
+              
+              // 사용자 데이터 초기화
+              resetUserData();
+              
+              // 로그인 화면으로 이동
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' as never }],
+              });
+            } catch (error) {
+              console.error('로그아웃 오류:', error);
+              Alert.alert('오류', '로그아웃 중 오류가 발생했습니다.');
+            }
           },
         },
       ]
