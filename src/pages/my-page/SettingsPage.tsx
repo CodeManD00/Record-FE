@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   ScrollView,
   Alert,
   Image,
+  TextInput,
+  Modal,
+  Platform,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -15,7 +18,7 @@ import {
 import { useAtom } from 'jotai';
 import { userProfileAtom, resetUserDataAtom } from '../../atoms/userAtoms';
 import { ticketsAtom } from '../../atoms/ticketAtoms';
-import { logoutAtom } from '../../atoms/userAtomsApi';
+import { logoutAtom, deleteAccountAtom } from '../../atoms/userAtomsApi';
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
@@ -45,6 +48,11 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   // 로그아웃 atom
   const [, logout] = useAtom(logoutAtom);
   const [, resetUserData] = useAtom(resetUserDataAtom);
+  const [, deleteAccount] = useAtom(deleteAccountAtom);
+
+  // 회원탈퇴 모달 상태
+  const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false);
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
 
   //로그아웃
   const handleLogout = async () => {
@@ -82,26 +90,76 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
     );
   };
 
-  //회원탈퇴
+  //회원탈퇴 확인 다이얼로그
   const handleDeleteAccount = () => {
-    Alert.alert(
-      '회원 탈퇴',
-      '정말 회원 탈퇴를 하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
-      [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
-        {
-          text: '탈퇴',
-          style: 'destructive',
-          onPress: () => {
-            // 회원 탈퇴 로직 구현
-            console.log('회원 탈퇴 처리');
+    if (Platform.OS === 'ios') {
+      // iOS는 Alert.prompt 사용
+      Alert.prompt(
+        '회원 탈퇴',
+        '정말 회원 탈퇴를 하시겠습니까?\n이 작업은 되돌릴 수 없습니다.\n\n비밀번호를 입력해주세요.',
+        [
+          {
+            text: '취소',
+            style: 'cancel',
           },
-        },
-      ]
-    );
+          {
+            text: '탈퇴',
+            style: 'destructive',
+            onPress: async (password) => {
+              if (!password || password.trim() === '') {
+                Alert.alert('오류', '비밀번호를 입력해주세요.');
+                return;
+              }
+              await executeDeleteAccount(password.trim());
+            },
+          },
+        ],
+        'secure-text' // 비밀번호 입력 모드
+      );
+    } else {
+      // Android는 커스텀 모달 사용
+      setDeleteAccountModalVisible(true);
+    }
+  };
+
+  // 회원탈퇴 실행
+  const executeDeleteAccount = async (password: string) => {
+    try {
+      // 회원탈퇴 실행
+      const result = await deleteAccount(password);
+      
+      if (result.success) {
+        // 사용자 데이터 초기화
+        resetUserData();
+        
+        // 모달 닫기
+        setDeleteAccountModalVisible(false);
+        setDeleteAccountPassword('');
+        
+        // 로그인 화면으로 이동
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' as never }],
+        });
+      } else {
+        Alert.alert(
+          '회원탈퇴 실패',
+          result.error?.message || '회원탈퇴 중 오류가 발생했습니다.'
+        );
+      }
+    } catch (error) {
+      console.error('회원탈퇴 오류:', error);
+      Alert.alert('오류', '회원탈퇴 중 오류가 발생했습니다.');
+    }
+  };
+
+  // Android용 회원탈퇴 모달에서 확인 버튼 클릭
+  const handleDeleteAccountConfirm = () => {
+    if (!deleteAccountPassword || deleteAccountPassword.trim() === '') {
+      Alert.alert('오류', '비밀번호를 입력해주세요.');
+      return;
+    }
+    executeDeleteAccount(deleteAccountPassword.trim());
   };
 
   //설정 페이지 리스트
@@ -200,6 +258,54 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
           <Text style={styles.versionText}>버전 1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* Android용 회원탈퇴 비밀번호 입력 모달 */}
+      <Modal
+        visible={deleteAccountModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setDeleteAccountModalVisible(false);
+          setDeleteAccountPassword('');
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>회원 탈퇴</Text>
+            <Text style={styles.modalMessage}>
+              정말 회원 탈퇴를 하시겠습니까?{'\n'}
+              이 작업은 되돌릴 수 없습니다.{'\n\n'}
+              비밀번호를 입력해주세요.
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="비밀번호"
+              placeholderTextColor={Colors.tertiaryLabel}
+              value={deleteAccountPassword}
+              onChangeText={setDeleteAccountPassword}
+              secureTextEntry
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => {
+                  setDeleteAccountModalVisible(false);
+                  setDeleteAccountPassword('');
+                }}
+              >
+                <Text style={styles.modalButtonCancelText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonDelete]}
+                onPress={handleDeleteAccountConfirm}
+              >
+                <Text style={styles.modalButtonDeleteText}>탈퇴</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -286,6 +392,66 @@ const styles = StyleSheet.create({
   versionText: {
     ...Typography.footnote,
     color: Colors.tertiaryLabel,
+  },
+  // 회원탈퇴 모달 스타일
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  modalContent: {
+    backgroundColor: Colors.systemBackground,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    ...Shadows.large,
+  },
+  modalTitle: {
+    ...Typography.title2,
+    fontWeight: '600',
+    color: Colors.label,
+    marginBottom: Spacing.md,
+  },
+  modalMessage: {
+    ...Typography.body,
+    color: Colors.secondaryLabel,
+    marginBottom: Spacing.lg,
+    lineHeight: 20,
+  },
+  modalInput: {
+    ...ComponentStyles.input,
+    marginBottom: Spacing.lg,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: Spacing.md,
+  },
+  modalButton: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.md,
+    minWidth: 80,
+    alignItems: 'center',
+  },
+  modalButtonCancel: {
+    backgroundColor: Colors.systemGray5,
+  },
+  modalButtonDelete: {
+    backgroundColor: '#FF3B30',
+  },
+  modalButtonCancelText: {
+    ...Typography.callout,
+    fontWeight: '600',
+    color: Colors.label,
+  },
+  modalButtonDeleteText: {
+    ...Typography.callout,
+    fontWeight: '600',
+    color: Colors.white,
   },
 });
 
