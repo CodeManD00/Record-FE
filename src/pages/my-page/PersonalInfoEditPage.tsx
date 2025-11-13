@@ -19,6 +19,8 @@ import { useAtom } from 'jotai';
 import { userProfileAtom, updateUserProfileAtom } from '../../atoms/userAtoms';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
+import { useUserProfileData } from '../../hooks/useApiData';
+import { useEffect } from 'react';
 
 interface PersonalInfoEditPageProps {
   navigation: any;
@@ -27,20 +29,39 @@ interface PersonalInfoEditPageProps {
 // 개인정보 수정
 const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  
+  // 사용자 프로필 데이터 가져오기 (백엔드에서 자동으로 로드)
+  const { data: profile } = useUserProfileData({
+    autoFetch: true,
+  });
+  
   const [userProfile] = useAtom(userProfileAtom);
   const [, updateUserProfile] = useAtom(updateUserProfileAtom);
   
+  // 백엔드에서 가져온 프로필이 있으면 사용, 없으면 atom 값 사용
+  const actualProfile = profile || userProfile;
 
   //현재 프로필 이미지의 경로
-  const [profileImage, setProfileImage] = useState<string | null>(userProfile.profileImage || null);
+  const [profileImage, setProfileImage] = useState<string | null>(actualProfile.profileImage || null);
   //사용자 닉네임
-  const [name, setName] = useState(userProfile.name);
+  const [name, setName] = useState(actualProfile.name || '');
   //사용자 아이디
-  const [userId, setUserId] = useState(userProfile.userId);
+  const [userId, setUserId] = useState(actualProfile.userId || actualProfile.id || '');
   //사용자 이메일
-  const [email, setEmail] = useState(userProfile.email);
+  const [email, setEmail] = useState(actualProfile.email || '');
   //계정 공개여부
-  const [isAccountPrivate, setIsAccountPrivate] = useState(userProfile.isAccountPrivate);
+  const [isAccountPrivate, setIsAccountPrivate] = useState(actualProfile.isAccountPrivate || false);
+  
+  // 프로필이 업데이트되면 폼 필드도 업데이트
+  useEffect(() => {
+    if (actualProfile) {
+      if (actualProfile.profileImage) setProfileImage(actualProfile.profileImage);
+      if (actualProfile.name) setName(actualProfile.name);
+      if (actualProfile.userId || actualProfile.id) setUserId(actualProfile.userId || actualProfile.id || '');
+      if (actualProfile.email) setEmail(actualProfile.email);
+      if (actualProfile.isAccountPrivate !== undefined) setIsAccountPrivate(actualProfile.isAccountPrivate);
+    }
+  }, [actualProfile]);
   //비밀번호 관련
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');

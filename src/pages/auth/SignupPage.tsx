@@ -80,16 +80,13 @@ const SignupPage = () => {
       if (result.success) {
         Alert.alert(
           '회원가입 완료',
-          '회원가입이 완료되었습니다.',
+          '회원가입이 완료되었습니다. 로그인 화면으로 돌아갑니다.',
           [
             {
               text: '확인',
               onPress: () => {
-                // Navigate to main app after successful signup
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'MainTabs' as never }],
-                });
+                // 회원가입 완료 후 로그인 화면으로 돌아가기
+                navigation.goBack();
               },
             },
           ]

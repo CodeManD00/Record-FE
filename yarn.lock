@@ -5895,10 +5895,10 @@ react-native-modal-selector@^2.1.2:
   dependencies:
     prop-types "^15.5.10"
 
-react-native-nitro-modules@*:
-  version "0.31.4"
-  resolved "https://registry.npmjs.org/react-native-nitro-modules/-/react-native-nitro-modules-0.31.4.tgz"
-  integrity sha512-VIOD4lDMivexP6cqG6V3TyhAAGbnAVcBCv2LxWYHN5rQmRHgJHQ3fT2d/zbNChP5Be0ajR9QYF1xXEDDxbQT3w==
+react-native-nitro-modules@*, react-native-nitro-modules@^0.31.6:
+  version "0.31.6"
+  resolved "https://registry.npmjs.org/react-native-nitro-modules/-/react-native-nitro-modules-0.31.6.tgz"
+  integrity sha512-EcKuLgYwOPrWSGC0VqxqTXjxsQBLCjl/1+ryuKwKDA4iyLr9C/8CBCn6sDS3wbmZDlNl+EPWTPU+VWC6SnPW8Q==
 
 react-native-pager-view@^6.9.1:
   version "6.9.1"

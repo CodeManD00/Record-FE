@@ -20,11 +20,13 @@ export interface AuthUser {
 
 /**
  * Authentication response from backend
+ * 백엔드 TokenResponse와 일치해야 함: { token, type, expiresIn, role }
  */
 export interface AuthResponse {
-  id: AuthUser;
-  accessToken: string;
-  refreshToken: string;
+  token: string;      // JWT 토큰
+  type: string;       // "Bearer"
+  expiresIn: number; // 만료 시간 (ms)
+  role: string;       // "USER" | "ADMIN"
 }
 
 class AuthService {
@@ -53,11 +55,8 @@ class AuthService {
       });
 
       if (result.success && result.data) {
-        // Store auth token
-        apiClient.setAuthToken(result.data.accessToken);
-        
-        // Store current user
-        this.currentUser = result.data.id;
+        // 회원가입 시에는 토큰을 저장하지 않음 (회원가입 후 자동 로그인 방지)
+        // 사용자가 직접 로그인 화면에서 로그인해야 함
 
         return result;
       }
@@ -72,22 +71,23 @@ class AuthService {
   }
 
   /**
-   * Sign in with email and password
+   * Sign in with id and password
    */
-  async signInWithEmail(email: string, password: string): Promise<Result<AuthResponse>> {
+  async signInWithId(id: string, password: string): Promise<Result<AuthResponse>> {
     try {
       // Send credentials to backend for authentication
       const result = await apiClient.post<AuthResponse>('/auth/login', {
-        email,
+        id,
         password,
       });
 
       if (result.success && result.data) {
+        // 백엔드 응답: { token, type, expiresIn, role }
         // Store auth token
-        apiClient.setAuthToken(result.data.accessToken);
+        apiClient.setAuthToken(result.data.token);
         
-        // Store current user
-        this.currentUser = result.data.id;
+        // Store current user (id는 별도로 조회해야 함)
+        // TODO: 사용자 정보를 별도 API로 조회하거나, 로그인 응답에 포함시켜야 함
 
         return result;
       }

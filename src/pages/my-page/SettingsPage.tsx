@@ -18,6 +18,7 @@ import { ticketsAtom } from '../../atoms/ticketAtoms';
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
+import { useUserProfileData } from '../../hooks/useApiData';
 
 interface SettingsPageProps {
   navigation: any;
@@ -25,8 +26,17 @@ interface SettingsPageProps {
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  
+  // 사용자 프로필 데이터 가져오기 (백엔드에서 자동으로 로드)
+  const { data: profile } = useUserProfileData({
+    autoFetch: true,
+  });
+  
   const [userProfile] = useAtom(userProfileAtom);
   const [tickets] = useAtom(ticketsAtom);
+  
+  // 백엔드에서 가져온 프로필이 있으면 사용, 없으면 atom 값 사용
+  const actualProfile = profile || userProfile;
   
   // 실제 티켓 개수 계산
   const realTickets = tickets.filter(ticket => !isPlaceholderTicket(ticket));
@@ -127,8 +137,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
             style={styles.avatarContainer}
             onPress={() => navigation.navigate('PersonalInfoEdit')}
           >
-            {userProfile.profileImage ? (
-              <Image source={{ uri: userProfile.profileImage }} style={styles.avatarImage} />
+            {actualProfile.profileImage ? (
+              <Image source={{ uri: actualProfile.profileImage }} style={styles.avatarImage} />
             ) : (
               <View style={[styles.avatarImage, styles.defaultAvatar]}>
                 <Text style={styles.defaultAvatarText}>👤</Text>
@@ -137,7 +147,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
           </TouchableOpacity>
 
           {/* 사용자 이름 */}
-          <Text style={styles.username}>{userProfile.name || userProfile.username || '사용자'}</Text>
+          <Text style={styles.username}>{actualProfile.name || actualProfile.username || '사용자'}</Text>
         </View>
 
         {/* 설정 리스트 */}

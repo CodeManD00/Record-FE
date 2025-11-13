@@ -36,18 +36,22 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   // 로컬 상태 관리 atoms 사용
   const [myTickets] = useAtom(ticketsAtom);
   const [friendsList] = useAtom(friendsAtom);
-  const [profile] = useAtom(userProfileAtom);
+  
+  // 사용자 프로필 데이터 가져오기 (백엔드에서 자동으로 로드)
+  const { data: profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useUserProfileData({
+    autoFetch: true,  // 자동으로 프로필 데이터 가져오기
+  });
 
   // 기본값으로 안전하게 처리
   const actualTickets = myTickets || [];
   const actualFriends = friendsList || [];
 
-  // 더미 사용자 (임시 로그인 상태) - userProfileAtom 사용으로 변경
+  // 사용자 프로필 (백엔드에서 가져온 닉네임 사용)
   const actualProfile = profile || {
-    id: 'dummy',
-    name: '구름',
-    username: '@9RMMY',
-    email: '9RMMY@google.com',
+    id: '',
+    name: '사용자',  // 기본값 (프로필이 없을 때만 표시)
+    username: '',
+    email: '',
     profileImage: undefined,
     avatar: undefined,
     createdAt: new Date().toISOString(),

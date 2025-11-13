@@ -64,9 +64,15 @@ class AudioRecorderManager {
       }
 
       // 라이브러리 동적 로드
+      // react-native-audio-recorder-player가 설치되지 않았거나 로드할 수 없는 경우를 대비한 오류 처리
       if (!this.audioRecorderPlayer) {
-        const AudioRecorderPlayerModule = require('react-native-audio-recorder-player');
-        this.audioRecorderPlayer = new AudioRecorderPlayerModule.default();
+        try {
+          const AudioRecorderPlayerModule = require('react-native-audio-recorder-player');
+          this.audioRecorderPlayer = new AudioRecorderPlayerModule.default();
+        } catch (error) {
+          console.error('react-native-audio-recorder-player 모듈을 로드할 수 없습니다:', error);
+          throw new Error('오디오 녹음 기능을 사용할 수 없습니다. 패키지 설치를 확인해주세요.');
+        }
       }
 
       // 녹음 경로 설정

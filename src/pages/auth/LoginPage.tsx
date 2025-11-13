@@ -16,17 +16,20 @@ import {
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../styles/designSystem';
 import { authService } from '../../services/auth/authService';
 import { useNavigation } from '@react-navigation/native';
+import { useAtom } from 'jotai';
+import { fetchMyProfileAtom } from '../../atoms/userAtomsApi';
 
 const LoginPage = () => {
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [id, setId] = useState('');
   const [password, setPassword] = useState('');
+  const [, fetchMyProfile] = useAtom(fetchMyProfileAtom);
 
   const handleLogin = async () => {
     // 입력 검증
-    if (!email.trim()) {
-      Alert.alert('입력 오류', '이메일을 입력해주세요.', [{ text: '확인' }]);
+    if (!id.trim()) {
+      Alert.alert('입력 오류', '아이디를 입력해주세요.', [{ text: '확인' }]);
       return;
     }
     if (!password.trim()) {
@@ -36,9 +39,17 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      const result = await authService.signInWithEmail(email, password);
+      const result = await authService.signInWithId(id, password);
       
       if (result.success) {
+        // 로그인 성공 후 사용자 프로필 정보 가져오기
+        try {
+          await fetchMyProfile(true);  // force: true로 최신 정보 가져오기
+        } catch (error) {
+          console.error('프로필 정보를 가져오는데 실패했습니다:', error);
+          // 프로필 로드 실패해도 로그인은 성공한 것으로 처리
+        }
+        
         // Navigate to main app after successful login
         navigation.reset({
           index: 0,
@@ -87,16 +98,15 @@ const LoginPage = () => {
 
           {/* Login Form Section */}
           <View style={styles.formSection}>
-            {/* Email Input */}
+            {/* ID Input */}
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>이메일</Text>
+              <Text style={styles.inputLabel}>아이디</Text>
               <TextInput
                 style={styles.input}
-                placeholder="이메일을 입력하세요"
+                placeholder="아이디를 입력하세요"
                 placeholderTextColor={Colors.placeholderText}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
+                value={id}
+                onChangeText={setId}
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isLoading}
