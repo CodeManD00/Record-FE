@@ -66,36 +66,55 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         setIsLoadingQuestions(true);
         
         // 장르 매핑 (프론트엔드 → 백엔드)
+        // 백엔드의 mapGenre 메서드가 "밴드", "연극/뮤지컬" 등을 받아서 "band", "musical", "common"으로 매핑합니다.
         const mapGenreForBackend = (frontendGenre: string): string => {
-          if (!frontendGenre) return 'COMMON';
+          if (!frontendGenre) {
+            console.warn('장르가 없어서 COMMON으로 설정');
+            return 'COMMON';
+          }
           const genre = frontendGenre.trim();
           if (genre.includes('밴드') || genre === '밴드') {
-            return '밴드';
+            return '밴드';  // 백엔드에서 "band"로 매핑됨
           } else if (genre.includes('뮤지컬') || genre.includes('연극')) {
-            return '연극/뮤지컬';
+            return '연극/뮤지컬';  // 백엔드에서 "musical"로 매핑됨
           }
-          return 'COMMON';
+          return 'COMMON';  // 백엔드에서 "common"으로 매핑됨
         };
 
         const genre = mapGenreForBackend(ticketData.genre || '');
-        console.log('질문 가져오기 요청 - 장르:', genre, '원본 장르:', ticketData.genre);
+        console.log('=== 질문 가져오기 시작 ===');
+        console.log('원본 장르:', ticketData.genre);
+        console.log('매핑된 장르:', genre);
+        console.log('API 요청 URL:', `/review-questions?genre=${encodeURIComponent(genre)}`);
         
         const result = await apiClient.get<string[]>(`/review-questions?genre=${encodeURIComponent(genre)}`);
         
-        console.log('질문 가져오기 응답:', result);
+        console.log('API 응답 전체:', JSON.stringify(result, null, 2));
+        console.log('응답 success:', result.success);
+        console.log('응답 data:', result.data);
+        console.log('응답 data 길이:', result.data?.length);
         
         if (result.success && result.data && result.data.length > 0) {
-          console.log('가져온 질문:', result.data);
+          console.log('✅ 질문 가져오기 성공! 가져온 질문:', result.data);
           setQuestions(result.data);
         } else {
           // API 호출 실패 또는 빈 리스트 시 기본 질문 사용
-          console.warn('질문 가져오기 실패 또는 빈 리스트, 기본 질문 사용. 응답:', result);
+          console.warn('⚠️ 질문 가져오기 실패 또는 빈 리스트');
+          console.warn('응답 상세:', {
+            success: result.success,
+            data: result.data,
+            dataLength: result.data?.length,
+            error: result.error,
+          });
+          console.warn('기본 질문 사용');
         }
       } catch (error) {
-        console.error('질문 가져오기 오류:', error);
+        console.error('❌ 질문 가져오기 오류:', error);
+        console.error('오류 상세:', error instanceof Error ? error.message : String(error));
         // 오류 발생 시 기본 질문 사용
       } finally {
         setIsLoadingQuestions(false);
+        console.log('=== 질문 가져오기 완료 ===');
       }
     };
 
