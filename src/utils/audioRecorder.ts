@@ -1,6 +1,6 @@
 /**
  * 오디오 녹음 유틸리티
- * react-native-audio-recorder-player 사용
+ * react-native-nitro-sound 사용 (react-native-audio-recorder-player의 후속 라이브러리)
  */
 
 import { Platform, PermissionsAndroid } from 'react-native';
@@ -54,8 +54,16 @@ class AudioRecorderManager {
 
   /**
    * 녹음 시작
+   * 
+   * ⚠️ 일시적으로 비활성화됨: react-native-nitro-sound 빌드 문제로 인해 임시로 비활성화되었습니다.
+   * iOS 빌드 문제가 해결되면 다시 활성화할 예정입니다.
    */
   async startRecording(): Promise<boolean> {
+    // 일시적으로 비활성화: iOS 빌드 문제로 인해 오디오 녹음 기능을 임시로 비활성화합니다.
+    console.warn('오디오 녹음 기능이 일시적으로 비활성화되었습니다.');
+    throw new Error('오디오 녹음 기능이 일시적으로 비활성화되었습니다.');
+    
+    /* 원래 코드 (주석 처리)
     try {
       // 권한 확인
       const hasPermission = await this.requestPermissions();
@@ -64,13 +72,13 @@ class AudioRecorderManager {
       }
 
       // 라이브러리 동적 로드
-      // react-native-audio-recorder-player가 설치되지 않았거나 로드할 수 없는 경우를 대비한 오류 처리
+      // react-native-nitro-sound가 설치되지 않았거나 로드할 수 없는 경우를 대비한 오류 처리
       if (!this.audioRecorderPlayer) {
         try {
-          const AudioRecorderPlayerModule = require('react-native-audio-recorder-player');
+          const AudioRecorderPlayerModule = require('react-native-nitro-sound');
           this.audioRecorderPlayer = new AudioRecorderPlayerModule.default();
         } catch (error) {
-          console.error('react-native-audio-recorder-player 모듈을 로드할 수 없습니다:', error);
+          console.error('react-native-nitro-sound 모듈을 로드할 수 없습니다:', error);
           throw new Error('오디오 녹음 기능을 사용할 수 없습니다. 패키지 설치를 확인해주세요.');
         }
       }
@@ -92,12 +100,21 @@ class AudioRecorderManager {
       console.error('녹음 시작 실패:', error);
       throw error;
     }
+    */
   }
 
   /**
    * 녹음 중지 및 파일 경로 반환
+   * 
+   * ⚠️ 일시적으로 비활성화됨: react-native-nitro-sound 빌드 문제로 인해 임시로 비활성화되었습니다.
    */
   async stopRecording(): Promise<{ uri: string; name: string } | null> {
+    // 일시적으로 비활성화: iOS 빌드 문제로 인해 오디오 녹음 기능을 임시로 비활성화합니다.
+    console.warn('오디오 녹음 기능이 일시적으로 비활성화되었습니다.');
+    this.isRecording = false;
+    return null;
+    
+    /* 원래 코드 (주석 처리)
     try {
       if (!this.audioRecorderPlayer || !this.isRecording) {
         console.warn('녹음 중이 아닙니다');
@@ -128,6 +145,7 @@ class AudioRecorderManager {
       this.isRecording = false;
       return null;
     }
+    */
   }
 
   /**

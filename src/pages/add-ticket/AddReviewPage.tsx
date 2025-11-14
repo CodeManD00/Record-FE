@@ -23,6 +23,7 @@ import { sttService } from '../../services/api/sttService';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/reviewTypes';
 import ReviewSummaryModal from '../../components/ReviewSummaryModal';
+import { apiClient } from '../../services/api/client';
 
 type AddReviewPageProps = NativeStackScreenProps<RootStackParamList, 'AddReview'>;
 
@@ -42,6 +43,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     '가장 인상 깊었던 순간은?',
     '다시 본다면 어떤 점이 기대되나요?',
   ]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCardVisible, setIsCardVisible] = useState(true);
 
@@ -56,6 +58,49 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   useEffect(() => {
     currentIndexRef.current = currentIndex;
   }, [currentIndex]);
+
+  // 후기 작성 화면 진입 시 질문 가져오기
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setIsLoadingQuestions(true);
+        
+        // 장르 매핑 (프론트엔드 → 백엔드)
+        const mapGenreForBackend = (frontendGenre: string): string => {
+          if (!frontendGenre) return 'COMMON';
+          const genre = frontendGenre.trim();
+          if (genre.includes('밴드') || genre === '밴드') {
+            return '밴드';
+          } else if (genre.includes('뮤지컬') || genre.includes('연극')) {
+            return '연극/뮤지컬';
+          }
+          return 'COMMON';
+        };
+
+        const genre = mapGenreForBackend(ticketData.genre || '');
+        console.log('질문 가져오기 요청 - 장르:', genre, '원본 장르:', ticketData.genre);
+        
+        const result = await apiClient.get<string[]>(`/review-questions?genre=${encodeURIComponent(genre)}`);
+        
+        console.log('질문 가져오기 응답:', result);
+        
+        if (result.success && result.data && result.data.length > 0) {
+          console.log('가져온 질문:', result.data);
+          setQuestions(result.data);
+        } else {
+          // API 호출 실패 또는 빈 리스트 시 기본 질문 사용
+          console.warn('질문 가져오기 실패 또는 빈 리스트, 기본 질문 사용. 응답:', result);
+        }
+      } catch (error) {
+        console.error('질문 가져오기 오류:', error);
+        // 오류 발생 시 기본 질문 사용
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
+
+    fetchQuestions();
+  }, [ticketData.genre]);
 
   const resetCardPosition = () => {
     Animated.parallel([

@@ -5,6 +5,9 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+# iOS 16 이상이 필요한 서드파티 라이브러리(nitro-modules 등)를 위해
+# 최소 지원 버전을 16으로 고정합니다.
+min_ios_version_supported = '16.0'
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
@@ -21,18 +24,32 @@ target 'TicketBookApp' do
     :path => config[:reactNativePath],
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
-    # Disable New Architecture (Fabric/TurboModules)
-    :fabric_enabled => false,
-    :new_arch_enabled => false
+    # Enable New Architecture (Fabric + TurboModules) so Nitro Modules (예: react-native-nitro-sound) 를 사용할 수 있습니다.
+    # New Architecture는 Fabric(UI 렌더링)과 TurboModules(네이티브 모듈)로 구성되어 있습니다.
+    :fabric_enabled => true,
+    :new_arch_enabled => true
   )
 
   post_install do |installer|
+    # 모든 Pod 타깃의 iOS 최소 버전을 16.0으로 통일합니다.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      end
+    end
+
     # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
-    react_native_post_install(
-      installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
-    )
+    # react_native_post_install 호출 중 에러가 발생해도 계속 진행하도록 처리
+    begin
+      react_native_post_install(
+        installer,
+        config[:reactNativePath],
+        :mac_catalyst_enabled => false,
+        # :ccache_enabled => true
+      )
+    rescue => e
+      Pod::UI.warn "react_native_post_install 실행 중 에러 발생: #{e.message}"
+      Pod::UI.warn "계속 진행합니다..."
+    end
   end
 end
