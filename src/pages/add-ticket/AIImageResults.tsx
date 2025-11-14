@@ -9,6 +9,7 @@ import {
   Image,
   ActivityIndicator,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { imageGenerationService, ImageGenerationRequest } from '../../services/api';
@@ -48,6 +49,8 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
   const [isGenerating, setIsGenerating] = useState(true);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generationHistory, setGenerationHistory] = useState<string[]>([]);
+  const [regenerationRequest, setRegenerationRequest] = useState<string>(''); // 재생성 요구사항 입력 필드
+  const [currentPrompt, setCurrentPrompt] = useState<string | null>(null); // 현재 프롬프트 저장 (나중에 백엔드 연동 시 사용)
 
   const ticketData = route?.params?.ticketData;
   const reviewData = route?.params?.reviewData;
@@ -99,10 +102,19 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
         console.log('✅ 이미지 생성 성공:', result.data);
         
         // 생성된 이미지 URL 설정
-        setGeneratedImage(result.data.imageUrl);
-        setGenerationHistory(prev => [result.data.imageUrl, ...prev]);
+        const imageData = result.data;
+        if (imageData) {
+          setGeneratedImage(imageData.imageUrl);
+          setGenerationHistory(prev => [imageData.imageUrl, ...prev]);
+          
+          // 프롬프트 저장 (재생성 시 basePrompt로 사용하기 위해)
+          if (imageData.prompt) {
+            setCurrentPrompt(imageData.prompt);
+          }
+        }
 
-        Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
+        // Alert 제거 - 바로 재생성 UI를 보여줌
+        // Alert.alert('성공', 'AI 이미지가 성공적으로 생성되었습니다!');
       } else {
         console.error('❌ 이미지 생성 실패:', result.error);
         Alert.alert('오류', result.error?.message || 'AI 이미지 생성에 실패했습니다.');
@@ -125,9 +137,89 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
     }
   };
 
-  const handleRegenerateImage = () => {
-    setGeneratedImage(null);
-    handleGenerateAIImage();
+  /**
+   * 재생성 버튼 클릭 시 호출되는 함수
+   * 사용자가 입력한 요구사항(regenerationRequest)을 포함하여 이미지를 재생성합니다.
+   * 
+   * 현재는 백엔드 연동 전이므로, 요구사항을 포함한 요청을 보내지만
+   * 백엔드에서 basePrompt와 imageRequest를 처리할 수 있도록 준비합니다.
+   */
+  const handleRegenerateImage = async () => {
+    if (!generatedImage) {
+      Alert.alert('오류', '생성된 이미지가 없습니다.');
+      return;
+    }
+
+    setIsGenerating(true);
+    setGeneratedImage(null); // 재생성 중에는 이미지 숨김
+
+    try {
+      // 티켓 데이터와 후기 데이터가 있는지 확인
+      if (!ticketData?.title || !reviewData?.reviewText) {
+        Alert.alert('오류', '티켓 정보나 후기 정보가 없습니다.');
+        setIsGenerating(false);
+        return;
+      }
+
+      // 백엔드 API 요청 데이터 구성
+      const mapGenreForBackend = (frontendGenre: string): string => {
+        if (frontendGenre?.includes('뮤지컬') || frontendGenre?.includes('연극')) {
+          return '뮤지컬';
+        }
+        if (frontendGenre?.includes('밴드')) {
+          return '밴드';
+        }
+        return '뮤지컬';
+      };
+
+      // 재생성 요청 데이터 구성
+      // TODO: 백엔드 연동 시 basePrompt와 imageRequest 필드 추가 필요
+      const requestData: ImageGenerationRequest = {
+        title: ticketData.title,
+        review: reviewData.reviewText,
+        genre: mapGenreForBackend(ticketData.genre || ''),
+        location: ticketData.place || '',
+        date: ticketData.performedAt || '',
+        cast: [],
+        // TODO: 백엔드에서 basePrompt와 imageRequest를 받을 수 있도록 확장 필요
+        // basePrompt: currentPrompt,  // 이전 프롬프트
+        // imageRequest: regenerationRequest,  // 사용자 요구사항
+      };
+
+      console.log('🔄 재생성 요청 데이터:', requestData);
+      console.log('📝 사용자 요구사항:', regenerationRequest);
+      console.log('📋 이전 프롬프트:', currentPrompt);
+
+      // 백엔드 API 호출
+      const result = await imageGenerationService.generateImage(requestData);
+
+      if (result.success && result.data) {
+        console.log('✅ 재생성 성공:', result.data);
+        
+        // 생성된 이미지 URL 설정
+        const imageData = result.data;
+        if (imageData) {
+          setGeneratedImage(imageData.imageUrl);
+          setGenerationHistory(prev => [imageData.imageUrl, ...prev]);
+          
+          // 프롬프트 업데이트
+          if (imageData.prompt) {
+            setCurrentPrompt(imageData.prompt);
+          }
+
+          // 요구사항 입력 필드 초기화
+          setRegenerationRequest('');
+        }
+      } else {
+        console.error('❌ 재생성 실패:', result.error);
+        Alert.alert('오류', result.error?.message || '이미지 재생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('❌ 재생성 중 예외 발생:', error);
+      Alert.alert('오류', '이미지 재생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // 테스트 이미지 생성 (백엔드 연결 실패 시 대체)
@@ -179,7 +271,12 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
         <TouchableOpacity style={styles.backButton} onPress={handleGoBack}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>이미지 생성</Text>
+        <Text style={styles.headerTitle}>티켓 이미지 생성</Text>
+        {generatedImage && (
+          <TouchableOpacity style={styles.nextButton} onPress={handleSelectImage}>
+            <Text style={styles.nextButtonText}>다음</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {isGenerating ? (
@@ -190,27 +287,57 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
       ) : (
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {generatedImage && (
-            <View style={styles.generatedImageContainer}>
-              <Image
-                source={{ uri: generatedImage }}
-                style={styles.generatedImage}
-                resizeMode="cover"
-              />
-              <View style={styles.actionButtonsContainer}>
+            <>
+              {/* 생성 완료 메시지 */}
+              <View style={styles.successMessageContainer}>
+                <Text style={styles.successMessage}>이미지가 생성되었어요!</Text>
+              </View>
+
+              {/* 생성된 이미지 미리보기 */}
+              <View style={styles.generatedImageContainer}>
+                <Image
+                  source={{ uri: generatedImage }}
+                  style={styles.generatedImage}
+                  resizeMode="cover"
+                />
+              </View>
+
+              {/* 재생성 요구사항 입력 섹션 */}
+              <View style={styles.regenerationSection}>
+                <Text style={styles.regenerationTitle}>이렇게 바꿔주세요</Text>
+                
+                {/* 힌트 말풍선 */}
+                <View style={styles.hintBubble}>
+                  <Text style={styles.hintText}>
+                    생성된 티켓이 마음에 들지 않나요?{'\n'}
+                    원하는 스타일을 알려주세요!
+                  </Text>
+                </View>
+
+                {/* 요구사항 입력 필드 */}
+                <TextInput
+                  style={styles.regenerationInput}
+                  placeholder="요구사항을 입력하세요..."
+                  placeholderTextColor={Colors.tertiaryLabel}
+                  value={regenerationRequest}
+                  onChangeText={setRegenerationRequest}
+                  multiline
+                  textAlignVertical="top"
+                />
+
+                {/* 다시 생성하기 버튼 */}
                 <TouchableOpacity
-                  style={styles.regenerateButton}
+                  style={[
+                    styles.regenerateButton,
+                    isGenerating && styles.regenerateButtonDisabled,
+                  ]}
                   onPress={handleRegenerateImage}
+                  disabled={isGenerating}
                 >
                   <Text style={styles.regenerateButtonText}>다시 생성하기</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.selectButton}
-                  onPress={handleSelectImage}
-                >
-                  <Text style={styles.selectButtonText}>이미지 선택하기</Text>
-                </TouchableOpacity>
               </View>
-            </View>
+            </>
           )}
 
           {generationHistory.length > 1 && (
@@ -292,6 +419,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  nextButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+
+  nextButtonText: {
+    ...Typography.callout,
+    color: '#b11515',
+    fontWeight: '600',
+  },
+
   // 본문
   content: { flex: 1 },
 
@@ -310,57 +448,97 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
+  // 생성 완료 메시지
+  successMessageContainer: {
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.md,
+    alignItems: 'center',
+  },
+
+  successMessage: {
+    ...Typography.title2,
+    fontWeight: '600',
+    color: Colors.label,
+  },
+
   generatedImageContainer: {
-    marginHorizontal: 20,
-    marginTop: 20,
-    padding: 20,
-    borderRadius: 12,
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.lg,
     alignItems: 'center',
   },
 
   generatedImage: {
     width: cardWidth,
     height: cardHeight,
-    borderRadius: 12,
-    marginBottom: 20,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.systemGray5,
   },
 
-  // 버튼 두 개
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 8,
-    gap: 12,
+  // 재생성 섹션
+  regenerationSection: {
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.xxxl,
+    marginBottom: Spacing.xxxl,
   },
 
+  regenerationTitle: {
+    ...Typography.title3,
+    fontWeight: '600',
+    color: Colors.label,
+    marginBottom: Spacing.md,
+  },
+
+  // 힌트 말풍선
+  hintBubble: {
+    backgroundColor: '#FFF5F5',
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: '#FFE5E5',
+    position: 'relative',
+  },
+
+  hintText: {
+    ...Typography.caption1,
+    color: '#8B4513',
+    lineHeight: 18,
+  },
+
+  // 요구사항 입력 필드
+  regenerationInput: {
+    backgroundColor: Colors.systemBackground,
+    borderWidth: 1,
+    borderColor: Colors.systemGray5,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    minHeight: 100,
+    ...Typography.body,
+    color: Colors.label,
+    marginBottom: Spacing.lg,
+    ...Shadows.small,
+  },
+
+  // 다시 생성하기 버튼
   regenerateButton: {
-    width: (cardWidth - 12) / 2,
-    backgroundColor: '#f2f2f2',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#FF6B6B',
+    borderRadius: BorderRadius.lg,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
     alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.button,
+  },
+
+  regenerateButtonDisabled: {
+    opacity: 0.6,
   },
 
   regenerateButtonText: {
-    fontSize: 14,
+    ...Typography.headline,
+    color: Colors.white,
     fontWeight: '600',
-    color: '#000',
-  },
-
-  selectButton: {
-    width: (cardWidth - 12) / 2,
-    backgroundColor: '#b11515',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-
-  selectButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#FFFFFF',
   },
 
   // 생성 히스토리
