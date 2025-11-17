@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,126 @@ const SignupPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
 
+  // 타이머 useEffect
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    
+    if (timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setIsCodeSent(false);
+            setVerificationCode('');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [timeLeft]);
+
+  // 타이머 포맷팅 함수 (mm:ss)
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const handleSendVerificationCode = async () => {
+    // 이메일 빈 값 검증
+    if (!email.trim()) {
+      Alert.alert('입력 오류', '이메일을 입력해주세요.', [{ text: '확인' }]);
+      return;
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('입력 오류', '올바른 이메일 형식이 아닙니다.', [{ text: '확인' }]);
+      return;
+    }
+
+    // 이메일 코드 발송
+    setIsSendingCode(true);
+    try {
+      const result = await authService.sendSignupVerificationCode(email);
+      
+      if (result.success) {
+        // 성공 시
+        setIsCodeSent(true);
+        setTimeLeft(600);
+        Alert.alert('인증 코드 발송', '인증 코드가 이메일로 발송되었습니다.', [{ text: '확인' }]);
+      } else {
+        // 에러 메시지가 메일 인증 관련인 경우 더 친화적인 메시지 표시
+        let errorMessage = result.error?.message || '인증 코드 발송 중 오류가 발생했습니다.';
+        if (errorMessage.includes('메일 서비스') || errorMessage.includes('Authentication failed') || errorMessage.includes('인증에 실패')) {
+          errorMessage = '메일 서비스 설정에 문제가 있습니다.\n\n백엔드 관리자에게 다음을 확인해달라고 요청해주세요:\n• Gmail 앱 비밀번호 설정\n• MAIL_USERNAME, MAIL_PASSWORD 환경변수 확인\n• 백엔드 서버 재시작';
+        }
+        
+        Alert.alert(
+          '인증 코드 발송 실패',
+          errorMessage,
+          [{ text: '확인' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('인증 코드 발송 실패', '인증 코드 발송 중 오류가 발생했습니다.', [{ text: '확인' }]);
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  // 인증 코드 검증
+
+  const handleVerifyCode = async () => {
+    // 인증 코드 빈 값 검증
+    if (!verificationCode.trim()) {
+      Alert.alert('입력 오류', '인증 코드를 입력해주세요.', [{ text: '확인' }]);
+      return;
+    }
+
+    // 6자리 검증
+    if (verificationCode.length !== 6 || !/^\d+$/.test(verificationCode)) {
+      Alert.alert('입력 오류', '6자리 숫자 코드를 입력해주세요.', [{ text: '확인' }]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await authService.verifySignupCode(email, verificationCode);
+      
+      if (result.success) {
+        // 성공 시
+        setIsVerified(true);
+        setTimeLeft(0);
+        Alert.alert('인증 완료', '이메일 인증이 완료되었습니다.', [{ text: '확인' }]);
+      } else {
+        Alert.alert(
+          '인증 실패',
+          result.error?.message || '인증 코드가 올바르지 않습니다.',
+          [{ text: '확인' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert('인증 실패', '인증 코드 검증 중 오류가 발생했습니다.', [{ text: '확인' }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 유효값 검증
   const validateInputs = () => {
     if (!username.trim()) {
       Alert.alert('입력 오류', '아이디를 입력해주세요.', [{ text: '확인' }]);
@@ -63,6 +182,10 @@ const SignupPage = () => {
     }
     if (nickname.length > 30) {
       Alert.alert('입력 오류', '닉네임은 30자 이하여야 합니다.', [{ text: '확인' }]);
+      return false;
+    }
+    if (!isVerified) {
+      Alert.alert('인증 필요', '이메일 인증을 완료해주세요.', [{ text: '확인' }]);
       return false;
     }
     return true;
@@ -188,18 +311,82 @@ const SignupPage = () => {
             {/* Email Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>이메일</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="이메일을 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-              />
+              <View style={styles.emailInputRow}>
+                <TextInput
+                  style={styles.emailInput}
+                  placeholder="이메일을 입력하세요"
+                  placeholderTextColor={Colors.placeholderText}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isLoading && !isVerified}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.verifyButton,
+                    (isLoading || isSendingCode || isVerified) && styles.verifyButtonDisabled,
+                  ]}
+                  onPress={handleSendVerificationCode}
+                  disabled={isLoading || isSendingCode || isVerified}
+                  activeOpacity={0.8}
+                >
+                  {isSendingCode ? (
+                    <ActivityIndicator color={Colors.white} size="small" />
+                  ) : (
+                    <Text style={styles.verifyButtonText}>
+                      {isVerified ? '인증완료' : '인증하기'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
+
+            {/* Verification Code Input */}
+            {isCodeSent && !isVerified && (
+              <View style={styles.inputContainer}>
+                <View style={styles.codeLabelRow}>
+                  <Text style={styles.inputLabel}>인증 코드</Text>
+                  {timeLeft > 0 && (
+                    <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+                  )}
+                </View>
+                <View style={styles.emailInputRow}>
+                  <TextInput
+                    style={styles.emailInput}
+                    placeholder="6자리 코드 입력"
+                    placeholderTextColor={Colors.placeholderText}
+                    value={verificationCode}
+                    onChangeText={(text) => {
+                      // 숫자만 입력 허용, 최대 6자리
+                      const numericText = text.replace(/[^0-9]/g, '').slice(0, 6);
+                      setVerificationCode(numericText);
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isLoading && timeLeft > 0}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.verifyButton,
+                      isLoading && styles.verifyButtonDisabled,
+                    ]}
+                    onPress={handleVerifyCode}
+                    disabled={isLoading || timeLeft === 0}
+                    activeOpacity={0.8}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color={Colors.white} size="small" />
+                    ) : (
+                      <Text style={styles.verifyButtonText}>확인</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Nickname Input */}
             <View style={styles.inputContainer}>
@@ -361,6 +548,54 @@ const styles = StyleSheet.create({
   footerText: {
     ...Typography.caption2,
     color: Colors.quaternaryLabel,
+  },
+  emailInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  emailInput: {
+    flex: 1,
+    backgroundColor: Colors.systemBackground,
+    borderWidth: 1,
+    borderColor: Colors.systemGray5,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    ...Typography.body,
+    color: Colors.label,
+    ...Shadows.small,
+    marginBottom: 0,
+  },
+  verifyButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 80,
+    height: 48,
+    ...Shadows.small,
+  },
+  verifyButtonDisabled: {
+    opacity: 0.6,
+  },
+  verifyButtonText: {
+    ...Typography.subheadline,
+    color: Colors.white,
+    fontWeight: '600',
+  },
+  codeLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  timerText: {
+    ...Typography.subheadline,
+    color: Colors.systemRed,
+    fontWeight: '600',
   },
 });
 
