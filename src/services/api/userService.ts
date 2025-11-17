@@ -104,7 +104,7 @@ class UserService {
    * 내 프로필 조회
    */
   async getMyProfile(): Promise<Result<UserProfile>> {
-    return apiClient.get<UserProfile>('/users/me');
+    return apiClient.get<UserProfile>('/auth/me');
   }
 
   /**

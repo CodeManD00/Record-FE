@@ -79,7 +79,7 @@ const SignupPage = () => {
     // 이메일 코드 발송
     setIsSendingCode(true);
     try {
-      const result = await authService.sendVerificationCode(email);
+      const result = await authService.sendSignupVerificationCode(email);
       
       if (result.success) {
         // 성공 시
@@ -123,7 +123,7 @@ const SignupPage = () => {
 
     setIsLoading(true);
     try {
-      const result = await authService.verifyCode(email, verificationCode);
+      const result = await authService.verifySignupCode(email, verificationCode);
       
       if (result.success) {
         // 성공 시

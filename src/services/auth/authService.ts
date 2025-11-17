@@ -6,6 +6,7 @@
 import { Result, ResultFactory, ErrorFactory } from '../../utils/result';
 import { apiClient } from '../api/client';
 import { Platform } from 'react-native';
+import { userService } from '../api/userService';
 
 /**
  * 현재 로그인한 사용자 정보
