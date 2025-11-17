@@ -8,7 +8,7 @@ import { apiClient } from '../api/client';
 import { Platform } from 'react-native';
 
 /**
- * User authentication data
+ * 현재 로그인한 사용자 정보
  */
 export interface AuthUser {
   id: string;
@@ -19,8 +19,7 @@ export interface AuthUser {
 }
 
 /**
- * Authentication response from backend
- * 백엔드 TokenResponse와 일치해야 함: { token, type, expiresIn, role }
+ * 백엔드 로그인/회원가입 응답 형식
  */
 export interface AuthResponse {
   token: string;      // JWT 토큰
@@ -29,6 +28,10 @@ export interface AuthResponse {
   role: string;       // "USER" | "ADMIN"
 }
 
+
+/*
+ * 현재 로그인한 사용자 정보
+ */
 class AuthService {
   private currentUser: AuthUser | null = null;
 
@@ -37,7 +40,37 @@ class AuthService {
   }
 
   /**
-   * Sign up with username, password, email, and nickname
+   * 회원가입용 이메일 인증 코드 발송
+   */
+    async sendSignupVerificationCode(email: string): Promise<Result<string>> {
+    try {
+      const result = await apiClient.post<string>('/auth/email/send-code', { email });
+      return result;
+    } catch (error: any) {
+      console.error('Send signup verification code error:', error);
+      return ResultFactory.failure(
+        ErrorFactory.unknown('회원가입 인증 코드 발송 중 오류가 발생했습니다')
+      );
+    }
+  }
+
+  /**
+   * 회원가입용 이메일 인증 코드 검증
+   */
+  async verifySignupCode(email: string, code: string): Promise<Result<string>> {
+    try {
+      const result = await apiClient.post<string>('/auth/email/verify', { email, code });
+      return result;
+    } catch (error: any) {
+      console.error('Verify signup code error:', error);
+      return ResultFactory.failure(
+        ErrorFactory.unknown('회원가입 인증 코드 검증 중 오류가 발생했습니다')
+      );
+    }
+  }
+
+  /**
+   * 회원가입
    */
   async signUp(
     id: string,
@@ -71,7 +104,7 @@ class AuthService {
   }
 
   /**
-   * Sign in with id and password
+   * 로그인
    */
   async signInWithId(id: string, password: string): Promise<Result<AuthResponse>> {
     try {
@@ -102,7 +135,7 @@ class AuthService {
   }
 
   /**
-   * Handle password reset request
+   * 비밀번호 재설정 요청
    */
   async requestPasswordReset(email: string): Promise<Result<{ message: string }>> {
     try {
@@ -117,7 +150,7 @@ class AuthService {
   }
 
   /**
-   * Sign out
+   * 로그아웃
    */
   async signOut(): Promise<Result<void>> {
     try {
@@ -137,7 +170,7 @@ class AuthService {
   }
 
   /**
-   * Check if user is authenticated
+   * 인증상태 확인 - 토큰 여부
    */
   async isAuthenticated(): Promise<boolean> {
     try {
@@ -150,7 +183,7 @@ class AuthService {
   }
 
   /**
-   * Get current user
+   * 현재 사용자 조회
    */
   getCurrentUser(): AuthUser | null {
     return this.currentUser;
@@ -206,6 +239,7 @@ class AuthService {
       );
     }
   }
+
 }
 
 // Singleton instance

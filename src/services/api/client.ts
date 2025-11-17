@@ -103,12 +103,62 @@ class ApiClient {
         console.log(`API Response: ${response.status} ${fullUrl}`);
       }
 
-      const data: ApiResponse<T> = await response.json();
-
-      if (response.ok && data.success) {
-        return ResultFactory.success(data.data as T);
+      // 응답 본문 확인
+      const contentType = response.headers.get('content-type');
+      const responseText = await response.text();
+      
+      // 에러 응답 상세 로깅
+      if (__DEV__ && !response.ok) {
+        console.error('❌ API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: fullUrl,
+          body: responseText,
+        });
+      }
+      
+      // JSON 응답인 경우
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const data: ApiResponse<T> = JSON.parse(responseText);
+          
+          if (response.ok && data.success) {
+            return ResultFactory.success(data.data as T);
+          } else {
+            // 백엔드에서 반환한 에러 메시지 사용
+            // 500 오류의 경우 trace에서 더 자세한 정보 추출
+            if (response.status === 500 && (data as any).trace) {
+              const trace = (data as any).trace as string;
+              let detailedMessage = data?.message || '서버 오류가 발생했습니다';
+              
+              // 메일 인증 실패인 경우
+              if (trace.includes('MailAuthenticationException') || trace.includes('Authentication failed') || trace.includes('Username and Password not accepted')) {
+                detailedMessage = '메일 서비스 인증에 실패했습니다.\n\n백엔드 관리자에게 다음을 확인해달라고 요청해주세요:\n• Gmail 앱 비밀번호 설정\n• MAIL_USERNAME, MAIL_PASSWORD 환경변수 확인\n• 백엔드 서버 재시작';
+              }
+              
+              return this.handleHttpError(response.status, {
+                ...data,
+                message: detailedMessage,
+              });
+            }
+            
+            return this.handleHttpError(response.status, data);
+          }
+        } catch (e) {
+          // JSON 파싱 실패 시 문자열로 처리
+          if (response.ok) {
+            return ResultFactory.success(responseText as T);
+          } else {
+            return ResultFactory.failure(ErrorFactory.api('PARSE_ERROR', responseText));
+          }
+        }
       } else {
-        return this.handleHttpError(response.status, data);
+        // 문자열 응답인 경우 (AccountRecoveryController 등)
+        if (response.ok) {
+          return ResultFactory.success(responseText as T);
+        } else {
+          return ResultFactory.failure(ErrorFactory.api(`HTTP_${response.status}`, responseText));
+        }
       }
     } catch (error: any) {
       return this.handleError(error);
@@ -166,21 +216,24 @@ class ApiClient {
       }
     }
 
+    // 백엔드에서 반환한 메시지 우선 사용
+    const errorMessage = data?.message || data?.error?.message;
+
     switch (status) {
       case 400:
-        return ResultFactory.failure(ErrorFactory.validation(data?.message || '잘못된 요청입니다'));
+        return ResultFactory.failure(ErrorFactory.validation(errorMessage || '잘못된 요청입니다'));
       case 401:
-        return ResultFactory.failure(ErrorFactory.unauthorized());
+        return ResultFactory.failure(ErrorFactory.unauthorized(errorMessage));
       case 403:
-        return ResultFactory.failure(ErrorFactory.forbidden());
+        return ResultFactory.failure(ErrorFactory.forbidden(errorMessage));
       case 404:
-        return ResultFactory.failure(ErrorFactory.notFound('리소스'));
+        return ResultFactory.failure(ErrorFactory.notFound('리소스', errorMessage));
       case 500:
-        return ResultFactory.failure(ErrorFactory.server());
+        return ResultFactory.failure(ErrorFactory.server(errorMessage || '서버 오류가 발생했습니다'));
       default:
         return ResultFactory.failure(ErrorFactory.api(
           `HTTP_${status}`,
-          data?.message || `HTTP ${status} 오류가 발생했습니다`
+          errorMessage || `HTTP ${status} 오류가 발생했습니다`
         ));
     }
   }
