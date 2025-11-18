@@ -4,9 +4,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   Image,
-  Dimensions,
   Animated,
 } from 'react-native';
 import {
@@ -16,15 +14,19 @@ import {
 import { useAtom } from 'jotai';
 import { ticketsAtom } from '../../atoms/ticketAtoms';
 import { friendsAtom } from '../../atoms/friendsAtoms';
-import { userProfileAtom } from '../../atoms/userAtoms';
 import { Ticket } from '../../types/ticket';
-import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import TicketDetailModal from '../../components/TicketDetailModal';
 import GNB from '../../components/GNB';
 import TicketGrid from '../../components/TicketGrid';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import { useMyTicketsData, useFriendsData, useUserProfileData } from '../../hooks/useApiData';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles } from '../../styles/designSystem';
+import { useUserProfileData } from '../../hooks/useApiData';
+import {
+  Colors,
+  Typography,
+  Spacing,
+  BorderRadius,
+  Shadows,
+} from '../../styles/designSystem';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
 // 마이 페이지 Props 타입 정의
@@ -32,27 +34,41 @@ interface MyPageProps {
   navigation: any;
 }
 
+// 백엔드 사용자 프로필 타입 (SignupRequest 기준)
+interface UserProfile {
+  id: string;          // 로그인 아이디
+  email: string;       // 이메일
+  nickname: string;    // 닉네임
+  profileImage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   // 로컬 상태 관리 atoms 사용
   const [myTickets] = useAtom(ticketsAtom);
   const [friendsList] = useAtom(friendsAtom);
-  
-  // 사용자 프로필 데이터 가져오기 (백엔드에서 자동으로 로드)
-  const { data: profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useUserProfileData({
-    autoFetch: true,  // 자동으로 프로필 데이터 가져오기
-  });
+
+  // 사용자 프로필 데이터 가져오기
+  const {
+    data: profileData,
+    loading: profileLoading,
+    error: profileError,
+  } = useUserProfileData();
+
+  // 안전한 타입 캐스팅
+  const profile = profileData as UserProfile | undefined;
 
   // 기본값으로 안전하게 처리
-  const actualTickets = myTickets || [];
-  const actualFriends = friendsList || [];
+  const actualTickets: Ticket[] = (myTickets || []) as Ticket[];
+  const actualFriends = (friendsList || []) as any[];
 
-  // 사용자 프로필 (백엔드에서 가져온 닉네임 사용)
-  const actualProfile = profile || {
+  // 사용자 프로필 (없을 때 기본값)
+  const actualProfile: UserProfile = profile || {
     id: '',
-    nickname: '사용자',  // 기본값 (프로필이 없을 때만 표시)
     email: '',
+    nickname: '사용자',
     profileImage: undefined,
-    avatar: undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -68,7 +84,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
 
   // 최신순으로 정렬
   const realTickets = useMemo(() => {
-    return actualTickets.sort((a: Ticket, b: Ticket) => {
+    return [...actualTickets].sort((a: Ticket, b: Ticket) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       return dateB - dateA;
@@ -78,9 +94,8 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   // 디버깅용 로그
   console.log('===== MyPage 티켓 디버깅 =====');
   console.log('actualTickets:', actualTickets);
-  console.log('realTickets (필터 후):', realTickets);
+  console.log('realTickets (정렬 후):', realTickets);
   console.log('TicketGrid 전달용 티켓 수:', realTickets.length);
-
 
   // 티켓 모달 열기
   const handleTicketPress = (ticket: Ticket) => {
@@ -113,11 +128,21 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
     extrapolate: 'clamp',
   });
 
+  // 프로필 로딩 처리
+  if (profileLoading) {
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LoadingSpinner loading />
+    </SafeAreaView>
+  );
+}
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* 애니메이션 헤더 - 스크롤에 따라 투명도 변화 */}
       <GNB
-        centerTitle={actualProfile.id}
+        // 헤더 중앙에는 닉네임이 보이게, 없으면 아이디
+        centerTitle={actualProfile.nickname || actualProfile.id}
         centerTitleOpacity={centerIdOpacity}
         headerStyle={{
           backgroundColor: headerOpacity.interpolate({
@@ -163,13 +188,11 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
         scrollEventThrottle={16}
         contentContainerStyle={[
           styles.scrollViewContent,
-          { paddingBottom: tabBarHeight },
+          { paddingBottom: tabBarHeight + insets.bottom },
         ]}
       >
         {/* 사용자 프로필 섹션 */}
-        <View
-          style={[styles.profileSection,]}
-        >
+        <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             {actualProfile.profileImage ? (
               <Image
@@ -189,7 +212,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
             <Text style={styles.badgeText}>{realTickets.length}</Text>
           </View>
 
-          {/* 사용자 아이디 */}
+          {/* 닉네임 */}
           <Text style={styles.username}>{actualProfile.nickname}</Text>
 
           {/* 사용자 통계 */}
@@ -203,7 +226,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
               onPress={() => navigation.navigate('FriendsList')}
             >
               <Text style={styles.statLabel}>친구들</Text>
-              <Text style={styles.statValue}>{friendsList.length}명</Text>
+              <Text style={styles.statValue}>{actualFriends.length}명</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -260,7 +283,6 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.systemGray5,
     borderBottomWidth: 0.5,
   },
-  
 
   avatarContainer: {},
   avatarImage: {
@@ -328,13 +350,12 @@ const styles = StyleSheet.create({
     color: Colors.secondaryLabel,
   },
 
-  // 티켓 그리드 섹션 추가
+  // 티켓 그리드 섹션
   ticketGridSection: {
     flex: 1,
     backgroundColor: Colors.systemBackground,
     paddingTop: Spacing.xs,
   },
-
 });
 
 export default MyPage;
