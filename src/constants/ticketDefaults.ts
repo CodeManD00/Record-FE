@@ -54,7 +54,7 @@ export const createEmptyTicket = (): Partial<Ticket> => ({
   artist: '',
   bookingSite: '',
   genre: null,
-  userId: '',
+  user_id: '',
   createdAt: new Date(),
   updatedAt: new Date(),
   review: undefined,
@@ -67,13 +67,12 @@ export const createEmptyTicket = (): Partial<Ticket> => ({
  */
 export const createNewTicket = (
   ticketData: CreateTicketData, 
-  userId: string
+  user_id: string
 ): Ticket => {
   const now = new Date();
   
   return {
     id: IdGenerator.ticket(),
-    userId,
     createdAt: now,
     updatedAt: now,
     ...ticketData,
