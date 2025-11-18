@@ -71,6 +71,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
     profileImage: undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    isAccountPrivate: Boolean,
   };
 
   // 로딩 상태
@@ -212,7 +213,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
             <Text style={styles.badgeText}>{realTickets.length}</Text>
           </View>
 
-          {/* 닉네임 */}
+          {/* 사용자 닉네임 */}
           <Text style={styles.username}>{actualProfile.nickname}</Text>
 
           {/* 사용자 통계 */}
