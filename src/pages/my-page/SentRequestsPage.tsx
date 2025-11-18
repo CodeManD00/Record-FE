@@ -9,13 +9,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
+import ModalHeader from '../../components/ModalHeader';
 
 interface SentRequest {
   id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  isCancelled: boolean; // 요청 취소 여부
+  nickname: string;
+  profileImage: string;
+  isCancelled: boolean;
 }
 
 interface SentRequestsPageProps {
@@ -23,20 +23,22 @@ interface SentRequestsPageProps {
 }
 
 const SentRequestsPage: React.FC<SentRequestsPageProps> = ({ navigation }) => {
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
   // 더미 보낸 친구 요청 데이터
   const [sentRequests, setSentRequests] = useState<SentRequest[]>([
     {
-      id: '1',
-      name: '9RMMY',
-      username: '@9rmmy',
-      avatar: '👩🏻‍💼',
+      id: '@9rmmy',
+      nickname: '9RMMY',
+      profileImage: '👩🏻‍💼',
       isCancelled: false,
     },
     {
-      id: '2',
-      name: 'Alice',
-      username: '@alice',
-      avatar: '👩🏻‍🎤',
+      id: '@alice',
+      nickname: 'Alice',
+      profileImage: '👩🏻‍🎤',
       isCancelled: false,
     },
   ]);
@@ -52,17 +54,10 @@ const SentRequestsPage: React.FC<SentRequestsPageProps> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>보낸 요청</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ModalHeader 
+        title="보낸 요청"
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 보낸 요청 섹션 */}
@@ -87,11 +82,11 @@ const SentRequestsPage: React.FC<SentRequestsPageProps> = ({ navigation }) => {
               }
             >
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{request.avatar}</Text>
+                <Text style={styles.avatarText}>{request.profileImage}</Text>
               </View>
               <View style={styles.requestDetails}>
-                <Text style={styles.requestName}>{request.name}</Text>
-                <Text style={styles.requestHandle}>{request.username}</Text>
+                <Text style={styles.requestName}>{request.nickname}</Text>
+                <Text style={styles.requestHandle}>{request.id}</Text>
               </View>
             </TouchableOpacity>
 
@@ -117,43 +112,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    height: Layout.navigationBarHeight,
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
-    position: 'relative',
-  },
-  backButton: {
-    position: 'absolute',
-    left: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  backButtonText: {
-    ...Typography.body,
-    color: Colors.systemBlue,
-    fontWeight: '400',
-  },
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
-  },
-  placeholder: {
-    position: 'absolute',
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
   },
   content: {
     flex: 1,

@@ -146,20 +146,6 @@ class FriendService {
   async unblockFriend(friendId: string): Promise<Result<{ success: boolean }>> {
     return apiClient.delete<{ success: boolean }>(`/friends/${friendId}/block`);
   }
-
-  /**
-   * 친구 뮤트
-   */
-  async muteFriend(friendId: string): Promise<Result<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>(`/friends/${friendId}/mute`);
-  }
-
-  /**
-   * 친구 뮤트 해제
-   */
-  async unmuteFriend(friendId: string): Promise<Result<{ success: boolean }>> {
-    return apiClient.delete<{ success: boolean }>(`/friends/${friendId}/mute`);
-  }
 }
 
 // 싱글톤 인스턴스 생성

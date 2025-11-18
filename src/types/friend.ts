@@ -11,11 +11,9 @@ import { Ticket } from './ticket';
  */
 export interface Friend {
   readonly id: string;
-  name: string;
-  username: string;
+  userId: string;
+  nickname: string;
   profileImage?: string;
-  avatar?: string;
-  bio?: string;
   readonly createdAt: Date;
   updatedAt: Date;
 }

@@ -21,6 +21,7 @@ import {
 import { useAtom } from 'jotai';
 import { friendsAtom } from '../../atoms';
 import { Friend } from '../../types/friend';
+import ModalHeader from '../../components/ModalHeader';
 
 interface User {
   id: string;

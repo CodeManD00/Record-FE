@@ -224,7 +224,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
           </TouchableOpacity>
 
           {/* 사용자 이름 */}
-          <Text style={styles.username}>{actualProfile.name || actualProfile.username || '사용자'}</Text>
+          <Text style={styles.username}>{actualProfile.nickname}</Text>
         </View>
 
         {/* 설정 리스트 */}

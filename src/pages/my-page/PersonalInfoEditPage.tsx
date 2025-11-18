@@ -44,11 +44,11 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
   //현재 프로필 이미지의 경로
   const [profileImage, setProfileImage] = useState<string | null>(actualProfile.profileImage || null);
   //사용자 닉네임
-  const [name, setName] = useState(actualProfile.name || '');
+  const [nickname, setName] = useState(actualProfile.nickname);
   //사용자 아이디
-  const [userId, setUserId] = useState(actualProfile.userId || actualProfile.id || '');
+  const [id, setUserId] = useState(actualProfile.id);
   //사용자 이메일
-  const [email, setEmail] = useState(actualProfile.email || '');
+  const [email, setEmail] = useState(actualProfile.email);
   //계정 공개여부
   const [isAccountPrivate, setIsAccountPrivate] = useState(actualProfile.isAccountPrivate || false);
   
@@ -56,8 +56,8 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
   useEffect(() => {
     if (actualProfile) {
       if (actualProfile.profileImage) setProfileImage(actualProfile.profileImage);
-      if (actualProfile.name) setName(actualProfile.name);
-      if (actualProfile.userId || actualProfile.id) setUserId(actualProfile.userId || actualProfile.id || '');
+      if (actualProfile.nickname) setName(actualProfile.nickname);
+      if (actualProfile.id) setUserId(actualProfile.id);
       if (actualProfile.email) setEmail(actualProfile.email);
       if (actualProfile.isAccountPrivate !== undefined) setIsAccountPrivate(actualProfile.isAccountPrivate);
     }
@@ -93,7 +93,7 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
   // 저장 관리
   const handleSave = () => {
     // 이름 유효성 검사
-    if (!name.trim()) {
+    if (!nickname.trim()) {
       Alert.alert('오류', '이름을 입력해주세요.');
       return;
     }
@@ -119,8 +119,8 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
     // Jotai atom을 통한 상태 업데이트
     const updateResult = updateUserProfile({
       profileImage: profileImage || undefined,
-      name: name.trim(),
-      userId,
+      nickname: nickname.trim(),
+      id,
       email,
       isAccountPrivate,
     });
@@ -148,7 +148,7 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
     {
       id: 1,
       title: '이름',
-      value: name,
+      value: nickname,
       onChangeText: setName,
       placeholder: '이름을 입력하세요',
       keyboardType: 'default' as const,
@@ -157,7 +157,7 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
     {
       id: 2,
       title: '아이디',
-      value: userId,
+      value: id,
       onChangeText: setUserId,
       placeholder: '아이디를 입력하세요',
       keyboardType: 'default' as const,
