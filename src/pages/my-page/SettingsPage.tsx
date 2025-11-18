@@ -23,6 +23,7 @@ import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
 import { useUserProfileData } from '../../hooks/useApiData';
+import { UserProfile } from '../../types/user';
 
 interface SettingsPageProps {
   navigation: any;
@@ -40,7 +41,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   const [tickets] = useAtom(ticketsAtom);
   
   // 백엔드에서 가져온 프로필이 있으면 사용, 없으면 atom 값 사용
-  const actualProfile = profile || userProfile;
+  const actualProfile = (profile || userProfile || {}) as UserProfile;
   
   // 실제 티켓 개수 계산
   const realTickets = tickets.filter(ticket => !isPlaceholderTicket(ticket));

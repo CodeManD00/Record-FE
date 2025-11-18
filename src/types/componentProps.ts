@@ -3,7 +3,6 @@ import { RouteProp } from '@react-navigation/native';
 import { TicketData, ReviewData, RootStackParamList } from './reviewTypes';
 import { Ticket } from './ticket';
 
-// ===== NAVIGATION TYPES =====
 
 // 티켓 생성 플로우 props
 // 후기작성 방법 props
@@ -18,7 +17,6 @@ export type AIImageResultsScreenProps = NativeStackScreenProps<RootStackParamLis
 export type TicketCompleteScreenProps = NativeStackScreenProps<RootStackParamList, 'TicketComplete'>;
 
 
-// ===== COMPONENT PROPS =====
 
 // 캘린더 props
 // 캘린더 헤더 props

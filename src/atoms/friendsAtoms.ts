@@ -32,29 +32,26 @@ import { FriendValidator } from '../utils/validation';
  */
 export const friendsMapAtom = atom<Map<string, Friend>>(new Map([
   ['friend_1', {
-    id: 'friend_1',
-    name: '구름이',
-    username: '9RMMY',
+    id: '1',
+    nickname: '구름이',
+    user_id: '9RMMY',
     profileImage: 'https://via.placeholder.com/50/20B2AA/FFFFFF?text=서',
-    avatar: 'https://via.placeholder.com/50/20B2AA/FFFFFF?text=서',
     createdAt: new Date('2025-08-01T10:00:00'),
     updatedAt: new Date('2025-08-01T10:00:00'),
   }],
   ['friend_2', {
-    id: 'friend_2',
-    name: '먹구름이',
-    username: 'M9RM',
+    id: '2',
+    nickname: '먹구름이',
+    user_id: 'M9RM',
     profileImage: 'https://via.placeholder.com/50/8B4513/FFFFFF?text=민',
-    avatar: 'https://via.placeholder.com/50/8B4513/FFFFFF?text=민',
     createdAt: new Date('2025-08-02T10:00:00'),
     updatedAt: new Date('2025-08-02T10:00:00'),
   }],
   ['friend_3', {
     id: 'friend_3',
-    name: '뭉게구름이',
-    username: 'MUNG9',
+    nickname: '뭉게구름이',
+    user_id: 'MUNG9',
     profileImage: 'https://via.placeholder.com/50/708090/FFFFFF?text=이',
-    avatar: 'https://via.placeholder.com/50/708090/FFFFFF?text=이',
     createdAt: new Date('2025-08-03T10:00:00'),
     updatedAt: new Date('2025-08-03T10:00:00'),
   }],
@@ -69,9 +66,9 @@ export const friendRequestsMapAtom = atom<Map<string, FriendRequest>>(new Map([
     id: 'request_1',
     fromUserId: 'user_101',
     toUserId: 'current_user',
-    name: '김민수',
-    username: 'minsu_kim',
-    avatar: 'https://via.placeholder.com/50/4A90E2/FFFFFF?text=김',
+    nickname: '김민수',
+    user_id: 'minsu_kim',
+    profileImage: 'https://via.placeholder.com/50/4A90E2/FFFFFF?text=김',
     status: FriendRequestStatus.PENDING,
     message: '안녕하세요! 같이 공연 보러 가요!',
     createdAt: new Date('2025-09-18T14:30:00'),
@@ -81,9 +78,9 @@ export const friendRequestsMapAtom = atom<Map<string, FriendRequest>>(new Map([
     id: 'request_2',
     fromUserId: 'user_102',
     toUserId: 'current_user',
-    name: '박지영',
-    username: 'jiyoung_park',
-    avatar: 'https://via.placeholder.com/50/E91E63/FFFFFF?text=박',
+    nickname: '박지영',
+    user_id: 'jiyoung_park',
+    profileImage: 'https://via.placeholder.com/50/E91E63/FFFFFF?text=박',
     status: FriendRequestStatus.PENDING,
     message: '뮤지컬 좋아하시나요? 친구해요!',
     createdAt: new Date('2025-09-17T16:45:00'),
@@ -93,9 +90,9 @@ export const friendRequestsMapAtom = atom<Map<string, FriendRequest>>(new Map([
     id: 'request_3',
     fromUserId: 'user_103',
     toUserId: 'current_user',
-    name: '이준호',
-    username: 'junho_lee',
-    avatar: 'https://via.placeholder.com/50/FF9500/FFFFFF?text=이',
+    nickname: '이준호',
+    user_id: 'junho_lee',
+    profileImage: 'https://via.placeholder.com/50/FF9500/FFFFFF?text=이',
     status: FriendRequestStatus.PENDING,
     message: '콘서트 정보 공유해요!',
     createdAt: new Date('2025-09-16T09:20:00'),
@@ -105,9 +102,9 @@ export const friendRequestsMapAtom = atom<Map<string, FriendRequest>>(new Map([
     id: 'request_4',
     fromUserId: 'user_104',
     toUserId: 'current_user',
-    name: '최수진',
-    username: 'sujin_choi',
-    avatar: 'https://via.placeholder.com/50/9C27B0/FFFFFF?text=최',
+    nickname: '최수진',
+    user_id: 'sujin_choi',
+    profileImage: 'https://via.placeholder.com/50/9C27B0/FFFFFF?text=최',
     status: FriendRequestStatus.PENDING,
     message: '티켓북 앱에서 만나서 반가워요!',
     createdAt: new Date('2025-09-15T11:10:00'),
@@ -117,9 +114,9 @@ export const friendRequestsMapAtom = atom<Map<string, FriendRequest>>(new Map([
     id: 'request_5',
     fromUserId: 'user_105',
     toUserId: 'current_user',
-    name: '정다은',
-    username: 'daeun_jung',
-    avatar: 'https://via.placeholder.com/50/4CAF50/FFFFFF?text=정',
+    nickname: '정다은',
+    user_id: 'daeun_jung',
+    profileImage: 'https://via.placeholder.com/50/4CAF50/FFFFFF?text=정',
     status: FriendRequestStatus.PENDING,
     message: '같은 공연 좋아하는 것 같아요! 친구 신청드려요 😊',
     createdAt: new Date('2025-09-14T20:15:00'),
@@ -149,7 +146,7 @@ export const friendTicketsMapAtom = atom<FriendTicketsMap>(new Map([
         place: '홍대 롤링홀',
         artist: '라쿠나',
         genre: '밴드',
-        userId: 'friend_1',
+        user_id: 'friend_1',
         createdAt: new Date('2025-08-01T10:00:00'),
         updatedAt: new Date('2025-08-01T10:00:00'),
       },
@@ -161,7 +158,7 @@ export const friendTicketsMapAtom = atom<FriendTicketsMap>(new Map([
         place: '블루스퀘어 인터파크홀',
         artist: '뮤지컬 배우들',
         genre: '뮤지컬',
-        userId: 'friend_1',
+        user_id: 'friend_1',
         createdAt: new Date('2025-08-05T10:00:00'),
         updatedAt: new Date('2025-08-05T10:00:00'),
       },
@@ -178,7 +175,7 @@ export const friendTicketsMapAtom = atom<FriendTicketsMap>(new Map([
         place: '예술의전당 오페라극장',
         artist: '친구와 함께',
         genre: '오페라',
-        userId: 'friend_2',
+        user_id: 'friend_2',
         createdAt: new Date('2025-08-10T10:00:00'),
         updatedAt: new Date('2025-08-10T10:00:00'),
       },
@@ -201,7 +198,7 @@ export const friendTicketsMapAtom = atom<FriendTicketsMap>(new Map([
 export const friendsAtom = atom<Friend[]>((get) => {
   const friendsMap = get(friendsMapAtom);
   return Array.from(friendsMap.values()).sort((a, b) => 
-    a.name.localeCompare(b.name, 'ko')
+    a.nickname.localeCompare(b.nickname, 'ko')
   );
 });
 
@@ -298,8 +295,8 @@ export const sendFriendRequestAtom = atom(
         id: IdGenerator.friendRequest(),
         fromUserId: get(userProfileAtom).id,
         toUserId: requestData.toUserId,
-        name: requestData.name || 'Unknown User',
-        username: requestData.username || '@unknown',
+        nickname: requestData.nickname || 'Unknown User',
+        user_id: requestData.user_id || '@unknown',
         status: FriendRequestStatus.PENDING,
         message: requestData.message,
         createdAt: new Date(),
@@ -359,10 +356,9 @@ export const respondToFriendRequestAtom = atom(
         // 새 친구 추가 (FriendRequest의 실제 정보 사용)
         const newFriend: Friend = {
           id: request.fromUserId,
-          name: request.name,
-          username: request.username,
-          avatar: request.avatar,
-          profileImage: request.avatar, // avatar와 profileImage 동기화
+          nickname: request.nickname,
+          user_id: request.user_id,
+          profileImage: request.profileImage, // avatar와 profileImage 동기화
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -375,11 +371,10 @@ export const respondToFriendRequestAtom = atom(
         const currentUser = get(userProfileAtom);
         const newFriendship: Friendship = {
           id: IdGenerator.friend(),
-          userId: currentUser.id,
-          friendId: request.fromUserId,
+          user_id: currentUser.id,
+          friend_id: request.fromUserId,
           createdAt: new Date(),
           isBlocked: false,
-          isMuted: false,
         };
 
         const newFriendshipsMap = new Map(friendshipsMap);
@@ -418,7 +413,7 @@ export const removeFriendAtom = atom(
 
       // 친구 관계에서 제거
       const friendshipToRemove = Array.from(friendshipsMap.values())
-        .find(friendship => friendship.friendId === friendId);
+        .find(friendship => friendship.friend_id === friendId);
       
       if (friendshipToRemove) {
         const newFriendshipsMap = new Map(friendshipsMap);
@@ -481,8 +476,8 @@ export const searchFriendsAtom = atom<(query: string) => Friend[]>((get) => {
     
     const searchLower = query.toLowerCase();
     return friends.filter(friend => 
-      friend.name.toLowerCase().includes(searchLower) ||
-      friend.username.toLowerCase().includes(searchLower)
+      friend.nickname.toLowerCase().includes(searchLower) ||
+      friend.user_id.toLowerCase().includes(searchLower)
     );
   };
 });

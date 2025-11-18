@@ -11,7 +11,7 @@ import { Ticket } from './ticket';
  */
 export interface Friend {
   readonly id: string;
-  userId: string;
+  user_id: string;
   nickname: string;
   profileImage?: string;
   readonly createdAt: Date;
@@ -25,9 +25,9 @@ export interface FriendRequest {
   readonly id: string;
   readonly fromUserId: string;
   readonly toUserId: string;
-  name: string;
-  username: string;
-  avatar?: string;
+  nickname: string;
+  user_id: string;
+  profileImage?: string;
   status: FriendRequestStatus;
   message?: string;
   readonly createdAt: Date;
@@ -39,11 +39,10 @@ export interface FriendRequest {
  */
 export interface Friendship {
   readonly id: string;
-  readonly userId: string;
-  readonly friendId: string;
+  readonly user_id: string;
+  readonly friend_id: string;
   readonly createdAt: Date;
   isBlocked: boolean;
-  isMuted: boolean;
 }
 
 /**
@@ -79,8 +78,8 @@ export interface RemoveFriendParams {
  */
 export interface FriendSearchResult {
   readonly id: string;
-  name: string;
-  username: string;
+  nickname: string;
+  user_id: string;
   profileImage?: string;
   mutualFriendsCount: number;
   isAlreadyFriend: boolean;
@@ -92,8 +91,8 @@ export interface FriendSearchResult {
  */
 export interface CreateFriendRequestData {
   toUserId: string;
-  name: string;
-  username: string;
+  nickname: string;
+  user_id: string;
   message?: string;
 }
 

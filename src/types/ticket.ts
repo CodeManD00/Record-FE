@@ -23,7 +23,7 @@ export interface BaseTicket {
   bookingSite?: string;
   genre: string | null;
   status: TicketStatus;
-  readonly userId: string;
+  readonly user_id: string;
   readonly createdAt: Date;
   updatedAt?: Date;
 }

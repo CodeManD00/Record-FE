@@ -11,12 +11,10 @@ import { Result } from '../../utils/result';
  */
 export interface UserProfile {
   id: string;
-  name: string;
-  username: string;
+  nickname: string;
+  user_id: string;
   email: string;
   profileImage?: string;
-  avatar?: string;
-  bio?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,8 +31,8 @@ export interface LoginData {
  * 회원가입 데이터
  */
 export interface RegisterData {
-  name: string;
-  username: string;
+  nickname: string;
+  user_id: string;
   email: string;
   password: string;
 }
@@ -43,10 +41,9 @@ export interface RegisterData {
  * 프로필 업데이트 데이터
  */
 export interface UpdateProfileData {
-  name?: string;
-  username?: string;
+  nickname?: string;
+  user_id?: string;
   email?: string;
-  bio?: string;
 }
 
 /**
