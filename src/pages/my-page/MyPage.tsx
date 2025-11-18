@@ -49,8 +49,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   // 사용자 프로필 (백엔드에서 가져온 닉네임 사용)
   const actualProfile = profile || {
     id: '',
-    name: '사용자',  // 기본값 (프로필이 없을 때만 표시)
-    username: '',
+    nickname: '사용자',  // 기본값 (프로필이 없을 때만 표시)
     email: '',
     profileImage: undefined,
     avatar: undefined,
@@ -118,7 +117,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* 애니메이션 헤더 - 스크롤에 따라 투명도 변화 */}
       <GNB
-        centerTitle={actualProfile.username}
+        centerTitle={actualProfile.id}
         centerTitleOpacity={centerIdOpacity}
         headerStyle={{
           backgroundColor: headerOpacity.interpolate({
@@ -191,7 +190,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
           </View>
 
           {/* 사용자 아이디 */}
-          <Text style={styles.username}>{actualProfile.name}</Text>
+          <Text style={styles.username}>{actualProfile.nickname}</Text>
 
           {/* 사용자 통계 */}
           <View style={styles.statsRow}>
