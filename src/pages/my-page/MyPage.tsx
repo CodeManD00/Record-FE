@@ -36,12 +36,13 @@ interface MyPageProps {
 
 // 백엔드 사용자 프로필 타입 (SignupRequest 기준)
 interface UserProfile {
-  id: string;          // 로그인 아이디
+  user_id: string;          // 로그인 아이디
   email: string;       // 이메일
   nickname: string;    // 닉네임
   profileImage?: string;
   createdAt: string;
   updatedAt: string;
+  isAccountPrivate: false,
 }
 
 const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
@@ -65,13 +66,13 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
 
   // 사용자 프로필 (없을 때 기본값)
   const actualProfile: UserProfile = profile || {
-    id: '',
+    user_id: '',
     email: '',
     nickname: '사용자',
     profileImage: undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    isAccountPrivate: Boolean,
+    isAccountPrivate: false,
   };
 
   // 로딩 상태
@@ -143,7 +144,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
       {/* 애니메이션 헤더 - 스크롤에 따라 투명도 변화 */}
       <GNB
         // 헤더 중앙에는 닉네임이 보이게, 없으면 아이디
-        centerTitle={actualProfile.nickname || actualProfile.id}
+        centerTitle={actualProfile.nickname}
         centerTitleOpacity={centerIdOpacity}
         headerStyle={{
           backgroundColor: headerOpacity.interpolate({

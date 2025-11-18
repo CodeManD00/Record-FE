@@ -186,12 +186,12 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
                 <View style={styles.userInfo}>
                   <View style={styles.avatar}>
                     <Text style={styles.avatarText}>
-                      {friend.avatar || friend.name.charAt(0)}
+                      {friend.profileImage || friend.nickname.charAt(0)}
                     </Text>
                   </View>
                   <View style={styles.userDetails}>
-                    <Text style={styles.userName}>{friend.name}</Text>
-                    <Text style={styles.userHandle}>{friend.username}</Text>
+                    <Text style={styles.userName}>{friend.nickname}</Text>
+                    <Text style={styles.userHandle}>{friend.user_id}</Text>
                   </View>
                 </View>
               </TouchableOpacity>

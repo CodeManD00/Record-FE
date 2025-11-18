@@ -51,6 +51,7 @@ const SentRequestsPage: React.FC<SentRequestsPageProps> = ({ navigation }) => {
       )
     );
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>

@@ -21,6 +21,7 @@ import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, La
 import ModalHeader from '../../components/ModalHeader';
 import { useUserProfileData } from '../../hooks/useApiData';
 import { useEffect } from 'react';
+import { UserProfile } from '../../types/user';
 
 interface PersonalInfoEditPageProps {
   navigation: any;
@@ -34,19 +35,18 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
   const { data: profile } = useUserProfileData({
     autoFetch: true,
   });
-  
+
   const [userProfile] = useAtom(userProfileAtom);
   const [, updateUserProfile] = useAtom(updateUserProfileAtom);
   
-  // 백엔드에서 가져온 프로필이 있으면 사용, 없으면 atom 값 사용
-  const actualProfile = profile || userProfile;
+  const actualProfile = (profile || userProfile || {}) as UserProfile;
 
   //현재 프로필 이미지의 경로
   const [profileImage, setProfileImage] = useState<string | null>(actualProfile.profileImage || null);
   //사용자 닉네임
   const [nickname, setName] = useState(actualProfile.nickname);
   //사용자 아이디
-  const [id, setUserId] = useState(actualProfile.id);
+  const [user_id, setUserId] = useState(actualProfile.user_id);
   //사용자 이메일
   const [email, setEmail] = useState(actualProfile.email);
   //계정 공개여부
@@ -57,7 +57,7 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
     if (actualProfile) {
       if (actualProfile.profileImage) setProfileImage(actualProfile.profileImage);
       if (actualProfile.nickname) setName(actualProfile.nickname);
-      if (actualProfile.id) setUserId(actualProfile.id);
+      if (actualProfile.user_id) setUserId(actualProfile.user_id);
       if (actualProfile.email) setEmail(actualProfile.email);
       if (actualProfile.isAccountPrivate !== undefined) setIsAccountPrivate(actualProfile.isAccountPrivate);
     }
@@ -120,7 +120,7 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
     const updateResult = updateUserProfile({
       profileImage: profileImage || undefined,
       nickname: nickname.trim(),
-      id,
+      user_id,
       email,
       isAccountPrivate,
     });
@@ -157,7 +157,7 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
     {
       id: 2,
       title: '아이디',
-      value: id,
+      value: user_id,
       onChangeText: setUserId,
       placeholder: '아이디를 입력하세요',
       keyboardType: 'default' as const,

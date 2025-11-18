@@ -10,12 +10,10 @@ import { UserRole, AccountVisibility } from './enums';
  */
 export interface UserProfile {
   readonly id: string;
-  name: string;
-  username: string;
-  userId?: string;
+  user_id: string;
+  nickname: string;
   email: string;
   profileImage?: string;
-  bio?: string;
   isAccountPrivate?: boolean;
   readonly createdAt: Date;
   updatedAt: Date;
@@ -25,7 +23,7 @@ export interface UserProfile {
  * 사용자 계정 설정
  */
 export interface UserSettings {
-  readonly userId: string;
+  readonly user_id: string;
   accountVisibility: AccountVisibility;
   allowFriendRequests: boolean;
   showTicketsToFriends: boolean;
@@ -40,7 +38,7 @@ export interface UserSettings {
  * 사용자 인증 정보 (민감한 정보)
  */
 export interface UserAuth {
-  readonly userId: string;
+  readonly user_id: string;
   readonly role: UserRole;
   lastLoginAt?: Date;
   isEmailVerified: boolean;
@@ -71,5 +69,5 @@ export interface UpdateUserSettingsData extends Partial<Omit<UserSettings, 'user
  */
 export interface CreateUserData extends Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> {
   password: string;
-  settings?: Partial<Omit<UserSettings, 'userId' | 'updatedAt'>>;
+  settings?: Partial<Omit<UserSettings, 'user_id' | 'updatedAt'>>;
 }

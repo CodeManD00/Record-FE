@@ -46,7 +46,7 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
   const handleRejectRequest = (request: FriendRequest) => {
     Alert.alert(
       '친구 요청 거절',
-      `${request.name}님의 친구 요청을 거절하시겠어요?`,
+      `${request.nickname}님의 친구 요청을 거절하시겠어요?`,
       [
         { text: '취소', style: 'cancel' },
         {
@@ -80,7 +80,7 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
   const handleAcceptRequest = (request: FriendRequest) => {
     Alert.alert(
       '친구 요청 수락',
-      `${request.name}님의 친구 요청을 수락하시겠어요?`,
+      `${request.nickname}님의 친구 요청을 수락하시겠어요?`,
       [
         { text: '취소', style: 'cancel' },
         {
@@ -88,7 +88,7 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
           onPress: () => {
             try {
               respondToRequest({ requestId: request.id, accept: true });
-              Alert.alert('성공', `${request.name}님과 친구가 되었습니다! 🎉`);
+              Alert.alert('성공', `${request.nickname}님과 친구가 되었습니다! 🎉`);
             } catch (error) {
               Alert.alert('오류', '친구 요청 수락 중 오류가 발생했습니다.');
             }
@@ -141,12 +141,12 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
                 onPress={() => handleNavigateToFriendProfile(request)}
               >
                 <Image
-                  source={{ uri: request.avatar }}
+                  source={{ uri: request.profileImage }}
                   style={styles.friendAvatar}
                 />
                 <View style={styles.friendDetails}>
-                  <Text style={styles.friendName}>{request.name}</Text>
-                  <Text style={styles.friendUsername}>{request.username}</Text>
+                  <Text style={styles.friendName}>{request.nickname}</Text>
+                  <Text style={styles.friendUsername}>{request.user_id}</Text>
                 </View>
               </TouchableOpacity>
 
@@ -184,12 +184,12 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
                 onPress={() => handleNavigateToFriendProfile(friend)}
               >
                 <Image
-                  source={{ uri: friend.avatar }}
+                  source={{ uri: friend.profileImage }}
                   style={styles.friendAvatar}
                 />
                 <View style={styles.friendDetails}>
-                  <Text style={styles.friendName}>{friend.name}</Text>
-                  <Text style={styles.friendUsername}>{friend.username}</Text>
+                  <Text style={styles.friendName}>{friend.nickname}</Text>
+                  <Text style={styles.friendUsername}>{friend.user_id}</Text>
                 </View>
               </TouchableOpacity>
               <TouchableOpacity
