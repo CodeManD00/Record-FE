@@ -60,7 +60,7 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
   const [formData, setFormData] = useState<CreateTicketData>({
     title: '',
     artist: '',
-    place: '',
+    venue: '',
     seat: '',
     performedAt: getDefaultPerformanceTime(),
     bookingSite: '',
@@ -74,6 +74,17 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
   /** 장르 선택 모달 */
   const [showGenreModal, setShowGenreModal] = useState(false);
 
+  /** performedAt을 Date 객체로 변환하는 헬퍼 함수 */
+  const parsePerformedAt = (value: any): Date => {
+    if (!value) return getDefaultPerformanceTime();
+    if (value instanceof Date) return value;
+    if (typeof value === 'string') {
+      const parsed = new Date(value);
+      return isNaN(parsed.getTime()) ? getDefaultPerformanceTime() : parsed;
+    }
+    return getDefaultPerformanceTime();
+  };
+
   /** OCR 결과 자동 입력 */
   useEffect(() => {
     if (ocrData) {
@@ -81,9 +92,9 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
         ...prev,
         title: ocrData.title ?? prev.title,
         artist: ocrData.artist ?? prev.artist,
-        place: ocrData.place ?? prev.place,
+        venue: (ocrData as any).place ?? ocrData.venue ?? prev.venue,
         seat: ocrData.seat ?? prev.seat,
-        performedAt: ocrData.performedAt ?? prev.performedAt,
+        performedAt: ocrData.performedAt ? parsePerformedAt(ocrData.performedAt) : prev.performedAt,
         bookingSite: ocrData.bookingSite ?? prev.bookingSite,
         genre: ocrData.genre ?? prev.genre,
       }));
@@ -209,8 +220,8 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
             <Text style={styles.label}>공연장</Text>
             <TextInput
               style={styles.input}
-              value={formData.place}
-              onChangeText={value => handleInputChange('place', value)}
+              value={formData.venue}
+              onChangeText={value => handleInputChange('venue', value)}
               placeholder="예: KT&G 상상마당, 무신사개러지"
               placeholderTextColor="#BDC3C7"
             />
@@ -274,23 +285,25 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
             <Text style={styles.label}>공연 일시 *</Text>
             <TouchableOpacity style={styles.dateButton} onPress={showDateTimePicker}>
               <Text style={styles.dateButtonText}>
-                {formData.performedAt.toLocaleDateString('ko-KR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}{' '}
-                {formData.performedAt.toLocaleTimeString('ko-KR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  hour12: true,
-                })}
+                {(() => {
+                  const date = parsePerformedAt(formData.performedAt);
+                  return date.toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  }) + ' ' + date.toLocaleTimeString('ko-KR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  });
+                })()}
               </Text>
             </TouchableOpacity>
 
             {showDatePicker && Platform.OS === 'ios' && (
               <View style={styles.datePickerContainer}>
                 <DateTimePicker
-                  value={formData.performedAt}
+                  value={parsePerformedAt(formData.performedAt)}
                   mode="datetime"
                   display="default"
                   onChange={handleDateChange}

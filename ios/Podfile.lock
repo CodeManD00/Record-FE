@@ -1790,34 +1790,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - react-native-document-picker (9.3.1):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
   - react-native-image-picker (8.2.1):
     - boost
     - DoubleConversion
@@ -2467,16 +2439,6 @@ PODS:
     - React-perflogger (= 0.81.0)
     - React-utils (= 0.81.0)
     - SocketRocket
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-  - RNAudioRecorderPlayer (3.3.0):
-    - React-Core
->>>>>>> Stashed changes
-=======
-  - RNAudioRecorderPlayer (3.3.0):
-    - React-Core
->>>>>>> Stashed changes
   - RNCAsyncStorage (2.2.0):
     - boost
     - DoubleConversion
@@ -2783,7 +2745,6 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - "react-native-blur (from `../node_modules/@react-native-community/blur`)"
-  - react-native-document-picker (from `../node_modules/react-native-document-picker`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
@@ -2818,14 +2779,6 @@ DEPENDENCIES:
   - ReactAppDependencyProvider (from `build/generated/ios`)
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-  - RNAudioRecorderPlayer (from `../node_modules/react-native-audio-recorder-player`)
->>>>>>> Stashed changes
-=======
-  - RNAudioRecorderPlayer (from `../node_modules/react-native-audio-recorder-player`)
->>>>>>> Stashed changes
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - "RNCPicker (from `../node_modules/@react-native-picker/picker`)"
@@ -2931,8 +2884,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-blur:
     :path: "../node_modules/@react-native-community/blur"
-  react-native-document-picker:
-    :path: "../node_modules/react-native-document-picker"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
   react-native-pager-view:
@@ -3001,16 +2952,6 @@ EXTERNAL SOURCES:
     :path: build/generated/ios
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-  RNAudioRecorderPlayer:
-    :path: "../node_modules/react-native-audio-recorder-player"
->>>>>>> Stashed changes
-=======
-  RNAudioRecorderPlayer:
-    :path: "../node_modules/react-native-audio-recorder-player"
->>>>>>> Stashed changes
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNCMaskedView:
@@ -3077,14 +3018,6 @@ SPEC CHECKSUMS:
   React-Mapbuffer: e402e7a0535b2213c50727553621480fe8cd8ade
   React-microtasksnativemodule: a63ce5595016996a9bac1f10c70a7a7fe6506649
   react-native-blur: 6af83e7e3c4c1446a188d9b2c493600fc4beb173
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-  react-native-document-picker: dcf5e57f3bcae61bf8384a1c6f90896f81e17941
->>>>>>> Stashed changes
-=======
-  react-native-document-picker: dcf5e57f3bcae61bf8384a1c6f90896f81e17941
->>>>>>> Stashed changes
   react-native-image-picker: 0314366753615115fa55c3cc937ac44cb7e75702
   react-native-pager-view: a0516effb17ca5120ac2113bfd21b91130ad5748
   react-native-safe-area-context: c6e2edd1c1da07bdce287fa9d9e60c5f7b514616
@@ -3119,25 +3052,10 @@ SPEC CHECKSUMS:
   ReactAppDependencyProvider: c91900fa724baee992f01c05eeb4c9e01a807f78
   ReactCodegen: a55799cae416c387aeaae3aabc1bc0289ac19cee
   ReactCommon: 116d6ee71679243698620d8cd9a9042541e44aa6
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-  RNAudioRecorderPlayer: 9aaf1b3e0056e4c46c90544d2a17ab626b03db02
->>>>>>> Stashed changes
-=======
-  RNAudioRecorderPlayer: 9aaf1b3e0056e4c46c90544d2a17ab626b03db02
->>>>>>> Stashed changes
   RNCAsyncStorage: 29f0230e1a25f36c20b05f65e2eb8958d6526e82
   RNCMaskedView: 5ef8c95cbab95334a32763b72896a7b7d07e6299
   RNCPicker: a7e5555ebf53e17e06c1fde62195cf07b685d26c
   RNDateTimePicker: 113004837aad399a525cd391ac70b7951219ff2f
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-  RNFS: 89de7d7f4c0f6bafa05343c578f61118c8282ed8
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
   RNGestureHandler: 3a73f098d74712952870e948b3d9cf7b6cae9961
   RNGoogleSignin: b8f09e3ec56e09497e1e53b0ff66d5a45916c6b1
   RNScreens: 0bbf16c074ae6bb1058a7bf2d1ae017f4306797c
@@ -3145,14 +3063,6 @@ SPEC CHECKSUMS:
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 00013dd9cde63a2d98e8002fcc4f5ddb66c10782
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-PODFILE CHECKSUM: e4770f7e1d3e6e16481ff277c332e013f972815b
-=======
-PODFILE CHECKSUM: ed75c32f546ad1792e7eb2cb0b8696175fb5297b
->>>>>>> Stashed changes
-=======
-PODFILE CHECKSUM: ed75c32f546ad1792e7eb2cb0b8696175fb5297b
->>>>>>> Stashed changes
+PODFILE CHECKSUM: 1ad9a1bdc1e8a00c15cb1cc7ee3021d3f37f383f
 
 COCOAPODS: 1.16.2

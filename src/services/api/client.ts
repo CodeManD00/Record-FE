@@ -242,6 +242,21 @@ class ApiClient {
     }, options?.timeoutMs);
   }
 
+  async patch<T>(
+    url: string,
+    data?: any,
+    options?: { headers?: Record<string, string>; timeoutMs?: number }
+  ): Promise<Result<T>> {
+    return this.request<T>(url, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options?.headers || {}),
+      },
+    }, options?.timeoutMs);
+  }
+
   async delete<T>(
     url: string,
     data?: any,
@@ -250,7 +265,12 @@ class ApiClient {
     return this.request<T>(url, {
       method: 'DELETE',
       body: data ? JSON.stringify(data) : undefined,
-      headers: data ? { 'Content-Type': 'application/json' } : {},
+      headers: data 
+        ? { 
+            'Content-Type': 'application/json',
+            ...(options?.headers || {}),
+          }
+        : (options?.headers || {}),
     }, options?.timeoutMs);
   }
 

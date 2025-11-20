@@ -42,6 +42,7 @@ class TicketService {
   /**
    * 3) 티켓(=리뷰) 수정
    * PATCH /api/reviews/{reviewId}
+   * Header: X-User-Id
    */
   async updateTicket(
     reviewId: number,
@@ -49,19 +50,24 @@ class TicketService {
     data: ReviewUpdateRequest
   ): Promise<Result<any>> {
 
-    return apiClient.patch(`/api/reviews/${reviewId}?userId=${userId}`, data);
+    return apiClient.patch(`/api/reviews/${reviewId}`, data, {
+      headers: { 'X-User-Id': userId },
+    });
   }
 
   /**
    * 4) 티켓(=리뷰) 삭제
    * DELETE /api/reviews/{reviewId}
+   * Header: X-User-Id
    */
   async deleteTicket(
     reviewId: number,
     userId: string
   ): Promise<Result<any>> {
 
-    return apiClient.delete(`/api/reviews/${reviewId}?userId=${userId}`);
+    return apiClient.delete(`/api/reviews/${reviewId}`, undefined, {
+      headers: { 'X-User-Id': userId },
+    });
   }
 
   /**

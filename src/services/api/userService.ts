@@ -84,10 +84,9 @@ class UserService {
   }
 
   async deleteAccount(password: string): Promise<Result<void>> {
-    // DELETE body 전달이 가능해야지만 정상 작동함
+    // DELETE body 전달: DeleteAccountRequest { password: string }
     const result = await apiClient.delete<void>(
       '/users/me',
-      undefined,
       { password }
     );
 
