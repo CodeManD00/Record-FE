@@ -17,8 +17,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../styles/designSystem';
-import { voiceManager } from '../../utils/voiceUtils';
-import { audioRecorder } from '../../utils/audioRecorder';
+import { launchImageLibrary, ImagePickerResponse, Asset } from 'react-native-image-picker';
 import { sttService } from '../../services/api/sttService';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/reviewTypes';
@@ -34,15 +33,11 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
 
   const [reviewText, setReviewText] = useState('');
   const [isPublic, setIsPublic] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryText, setSummaryText] = useState('');
   const [isProcessingSTT, setIsProcessingSTT] = useState(false);
-  const [questions, setQuestions] = useState<string[]>([
-    '이 공연을 보게 된 계기는?',
-    '가장 인상 깊었던 순간은?',
-    '다시 본다면 어떤 점이 기대되나요?',
-  ]);
+  const [transcriptionId, setTranscriptionId] = useState<number | undefined>(undefined);
+  const [questions, setQuestions] = useState<string[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCardVisible, setIsCardVisible] = useState(true);
@@ -92,21 +87,40 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         console.log('API 응답 전체:', JSON.stringify(result, null, 2));
         console.log('응답 success:', result.success);
         console.log('응답 data:', result.data);
-        console.log('응답 data 길이:', result.data?.length);
+        console.log('응답 data 타입:', typeof result.data);
+        console.log('응답 data가 배열인가?', Array.isArray(result.data));
         
-        if (result.success && result.data && result.data.length > 0) {
-          console.log('✅ 질문 가져오기 성공! 가져온 질문:', result.data);
-          setQuestions(result.data);
+        if (result.success && result.data) {
+          // result.data가 배열인지 확인
+          const questionsArray = Array.isArray(result.data) 
+            ? result.data 
+            : (result.data as any)?.data || [];
+          
+          if (questionsArray.length > 0) {
+            console.log('✅ 질문 가져오기 성공! 가져온 질문:', questionsArray);
+            setQuestions(questionsArray);
+          } else {
+            console.warn('⚠️ 질문 배열이 비어있음');
+            // 기본 질문 사용
+            setQuestions([
+              '이 공연을 보게 된 계기는?',
+              '가장 인상 깊었던 순간은?',
+              '다시 본다면 어떤 점이 기대되나요?',
+            ]);
+          }
         } else {
-          // API 호출 실패 또는 빈 리스트 시 기본 질문 사용
-          console.warn('⚠️ 질문 가져오기 실패 또는 빈 리스트');
+          // API 호출 실패 시 기본 질문 사용
+          console.warn('⚠️ 질문 가져오기 실패');
           console.warn('응답 상세:', {
             success: result.success,
             data: result.data,
-            dataLength: result.data?.length,
             error: result.error,
           });
-          console.warn('기본 질문 사용');
+          setQuestions([
+            '이 공연을 보게 된 계기는?',
+            '가장 인상 깊었던 순간은?',
+            '다시 본다면 어떤 점이 기대되나요?',
+          ]);
         }
       } catch (error) {
         console.error('❌ 질문 가져오기 오류:', error);
@@ -199,83 +213,73 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     }),
   ).current;
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const setupVoice = async () => {
-      const available = await voiceManager.isVoiceAvailable();
-      if (!available || !isMounted) return;
-
-      await voiceManager.setListeners({
-        onSpeechResults: (event: any) => {
-          const text = event?.value?.[0];
-          if (text) setReviewText(prev => `${prev} ${text}`);
-        },
-        onSpeechEnd: () => setIsRecording(false),
-        onSpeechError: () => setIsRecording(false),
-      });
+  /** ===============================
+   *          오디오 파일 선택 + STT 처리
+   *  =============================== */
+  const handleAudioFilePick = () => {
+    const options = {
+      mediaType: 'mixed' as const, // 이미지, 비디오, 오디오 모두 선택 가능
+      includeBase64: false,
+      quality: 1.0,
+      includeExtra: true,
+      selectionLimit: 1,
     };
 
-    setupVoice();
-
-    return () => {
-      isMounted = false;
-      voiceManager.destroy();
-    };
-  }, []);
-
-  const toggleRecording = async () => {
-    if (isRecording) {
-      try {
-        // 녹음 중지
-        setIsRecording(false);
-        const audioFile = await audioRecorder.stopRecording();
-        
-        if (!audioFile || !audioFile.uri) {
-          Alert.alert('오류', '녹음 파일을 찾을 수 없습니다.');
-          return;
-        }
-
-        // STT 처리 시작
-        setIsProcessingSTT(true);
-        Alert.alert('처리중', 'STT 변환 중입니다...');
-        
-        const result = await sttService.transcribeAudio(audioFile.uri, audioFile.name);
-        
-        setIsProcessingSTT(false);
-        
-        if (result.success && result.data) {
-          // 변환된 텍스트를 후기에 추가
-          const newText = result.data.transcript;
-          setReviewText(prev => {
-            if (!prev) return newText;
-            return `${prev}\n${newText}`;
-          });
-          Alert.alert('완료', 'STT 변환이 완료되었습니다.');
-        } else {
-          Alert.alert('오류', result.error?.message || 'STT 변환에 실패했습니다.');
-        }
-      } catch (error: any) {
-        console.error('STT Error:', error);
-        setIsProcessingSTT(false);
-        setIsRecording(false);
-        Alert.alert('오류', 'STT 변환 중 오류가 발생했습니다.');
+    launchImageLibrary(options, async (response: ImagePickerResponse) => {
+      if (response.didCancel || response.errorMessage) {
+        return;
       }
-    } else {
+
+      const asset: Asset | undefined = response.assets?.[0];
+      if (!asset?.uri) {
+        return;
+      }
+
+      // 오디오 파일인지 확인 (파일 확장자 또는 타입으로)
+      const uri = asset.uri.toLowerCase();
+      const isAudioFile = 
+        uri.endsWith('.m4a') || 
+        uri.endsWith('.mp3') || 
+        uri.endsWith('.wav') || 
+        uri.endsWith('.aac') ||
+        uri.endsWith('.flac') ||
+        uri.endsWith('.mpeg') ||
+        uri.endsWith('.ogg') ||
+        asset.type?.startsWith('audio/');
+
+      if (!isAudioFile) {
+        Alert.alert('알림', '오디오 파일만 선택할 수 있습니다.\n\n(.m4a, .mp3, .wav, .aac, .flac 형식의 파일을 선택해주세요.)');
+        return;
+      }
+
       try {
-        // 녹음 시작
-        const started = await audioRecorder.startRecording();
-        if (started) {
-          setIsRecording(true);
-          setIsVoiceMode(true);
+        setIsProcessingSTT(true);
+
+        // 파일 이름과 타입 추출
+        const fileName = asset.fileName || asset.uri.split('/').pop() || 'audio.m4a';
+        const fileType = asset.type || 'audio/m4a';
+
+        const sttResult = await sttService.transcribeAndSave(asset.uri, fileName, fileType);
+
+        if (sttResult.success && sttResult.data) {
+          const transcript = sttResult.data.transcript;
+          const updatedText = reviewText ? `${reviewText}\n${transcript}` : transcript;
+          setReviewText(updatedText);
+
+          const newTranscriptionId = sttResult.data.id ?? transcriptionId;
+          if (newTranscriptionId) setTranscriptionId(newTranscriptionId);
+
+          Alert.alert('완료', '오디오 파일을 텍스트로 변환했어요.');
         } else {
-          Alert.alert('오류', '녹음을 시작할 수 없습니다.');
+          Alert.alert('오류', sttResult.error?.message || 'STT 변환 실패');
         }
       } catch (error) {
-        console.error('Recording start error:', error);
-        Alert.alert('오류', '녹음을 시작할 수 없습니다.');
+        console.error('오디오 파일 처리 오류:', error);
+        Alert.alert('오류', '오디오 파일 처리 중 문제가 발생했습니다.');
+      } finally {
+        setIsProcessingSTT(false);
       }
-    }
+    });
   };
 
   const handleSubmit = () => {
@@ -294,9 +298,11 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     try {
       Alert.alert('처리중', '후기를 요약하는 중입니다...');
       
-      const result = await sttService.summarizeText(reviewText);
+      const result = await sttService.summarizeReview(reviewText);
       
       if (result.success && result.data) {
+        const summary = result.data.summary || result.data.finalReview || result.data.transcript || reviewText;
+        setSummaryText(summary);
         setShowSummaryModal(true);
       } else {
         Alert.alert('오류', result.error?.message || '요약 생성에 실패했습니다.');
@@ -351,7 +357,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
       </View>
 
       {/* 질문 카드 스와이프 */}
-      {isCardVisible && (
+      {isCardVisible && !isLoadingQuestions && questions.length > 0 && (
         <Animated.View
           style={[
             styles.questionSection,
@@ -471,18 +477,17 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* 녹음 버튼 */}
+        {/* 오디오 파일 업로드 버튼 */}
         <TouchableOpacity
           style={[
-            styles.recordButton,
-            isRecording && styles.recordButtonActive,
-            isProcessingSTT && styles.recordButtonProcessing,
+            styles.audioUploadButton,
+            isProcessingSTT && styles.audioUploadButtonProcessing,
           ]}
-          onPress={toggleRecording}
+          onPress={handleAudioFilePick}
           disabled={isProcessingSTT}
         >
-          <Text style={styles.recordButtonIcon}>
-            {isProcessingSTT ? '⏳' : isRecording ? '⏹' : '🎤'}
+          <Text style={styles.audioUploadButtonIcon}>
+            {isProcessingSTT ? '⏳' : '🎵'}
           </Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
@@ -491,7 +496,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
       <ReviewSummaryModal
         visible={showSummaryModal}
         onClose={() => setShowSummaryModal(false)}
-        summaryText={reviewText || "이곳에 요약된 결과가 나옵니다."}
+        summaryText={summaryText || "이곳에 요약된 결과가 나옵니다."}
       />
     </SafeAreaView>
   );
@@ -635,8 +640,8 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 
-  // 녹음 버튼
-  recordButton: {
+  // 오디오 파일 업로드 버튼
+  audioUploadButton: {
     position: 'absolute',
     bottom: 40,
     right: 24,
@@ -648,14 +653,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Shadows.medium,
   },
-  recordButtonActive: {
-    backgroundColor: '#FF4444',
-  },
-  recordButtonProcessing: {
+  audioUploadButtonProcessing: {
     backgroundColor: '#FFA500',
     opacity: 0.7,
   },
-  recordButtonIcon: {
+  audioUploadButtonIcon: {
     fontSize: 24,
   },
 });

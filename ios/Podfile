@@ -35,6 +35,12 @@ target 'TicketBookApp' do
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+        
+        # glog 헤더 검색 경로 문제 해결
+        if target.name == 'glog'
+          config.build_settings['HEADER_SEARCH_PATHS'] ||= ['$(inherited)']
+          config.build_settings['HEADER_SEARCH_PATHS'] << '$(PODS_ROOT)/glog/src'
+        end
       end
     end
 

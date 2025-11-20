@@ -93,6 +93,29 @@ class ApiClient {
   }
 
   /**
+   * ⭐ 저장된 토큰 가져오기 (외부에서 사용)
+   */
+  async getStoredToken(): Promise<string | null> {
+    // 이미 메모리에 토큰이 있으면 반환
+    if (this.authToken) {
+      return this.authToken;
+    }
+
+    // AsyncStorage에서 토큰 불러오기
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      if (token) {
+        this.authToken = token;
+        if (__DEV__) console.log('🔑 Token loaded from storage');
+      }
+      return token;
+    } catch (e) {
+      console.warn('Failed to load auth token', e);
+      return null;
+    }
+  }
+
+  /**
    * ⭐ 기본 헤더 (Content-Type 강제 제거)
    */
   private getHeaders(customHeaders?: Record<string, string>): Record<string, string> {

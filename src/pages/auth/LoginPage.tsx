@@ -39,7 +39,7 @@ const LoginPage = () => {
 
     setIsLoading(true);
     try {
-      const result = await authService.signInWithId(id, password);
+      const result = await authService.signIn(id, password);
       
       if (result.success) {
         // 로그인 성공 후 사용자 프로필 정보 가져오기
@@ -63,9 +63,11 @@ const LoginPage = () => {
         );
       }
     } catch (error) {
+      console.error('로그인 오류:', error);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
       Alert.alert(
         '로그인 실패',
-        '예상치 못한 오류가 발생했습니다.',
+        `예상치 못한 오류가 발생했습니다.\n\n${errorMessage}`,
         [{ text: '확인' }]
       );
     } finally {

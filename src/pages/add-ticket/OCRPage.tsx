@@ -93,7 +93,15 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
     try {
       console.log('이미지 URI: ', imageUri);
       console.log('OCR 시작:', imageUri);
-      const result = await ocrService.extractTicketInfo(imageUri);
+      
+      // Asset 객체 생성
+      const asset: any = {
+        uri: imageUri,
+        type: 'image/jpeg',
+        fileName: imageUri.split('/').pop() || 'ticket.jpg',
+      };
+      
+      const result = await ocrService.extractTicket(asset);
 
       console.log('🔍 OCR 서비스 응답:', result);
 
@@ -106,11 +114,11 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
 
       const formatted: CreateTicketData = {
         title: ocrData.title ?? '',
-        artist: '', // OCR에서는 아티스트 정보를 추출하지 않음
-        place: ocrData.place ?? '',
-        seat: ocrData.seat ?? '', // OCR에서 추출한 좌석 정보
-        performedAt: ocrData.performedAt
-          ? new Date(ocrData.performedAt)
+        artist: ocrData.artist ?? '', // OCR에서 아티스트 정보 추출
+        place: ocrData.venue ?? ocrData.place ?? '',
+        seat: ocrData.seat ?? '',
+        performedAt: ocrData.date
+          ? new Date(ocrData.date + (ocrData.time ? `T${ocrData.time}` : ''))
           : new Date(),
         genre: null,
         status: TicketStatus.PUBLIC,

@@ -46,7 +46,7 @@ class SttService {
 
   /**
    * 2) STT 텍스트 기반 요약
-   * POST /reviews/summarize
+   * POST /review/summarize
    *
    * request body: ReviewRequest {
    *   transcriptionId?: number;
@@ -62,7 +62,7 @@ class SttService {
 
     // OpenAI API 호출은 시간이 오래 걸릴 수 있으므로 타임아웃을 60초로 설정
     return apiClient.post(
-      '/reviews/summarize',
+      '/review/summarize',
       {
         text,
         transcriptionId,
@@ -73,7 +73,7 @@ class SttService {
 
   /**
    * 3) 후기 조직화 (Organize)
-   * POST /reviews/organize
+   * POST /review/organize
    *
    * request: ReviewRequest 같은 구조
    */
@@ -84,7 +84,7 @@ class SttService {
 
     // OpenAI API 호출은 시간이 오래 걸릴 수 있으므로 타임아웃을 60초로 설정
     return apiClient.post(
-      '/reviews/organize',
+      '/review/organize',
       {
         text,
         transcriptionId,
