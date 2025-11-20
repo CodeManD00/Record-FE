@@ -32,6 +32,9 @@ export {
   ticketsWithReviewsAtom,
   ticketsWithImagesAtom,
   createTicketsByStatusAtom,
+  
+  // AI 이미지 생성 관련
+  basePromptAtom,
 } from './ticketAtoms';
 
 // 사용자 관련 atoms

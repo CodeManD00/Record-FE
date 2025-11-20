@@ -188,7 +188,7 @@ export const fetchMyProfileAtom = atom(
     set(userProfileStateAtom, apiStateHelpers.setLoading(currentState));
 
     try {
-      const result = await userService.getMyProfile();
+      const result = await userService.fetchMyProfile();
       
       if (result.success && result.data) {
         set(userProfileStateAtom, apiStateHelpers.setSuccess(currentState, result.data));

@@ -32,6 +32,12 @@ import { currentUserIdAtom } from './userAtoms';
  */
 export const ticketsMapAtom = atom<Map<string, Ticket>>(new Map());
 
+/**
+ * AI 이미지 생성을 위한 basePrompt (5줄 영어 요약)
+ * 로그아웃 또는 티켓 생성 완료 전까지 유지
+ */
+export const basePromptAtom = atom<string | null>(null);
+
 
 // ============= 파생 Atoms (읽기 전용) =============
 

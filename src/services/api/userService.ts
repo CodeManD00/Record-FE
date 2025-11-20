@@ -1,242 +1,112 @@
 /**
- * 사용자 관련 API 서비스
- * 프로필, 인증, 설정 등의 API 호출 함수들
+ * User Service – FIXED VERSION
  */
-
+import { Result, ResultFactory, ErrorFactory } from '../../utils/result';
 import { apiClient } from './client';
-import { Result } from '../../utils/result';
+import { userProfileAtom } from '../../atoms/userAtoms';
+import { getDefaultStore } from 'jotai';
 
-/**
- * 사용자 프로필 타입
- */
+const store = getDefaultStore();
+
 export interface UserProfile {
   id: string;
   nickname: string;
-  user_id: string;
   email: string;
   profileImage?: string;
-  createdAt: string;
-  updatedAt: string;
+  isAccountPrivate: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
-/**
- * 로그인 데이터
- */
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-/**
- * 회원가입 데이터
- */
-export interface RegisterData {
-  nickname: string;
-  user_id: string;
-  email: string;
-  password: string;
-}
-
-/**
- * 프로필 업데이트 데이터
- */
-export interface UpdateProfileData {
-  nickname?: string;
-  user_id?: string;
-  email?: string;
-}
-
-/**
- * 비밀번호 변경 데이터
- */
-export interface ChangePasswordData {
-  currentPassword: string;
-  newPassword: string;
-}
-
-/**
- * 인증 응답
- */
-export interface AuthResponse {
-  user: UserProfile;
-  token: string;
-  refreshToken: string;
-}
-
-/**
- * 사용자 서비스 클래스
- */
 class UserService {
-  /**
-   * 로그인
-   */
-  async login(data: LoginData): Promise<Result<AuthResponse>> {
-    return apiClient.post<AuthResponse>('/auth/login', data);
+  private profile: UserProfile | null = null;
+
+  async fetchMyProfile(): Promise<Result<UserProfile>> {
+    try {
+      const result = await apiClient.get<UserProfile>('/users/me');
+
+      if (result.success && result.data) {
+        this.profile = result.data;
+        store.set(userProfileAtom, result.data);
+      }
+      return result;
+    } catch {
+      return ResultFactory.failure(
+        ErrorFactory.unknown('프로필 정보를 불러올 수 없습니다.')
+      );
+    }
   }
 
-  /**
-   * 회원가입
-   */
-  async register(data: RegisterData): Promise<Result<AuthResponse>> {
-    return apiClient.post<AuthResponse>('/auth/register', data);
-  }
+  async updateProfileImage(file: {
+    uri: string;
+    type: string;
+    name: string;
+  }): Promise<Result<UserProfile>> {
 
-  /**
-   * 로그아웃
-   */
-  async logout(): Promise<Result<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>('/auth/logout');
-  }
-
-  /**
-   * 토큰 갱신
-   */
-  async refreshToken(refreshToken: string): Promise<Result<{ token: string; refreshToken: string }>> {
-    return apiClient.post<{ token: string; refreshToken: string }>('/auth/refresh', {
-      refreshToken,
-    });
-  }
-
-  /**
-   * 내 프로필 조회
-   */
-  async getMyProfile(): Promise<Result<UserProfile>> {
-    return apiClient.get<UserProfile>('/auth/me');
-  }
-
-  /**
-   * 프로필 업데이트
-   */
-  async updateProfile(data: UpdateProfileData): Promise<Result<UserProfile>> {
-    return apiClient.put<UserProfile>('/users/me', data);
-  }
-
-  /**
-   * 비밀번호 변경
-   */
-  async changePassword(data: ChangePasswordData): Promise<Result<{ success: boolean }>> {
-    return apiClient.put<{ success: boolean }>('/users/me/password', data);
-  }
-
-  /**
-   * 프로필 이미지 업로드
-   */
-  async uploadProfileImage(imageUri: string, fileName?: string): Promise<Result<{ imageUrl: string }>> {
     const formData = new FormData();
-    
-    // React Native에서 이미지 업로드
-    formData.append('image', {
-      uri: imageUri,
-      type: 'image/jpeg', // 또는 동적으로 결정
-      name: fileName || 'profile.jpg',
-    } as any);
+    formData.append('file', file as any);
 
-    return apiClient.post<{ imageUrl: string }>('/users/me/profile-image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const result = await apiClient.putForm<UserProfile>(
+      '/users/me/profile-image',
+      formData
+    );
+
+    if (result.success) {
+      // 이미지 업로드 후 전체 프로필 다시 fetch (가장 안정적)
+      await this.fetchMyProfile();
+      
+      // 업로드 성공 시 최신 프로필 반환
+      if (result.data) {
+        return ResultFactory.success(result.data);
+      }
+    }
+
+    return result;
   }
 
-  /**
-   * 사용자 검색
-   */
-  async searchUsers(query: string, params?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<Result<{
-    users: UserProfile[];
-    total: number;
-    hasMore: boolean;
-  }>> {
-    const queryParams = new URLSearchParams({ search: query });
-    
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.offset) queryParams.append('offset', params.offset.toString());
+  async updateProfile(
+    profileData: Partial<UserProfile>
+  ): Promise<Result<UserProfile>> {
+    try {
+      const result = await apiClient.put<UserProfile>('/users/me', profileData);
 
-    return apiClient.get(`/users/search?${queryParams.toString()}`);
+      if (result.success && result.data) {
+        this.profile = result.data;
+        store.set(userProfileAtom, result.data);
+      }
+
+      return result;
+    } catch {
+      return ResultFactory.failure(
+        ErrorFactory.unknown('프로필 수정 중 오류가 발생했습니다.')
+      );
+    }
   }
 
-  /**
-   * 사용자 프로필 조회 (다른 사용자)
-   */
-  async getUserProfile(userId: string): Promise<Result<UserProfile>> {
-    return apiClient.get<UserProfile>(`/users/${userId}`);
+  async deleteAccount(password: string): Promise<Result<void>> {
+    // DELETE body 전달이 가능해야지만 정상 작동함
+    const result = await apiClient.delete<void>(
+      '/users/me',
+      undefined,
+      { password }
+    );
+
+    if (result.success) {
+      this.clearProfile();
+    }
+
+    return result;
   }
 
-  /**
-   * 계정 삭제
-   */
-  async deleteAccount(password: string): Promise<Result<{ success: boolean }>> {
-    return apiClient.delete<{ success: boolean }>('/users/me', { password });
+  clearProfile() {
+    this.profile = null;
+    store.set(userProfileAtom, null);
   }
 
-  /**
-   * 이메일 인증 요청
-   */
-  async requestEmailVerification(): Promise<Result<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>('/auth/verify-email/request');
-  }
-
-  /**
-   * 이메일 인증 확인
-   */
-  async verifyEmail(token: string): Promise<Result<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>('/auth/verify-email/confirm', { token });
-  }
-
-  /**
-   * 비밀번호 재설정 요청
-   */
-  async requestPasswordReset(email: string): Promise<Result<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>('/auth/password-reset/request', { email });
-  }
-
-  /**
-   * 비밀번호 재설정 확인
-   */
-  async resetPassword(token: string, newPassword: string): Promise<Result<{ success: boolean }>> {
-    return apiClient.post<{ success: boolean }>('/auth/password-reset/confirm', {
-      token,
-      newPassword,
-    });
-  }
-
-  /**
-   * 사용자 설정 조회
-   */
-  async getUserSettings(): Promise<Result<{
-    notifications: {
-      friendRequests: boolean;
-      newTickets: boolean;
-      reminders: boolean;
-    };
-    privacy: {
-      profileVisibility: 'public' | 'friends' | 'private';
-      ticketVisibility: 'public' | 'friends' | 'private';
-    };
-  }>> {
-    return apiClient.get('/users/me/settings');
-  }
-
-  /**
-   * 사용자 설정 업데이트
-   */
-  async updateUserSettings(settings: {
-    notifications?: {
-      friendRequests?: boolean;
-      newTickets?: boolean;
-      reminders?: boolean;
-    };
-    privacy?: {
-      profileVisibility?: 'public' | 'friends' | 'private';
-      ticketVisibility?: 'public' | 'friends' | 'private';
-    };
-  }): Promise<Result<{ success: boolean }>> {
-    return apiClient.put<{ success: boolean }>('/users/me/settings', settings);
+  getProfile(): UserProfile | null {
+    return this.profile;
   }
 }
 
-// 싱글톤 인스턴스 생성
 export const userService = new UserService();
 export default userService;

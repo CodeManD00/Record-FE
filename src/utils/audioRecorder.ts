@@ -1,23 +1,18 @@
 /**
  * 오디오 녹음 유틸리티
- * react-native-nitro-sound 사용 (react-native-audio-recorder-player의 후속 라이브러리)
+ * react-native-audio-recorder-player 사용
  */
 
 import { Platform, PermissionsAndroid } from 'react-native';
-
-// 타입 정의
-interface AudioRecorderPlayer {
-  startRecorder: (path?: string) => Promise<string>;
-  stopRecorder: () => Promise<string>;
-  addRecordBackListener: (callback: (data: any) => void) => void;
-  removeRecordBackListener: () => void;
-}
+import AudioRecorderPlayer, {
+  AudioSet,
+  PlayBackType,
+} from 'react-native-audio-recorder-player';
 
 /**
  * 오디오 녹음 매니저
  */
 class AudioRecorderManager {
-  private audioRecorderPlayer: AudioRecorderPlayer | null = null;
   private isRecording: boolean = false;
   private recordingPath: string | null = null;
 
@@ -54,16 +49,8 @@ class AudioRecorderManager {
 
   /**
    * 녹음 시작
-   * 
-   * ⚠️ 일시적으로 비활성화됨: react-native-nitro-sound 빌드 문제로 인해 임시로 비활성화되었습니다.
-   * iOS 빌드 문제가 해결되면 다시 활성화할 예정입니다.
    */
   async startRecording(): Promise<boolean> {
-    // 일시적으로 비활성화: iOS 빌드 문제로 인해 오디오 녹음 기능을 임시로 비활성화합니다.
-    console.warn('오디오 녹음 기능이 일시적으로 비활성화되었습니다.');
-    throw new Error('오디오 녹음 기능이 일시적으로 비활성화되었습니다.');
-    
-    /* 원래 코드 (주석 처리)
     try {
       // 권한 확인
       const hasPermission = await this.requestPermissions();
@@ -71,26 +58,24 @@ class AudioRecorderManager {
         throw new Error('녹음 권한이 필요합니다');
       }
 
-      // 라이브러리 동적 로드
-      // react-native-nitro-sound가 설치되지 않았거나 로드할 수 없는 경우를 대비한 오류 처리
-      if (!this.audioRecorderPlayer) {
-        try {
-          const AudioRecorderPlayerModule = require('react-native-nitro-sound');
-          this.audioRecorderPlayer = new AudioRecorderPlayerModule.default();
-        } catch (error) {
-          console.error('react-native-nitro-sound 모듈을 로드할 수 없습니다:', error);
-          throw new Error('오디오 녹음 기능을 사용할 수 없습니다. 패키지 설치를 확인해주세요.');
-        }
-      }
+      // 녹음 설정
+      const audioSet: AudioSet = {
+        AudioEncoderAndroid: Platform.OS === 'android' ? 3 : undefined, // AAC
+        AudioSourceAndroid: Platform.OS === 'android' ? 1 : undefined, // MIC
+        AVModeIOSOption: Platform.OS === 'ios' ? 'measurement' : undefined,
+        AVEncoderAudioQualityKeyIOS: Platform.OS === 'ios' ? 'high' : undefined,
+        AVNumberOfChannelsKeyIOS: Platform.OS === 'ios' ? 2 : undefined,
+        AVFormatIDKeyIOS: Platform.OS === 'ios' ? 'aac' : undefined,
+      };
 
       // 녹음 경로 설정
       const path = Platform.select({
-        ios: 'recording.m4a',
-        android: 'sdcard/recording.mp4', // Android는 mp4 확장자 사용
+        ios: undefined, // iOS는 자동으로 경로 생성
+        android: 'sdcard/recording.m4a',
       });
 
-      // 녹음 시작
-      const uri = await this.audioRecorderPlayer!.startRecorder(path);
+      // 녹음 시작 (AudioRecorderPlayer는 이미 인스턴스화된 객체)
+      const uri = await AudioRecorderPlayer.startRecorder(path, audioSet);
       this.recordingPath = uri;
       this.isRecording = true;
 
@@ -100,37 +85,28 @@ class AudioRecorderManager {
       console.error('녹음 시작 실패:', error);
       throw error;
     }
-    */
   }
 
   /**
    * 녹음 중지 및 파일 경로 반환
-   * 
-   * ⚠️ 일시적으로 비활성화됨: react-native-nitro-sound 빌드 문제로 인해 임시로 비활성화되었습니다.
    */
   async stopRecording(): Promise<{ uri: string; name: string } | null> {
-    // 일시적으로 비활성화: iOS 빌드 문제로 인해 오디오 녹음 기능을 임시로 비활성화합니다.
-    console.warn('오디오 녹음 기능이 일시적으로 비활성화되었습니다.');
-    this.isRecording = false;
-    return null;
-    
-    /* 원래 코드 (주석 처리)
     try {
-      if (!this.audioRecorderPlayer || !this.isRecording) {
+      if (!this.isRecording) {
         console.warn('녹음 중이 아닙니다');
         return null;
       }
 
-      const result = await this.audioRecorderPlayer.stopRecorder();
-      this.audioRecorderPlayer.removeRecordBackListener();
+      const result = await AudioRecorderPlayer.stopRecorder();
+      AudioRecorderPlayer.removeRecordBackListener();
       this.isRecording = false;
 
       console.log('녹음 중지:', result);
 
-      if (result && this.recordingPath) {
+      if (result) {
         const fileName = Platform.select({
           ios: 'recording.m4a',
-          android: 'recording.mp4',
+          android: 'recording.m4a',
         }) || 'recording.m4a';
 
         return {
@@ -145,7 +121,6 @@ class AudioRecorderManager {
       this.isRecording = false;
       return null;
     }
-    */
   }
 
   /**
@@ -158,18 +133,19 @@ class AudioRecorderManager {
   /**
    * 녹음 진행 상황 리스너 추가
    */
-  addRecordingListener(callback: (data: any) => void): void {
-    if (this.audioRecorderPlayer) {
-      this.audioRecorderPlayer.addRecordBackListener(callback);
-    }
+  addRecordingListener(callback: (data: PlayBackType) => void): void {
+    AudioRecorderPlayer.addRecordBackListener(callback);
   }
 
   /**
    * 정리
    */
   cleanup(): void {
-    if (this.audioRecorderPlayer) {
-      this.audioRecorderPlayer.removeRecordBackListener();
+    AudioRecorderPlayer.removeRecordBackListener();
+    try {
+      AudioRecorderPlayer.stopRecorder();
+    } catch (e) {
+      // 이미 중지된 경우 무시
     }
     this.isRecording = false;
     this.recordingPath = null;
