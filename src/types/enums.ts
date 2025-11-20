@@ -6,14 +6,12 @@
 // 티켓 공개 범위 열거형 (API/DB 저장용)
 export enum TicketStatus {
   PUBLIC = 'public',
-  FRIENDS = 'friends',
   PRIVATE = 'private',
 }
 
 // 티켓 공개 범위 UI 표시용 레이블
 export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   [TicketStatus.PUBLIC]: '전체 공개',
-  [TicketStatus.FRIENDS]: '친구 공개',
   [TicketStatus.PRIVATE]: '나만 보기',
 };
 
