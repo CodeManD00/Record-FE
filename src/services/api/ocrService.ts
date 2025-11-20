@@ -1,242 +1,117 @@
 /**
- * OCR API 서비스
+ * OCR API 서비스 — iOS/Android 완전 대응 버전
  */
 
-import { ApiResponse } from './client';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Asset } from 'react-native-image-picker';
+import { API_BASE_URL } from './client';
+import { ErrorFactory, Result, ResultFactory } from '../../utils/result';
 
-const API_BASE_URL = 'http://127.0.0.1:8080'; // 로컬 개발용 (iOS 시뮬레이터 호환)
-const USE_MOCK_DATA = false; // 서버 없이 테스트할 때 true로 설정
+export type OCRResult = Record<string, string>;
 
-/**
- * OCR 결과 타입 정의
- * 백엔드에서 반환하는 주요 공연 정보 필드
- */
-export interface OCRResult {
-  title: string;
-  place: string;
-  seat?: string; // 좌석 정보 (예: C열 8번)
-  performedAt?: string; // ISO 8601 형식 (YYYY-MM-DDTHH:mm:ss)
-  rawText?: string; // 원본 OCR 텍스트 (디버깅용)
-  confidence?: number; // OCR 정확도 (0.0 ~ 1.0)
-}
-
-/**
- * OCR 요청 타입 정의
- */
-export interface OCRRequest {
-  imageUri: string;
-  apiKey?: string;
-}
-
-/**
- * OCR 서비스 객체
- * - 백엔드 OCR API를 호출하는 비동기 함수 포함
- */
-export const ocrService = {
-  /**
-   * 티켓 이미지에서 공연 정보를 추출
-   * @param imageUri - React Native의 이미지 URI
-   * @returns ApiResponse<OCRResult> - 공연 정보 또는 에러 응답
-   */
-  async extractTicketInfo(imageUri: string): Promise<ApiResponse<OCRResult>> {
-    console.log('extractTicketInfo - 이미지URI:', imageUri);
-    
-    // 목 데이터 모드: 서버 없이 테스트용
-    if (USE_MOCK_DATA) {
-      console.log('🧪 목 데이터 모드로 OCR 실행');
-      await new Promise<void>(resolve => setTimeout(() => resolve(), 1500)); // 로딩 시뮬레이션
-      
-      return {
-        success: true,
-        data: {
-          title: '2024 밴드 페스티벌',
-          place: '올림픽공원 88잔디마당',
-          performedAt: '2024-10-25T19:00:00',
-        },
-      };
+class OcrService {
+  /** 파일 업로드용 FormData 생성 */
+  private buildFormData(asset: Asset): FormData {
+    if (!asset.uri) {
+      throw new Error('이미지를 불러올 수 없습니다.');
     }
-    
-    // 실제 서버 호출
+
+    const formData = new FormData();
+    formData.append('file', {
+      uri: asset.uri,
+      name: asset.fileName || 'ticket.jpg',
+      type: asset.type || 'image/jpeg',
+    } as any);
+
+    return formData;
+  }
+
+  private async getAuthHeaders(): Promise<Record<string, string>> {
     try {
-      // 디버깅: 이미지 URI 확인
-      console.log('🔍 OCR 요청 시작 - 이미지 URI:', imageUri);
-      
-      // 백엔드 API는 MultipartFile을 받으므로 FormData로 전송
-      const formData = new FormData();
-      
-      // 이미지 파일을 FormData에 추가
-      // React Native에서는 uri를 직접 사용할 수 있음
-      const fileData = {
-        uri: imageUri,
-        type: 'image/jpeg', // 또는 image/png
-        name: 'ticket.jpg',
-      } as any;
-      
-      // 디버깅: FormData 구성 확인
-      console.log('📁 FormData 파일 정보:', fileData);
-      console.log('📁 이미지 URI:', imageUri);
-      
-      formData.append('file', fileData);
+      const token = await AsyncStorage.getItem('authToken');
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    } catch (error) {
+      console.warn('Failed to load auth token for OCR upload', error);
+      return {};
+    }
+  }
 
-      console.log('FormData 생성 완료');
-
-      // 2. 백엔드 /ocr/extract 엔드포인트 호출
-      const response = await fetch(`${API_BASE_URL}/ocr/extract`, {
-        method: 'POST',
-        //headers: { 'Content-Type': 'multipart/form-data' },
-        body: formData,
-        // FormData 사용 시 Content-Type 헤더를 설정하지 않음 (자동으로 boundary 설정됨)
+  private async postForm<T>(path: string, asset: Asset): Promise<Result<T>> {
+    try {
+      const formData = this.buildFormData(asset);
+      const authHeaders = await this.getAuthHeaders();
+      const response = await axios.post(`${API_BASE_URL}${path}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...authHeaders,
+        },
+        timeout: 20000,
       });
 
-      // 디버깅: 응답 상태 확인
-      console.log('📡 백엔드 응답 상태:', response.status, response.statusText);
+      const payload = response.data;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ 백엔드 오류 응답:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      if (payload?.success === false) {
+        const message = payload?.message || 'OCR 처리 중 오류가 발생했습니다.';
+        return ResultFactory.failure(
+          ErrorFactory.api(
+            payload?.error?.code || 'OCR_ERROR',
+            message,
+            payload?.error
+          )
+        );
       }
 
-      const result = await response.json();
-      console.log('✅ 백엔드 OCR 결과:', result);
-      
-      // 백엔드 응답을 OCRResult 형식으로 변환
-      const ocrResult: OCRResult = {
-        title: result.title || '',
-        place: result.venue || '',
-        seat: result.seat || undefined, // 좌석 정보가 있으면 사용, 없으면 undefined
-        performedAt: result.date && result.time 
-          ? `${result.date}T${result.time}:00` 
-          : undefined,
-        rawText: '',
-        confidence: 0.8,
-      };
-
-      return {
-        success: true,
-        data: ocrResult,
-      };
-
-    } catch (error) {
-      console.error('OCR extraction error:', error);
-      return {
-        success: false,
-        error: {
-          code: 'OCR_ERROR',
-          message: 'OCR 처리 중 오류가 발생했습니다.',
-        },
-      };
-    }
-  },
-
-  /**
-   * Google Vision API를 사용한 OCR (옵션)
-   */
-  async extractWithGoogleVision(
-    imageUri: string,
-    apiKey: string
-  ): Promise<ApiResponse<OCRResult>> {
-    try {
-      const base64Image = await convertImageToBase64(imageUri);
-
-      const response = await fetch(
-        `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            requests: [
-              {
-                image: {
-                  content: base64Image,
-                },
-                features: [
-                  {
-                    type: 'TEXT_DETECTION',
-                    maxResults: 1,
-                  },
-                ],
-              },
-            ],
-          }),
+      const data = payload?.data ?? payload;
+      return ResultFactory.success(data as T);
+    } catch (error: any) {
+      if (axios.isAxiosError(error)) {
+        if (error.code === 'ECONNABORTED') {
+          return ResultFactory.failure(ErrorFactory.timeout());
         }
+
+        const message =
+          error.response?.data?.message ||
+          error.message ||
+          'OCR 업로드 실패';
+
+        return ResultFactory.failure(
+          ErrorFactory.api(error.code || 'OCR_ERROR', message, error.response?.data)
+        );
+      }
+
+      return ResultFactory.failure(
+        ErrorFactory.unknown(
+          error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+        )
       );
-
-      const data = await response.json();
-      const extractedText =
-        data.responses[0]?.fullTextAnnotation?.text || '';
-
-      // 추출된 텍스트를 파싱하여 티켓 정보로 변환
-      const parsedResult = parseTicketText(extractedText);
-
-      return {
-        success: true,
-        data: parsedResult,
-      };
-    } catch (error) {
-      console.error('Google Vision API error:', error);
-      return {
-        success: false,
-        error: {
-          code: 'OCR_ERROR',
-          message: 'OCR 처리 중 오류가 발생했습니다.',
-        },
-      };
     }
-  },
+  }
 
-  /**
-   * 온디바이스 OCR (react-native-text-recognition 사용 시)
-   */
-  async extractWithDeviceOCR(imageUri: string): Promise<ApiResponse<OCRResult>> {
-    try {
-      // react-native-text-recognition 사용
-      // const TextRecognition = require('react-native-text-recognition').default;
-      // const result = await TextRecognition.recognize(imageUri);
-      // const extractedText = result.map((block: any) => block.text).join('\n');
+  /** 티켓 전용 OCR */
+  async extractTicket(asset: Asset): Promise<Result<OCRResult>> {
+    console.log('📤 OCR 티켓 추출 요청');
+    return this.postForm('/ocr/extract/ticket', asset);
+  }
 
-      // 임시 구현 (실제로는 위 코드 사용)
-      const extractedText = '임시 텍스트';
-      const parsedResult = parseTicketText(extractedText);
+  /** key-value OCR */
+  async extractKeyValue(asset: Asset): Promise<Result<OCRResult>> {
+    console.log('📤 OCR extract 요청');
+    return this.postForm('/ocr/extract', asset);
+  }
 
-      return {
-        success: true,
-        data: parsedResult,
-      };
-    } catch (error) {
-      console.error('Device OCR error:', error);
-      return {
-        success: false,
-        error: {
-          code: 'OCR_ERROR',
-          message: 'OCR 처리 중 오류가 발생했습니다.',
-        },
-      };
-    }
-  },
-};
+  /** 공연 구조화 OCR */
+  async extractStructured(asset: Asset): Promise<Result<any>> {
+    console.log('📤 OCR structured 요청');
+    return this.postForm('/ocr/structured', asset);
+  }
 
-/**
- * 이미지를 Base64로 변환하는 헬퍼 함수
- */
-async function convertImageToBase64(imageUri: string): Promise<string> {
-  // React Native에서 이미지를 Base64로 변환하는 로직
-  // 실제 구현은 react-native-fs 등을 사용
-  return '';
+  /** Raw OCR 텍스트 */
+  async extractRaw(asset: Asset): Promise<Result<{ text: string }>> {
+    console.log('📤 OCR raw 요청');
+    return this.postForm('/ocr', asset);
+  }
 }
 
-/**
- * 추출된 텍스트를 파싱하여 티켓 정보로 변환하는 헬퍼 함수
- */
-function parseTicketText(text: string): OCRResult {
-  // 텍스트 파싱 로직 구현
-  return {
-    title: '',
-    place: '',
-    performedAt: undefined,
-  };
-}
-
+export const ocrService = new OcrService();
 export default ocrService;

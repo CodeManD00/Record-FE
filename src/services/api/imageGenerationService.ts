@@ -1,133 +1,81 @@
-import { ApiResponse } from './client';
-
-const API_BASE_URL = 'http://127.0.0.1:8080'; // 로컬 개발용
-const USE_MOCK_DATA = false; // 서버 없이 테스트할 때 true로 설정
+import { apiClient } from './client';
+import { Result } from '../../utils/result';
 
 /**
- * 이미지 생성 요청 데이터 타입
- * 백엔드의 PromptRequest와 일치해야 함
+ * 백엔드 PromptRequest 타입과 일치하도록 설계
  */
 export interface ImageGenerationRequest {
-  title: string;        // 공연 제목
-  review: string;       // 후기 텍스트
-  genre?: string;       // 장르 (뮤지컬/밴드)
-  location?: string;    // 공연 장소 (선택사항)
-  date?: string;        // 공연 날짜 (선택사항)
-  cast?: string[];      // 출연진 (선택사항)
+  title: string;
+  review: string;
+
+  genre?: string;
+  location?: string;
+  date?: string;
+  cast?: string[];
+
+  imageRequest?: string;
+  size?: string;
+  n?: number;
+  basePrompt?: string;
 }
 
 /**
- * 이미지 생성 응답 데이터 타입
- * 백엔드의 ImageResponse와 일치해야 함
+ * 백엔드 ImageResponse 구조
  */
 export interface ImageGenerationResponse {
-  prompt: string;       // 생성된 프롬프트
-  imageUrl: string;     // 생성된 이미지 URL
+  prompt: string;
+  imageUrl: string;
+  error?: string;
 }
+
+const USE_MOCK_DATA = false;
 
 export const imageGenerationService = {
   /**
-   * AI 이미지 생성 요청
-   * @param request 이미지 생성 요청 데이터
-   * @returns 생성된 이미지 정보
+   * 실제 이미지 생성 API
    */
-  async generateImage(request: ImageGenerationRequest): Promise<ApiResponse<ImageGenerationResponse>> {
-    // 목 데이터 모드: 서버 없이 테스트용
+  async generateImage(
+    request: ImageGenerationRequest
+  ): Promise<Result<ImageGenerationResponse>> {
+
     if (USE_MOCK_DATA) {
-      console.log('🧪 목 데이터 모드로 이미지 생성 실행');
-      await new Promise<void>(resolve => setTimeout(() => resolve(), 2000)); // 로딩 시뮬레이션
-      
+      console.log('🧪 MOCK 이미지 생성 실행');
+
       return {
-        success: true,
-        data: {
-          prompt: `공연 후기 기반 AI 이미지: ${request.title} - ${request.review.substring(0, 50)}...`,
-          imageUrl: 'https://via.placeholder.com/1024x1024/FF6B6B/FFFFFF?text=Generated+Image',
+        ok: true,
+        value: {
+          prompt: `Mock Prompt for ${request.title}`,
+          imageUrl: 'https://via.placeholder.com/1024x1024?text=Mock+Image',
         },
       };
     }
 
-    // 실제 서버 호출
-    try {
-      // 디버깅: 요청 데이터 확인
-      console.log('🔍 이미지 생성 요청 시작 - 요청 데이터:', request);
-      
-      const response = await fetch(`${API_BASE_URL}/generate-image`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
+    console.log('🖼 이미지 생성 요청:', request);
 
-      // 디버깅: 응답 상태 확인
-      console.log('📡 백엔드 응답 상태:', response.status, response.statusText);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ 백엔드 오류 응답:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ 백엔드 이미지 생성 결과:', result);
-      
-      return {
-        success: true,
-        data: result,
-      };
-
-    } catch (error) {
-      console.error('이미지 생성 오류:', error);
-      return {
-        success: false,
-        error: {
-          code: 'IMAGE_GENERATION_ERROR',
-          message: '이미지 생성 중 오류가 발생했습니다.',
-        },
-      };
-    }
+    return apiClient.post<ImageGenerationResponse>('/generate-image', request, {
+      timeoutMs: 60000,
+    });
   },
 
   /**
-   * 테스트용 이미지 생성 (더미 데이터 반환)
-   * @param request 이미지 생성 요청 데이터
-   * @returns 더미 이미지 정보
+   * 파일 포함 버전 (문서 상 존재)
+   * POST /generate-image/with-file
    */
-  async generateTestImage(request: ImageGenerationRequest): Promise<ApiResponse<ImageGenerationResponse>> {
-    try {
-      console.log('🧪 테스트 이미지 생성 요청:', request);
-      
-      const response = await fetch(`${API_BASE_URL}/generate-image/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
+  async generateImageWithFile(
+    request: ImageGenerationRequest,
+    file: { uri: string; type: string; name: string }
+  ): Promise<Result<ImageGenerationResponse>> {
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ 테스트 이미지 생성 오류:', errorText);
-        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-      }
+    const formData = new FormData();
+    formData.append('request', JSON.stringify(request));
+    formData.append('file', file as any);
 
-      const result = await response.json();
-      console.log('✅ 테스트 이미지 생성 결과:', result);
-      
-      return {
-        success: true,
-        data: result,
-      };
+    console.log("🖼 파일 포함 이미지 생성:", request, file);
 
-    } catch (error) {
-      console.error('테스트 이미지 생성 오류:', error);
-      return {
-        success: false,
-        error: {
-          code: 'TEST_IMAGE_GENERATION_ERROR',
-          message: '테스트 이미지 생성 중 오류가 발생했습니다.',
-        },
-      };
-    }
+    return apiClient.postForm<ImageGenerationResponse>(
+      '/generate-image/with-file',
+      formData,
+      { timeoutMs: 60000 }
+    );
   },
 };

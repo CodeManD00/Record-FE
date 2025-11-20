@@ -4,6 +4,7 @@
  */
 
 export { apiClient } from './client';
+
 export { friendService } from './friendService';
 export { ticketService } from './ticketService';
 export { userService } from './userService';
@@ -11,20 +12,18 @@ export { ocrService } from './ocrService';
 export { imageGenerationService } from './imageGenerationService';
 export { sttService } from './sttService';
 
-// 타입들도 함께 export
-export type {
-  ApiError,
-  ApiResponse,
-} from './client';
+// === apiClient 관련 타입 ===
+export type { ApiError } from './client';
 
+// === Friend Service 타입 ===
 export type {
   SearchFriendsParams,
   SearchFriendsResponse,
-  GetFriendsParams,
   GetFriendsResponse,
   GetFriendRequestsResponse,
 } from './friendService';
 
+// === Ticket Service 타입 ===
 export type {
   GetTicketsParams,
   GetTicketsResponse,
@@ -33,6 +32,7 @@ export type {
   GetFriendTicketsParams,
 } from './ticketService';
 
+// === User Service 타입 ===
 export type {
   UserProfile,
   LoginData,
@@ -42,15 +42,16 @@ export type {
   AuthResponse,
 } from './userService';
 
-export type {
-  OCRResult,
-} from './ocrService';
+// === OCR 타입 ===
+export type { OCRResult } from './ocrService';
 
+// === Image Generation 타입 ===
 export type {
   ImageGenerationRequest,
   ImageGenerationResponse,
 } from './imageGenerationService';
 
+// === STT 타입 ===
 export type {
   TranscriptionResponse,
   SummaryResponse,
