@@ -1,12 +1,3 @@
-/**
- * 티켓 전용 헬퍼 유틸리티
- * 티켓 관련 공통 패턴과 최적화를 표준화
- * 
- * @author TicketBookApp Team
- * @version 1.0.0
- * @since 2025-09-15
- */
-
 import { Ticket, CreateTicketData, UpdateTicketData, TicketFilterOptions } from '../types/ticket';
 import { TicketStatus, CONSTANTS } from '../types/enums';
 import { Result, ErrorFactory, ResultFactory } from '../types/errors';
@@ -31,11 +22,11 @@ export const TICKET_VALIDATION_RULES: ValidationRule<CreateTicketData>[] = [
     }
   },
   {
-    field: 'place',
+    field: 'venue',
     validator: (place: string) => {
       // 장소는 선택 사항으로 변경
-      if (place && place.length > TICKET_LIMITS.MAX_PLACE_LENGTH) {
-        return new Error(`장소는 ${TICKET_LIMITS.MAX_PLACE_LENGTH}자를 초과할 수 없습니다`);
+      if (place && place.length > TICKET_LIMITS.MAX_VENUE_LENGTH) {
+        return new Error(`장소는 ${TICKET_LIMITS.MAX_VENUE_LENGTH}자를 초과할 수 없습니다`);
       }
       return null;
     }
@@ -86,11 +77,11 @@ export const TICKET_UPDATE_VALIDATION_RULES: ValidationRule<UpdateTicketData>[] 
     }
   },
   {
-    field: 'place',
+    field: 'venue',
     validator: (place: string) => {
       // 장소는 선택 사항
-      if (place && place.length > TICKET_LIMITS.MAX_PLACE_LENGTH) {
-        return new Error(`장소는 ${TICKET_LIMITS.MAX_PLACE_LENGTH}자를 초과할 수 없습니다`);
+      if (place && place.length > TICKET_LIMITS.MAX_VENUE_LENGTH) {
+        return new Error(`장소는 ${TICKET_LIMITS.MAX_VENUE_LENGTH}자를 초과할 수 없습니다`);
       }
       return null;
     }
@@ -167,6 +158,7 @@ export const validateReviewText = (reviewText?: string): Error | null => {
   return null;
 };
 
+
 /**
  * 통합 필터링 함수
  */
@@ -201,8 +193,8 @@ export const applyTicketFilters = (
     filters.push(ticket => {
       const titleMatch = ticket.title.toLowerCase().includes(searchLower);
       const artistMatch = ticket.artist?.toLowerCase().includes(searchLower) ?? false;
-      const placeMatch = ticket.place?.toLowerCase().includes(searchLower) ?? false;
-      return titleMatch || artistMatch || placeMatch;
+      const venueMatch = ticket.venue?.toLowerCase().includes(searchLower) ?? false;
+      return titleMatch || artistMatch || venueMatch;
     });
   }
 
@@ -270,7 +262,7 @@ export const processBulkDelete = (
       continue;
     }
     
-    if (ticket.userId !== currentUserId) {
+    if (ticket.user_id !== currentUserId) {
       result.failedIds.push(ticketId);
       result.errors.push({ id: ticketId, reason: '삭제 권한이 없습니다' });
       continue;

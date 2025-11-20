@@ -1,12 +1,3 @@
-/**
- * 티켓 관련 기본값 상수
- * 하드코딩된 초기값을 중앙화하여 관리
- * 
- * @author TicketBookApp Team
- * @version 1.0.0
- * @since 2025-09-15
- */
-
 import { Ticket, CreateTicketData, UpdateTicketData, TicketFilterOptions } from '../types/ticket';
 import { TicketStatus } from '../types/enums';
 import { IdGenerator } from '../utils/idGenerator';
@@ -15,21 +6,20 @@ import { IdGenerator } from '../utils/idGenerator';
  * 티켓 기본값
  */
 export const DEFAULT_TICKET_VALUES = {
-  STATUS: TicketStatus.PRIVATE,
-  USER_ID: 'user_current', // 실제 앱에서는 인증 시스템에서 가져옴
+  STATUS: TicketStatus.PUBLIC,
+  USER_ID: 'user_id',
   IMAGES: [] as string[],
-} as const;
+} as const; // 읽기 전용 리터럴 타입으로 만들어줌.
 
 /**
  * 티켓 제한값
  */
 export const TICKET_LIMITS = {
   MAX_TITLE_LENGTH: 100,
-  MAX_PLACE_LENGTH: 100,
+  MAX_VENUE_LENGTH: 100,
   MAX_ARTIST_LENGTH: 100,
   MAX_REVIEW_LENGTH: 1000,
-  MAX_IMAGES: 10,
-  MAX_TICKETS_PER_USER: 500,
+  MAX_TICKETS_PER_USER: 100,
 } as const;
 
 /**
@@ -37,9 +27,9 @@ export const TICKET_LIMITS = {
  */
 export const DEFAULT_FILTER_OPTIONS: TicketFilterOptions = {
   status: undefined,
-  category: undefined,
   dateRange: undefined,
   searchText: undefined,
+  genre: undefined,
 };
 
 /**
@@ -47,14 +37,14 @@ export const DEFAULT_FILTER_OPTIONS: TicketFilterOptions = {
  */
 export const createEmptyTicket = (): Partial<Ticket> => ({
   id: '',
+  user_id: '',
   title: '',
   performedAt: new Date(),
   status: DEFAULT_TICKET_VALUES.STATUS,
-  place: '',
+  venue: '',
   artist: '',
   bookingSite: '',
-  genre: null,
-  user_id: '',
+  genre: '밴드',
   createdAt: new Date(),
   updatedAt: new Date(),
   review: undefined,
@@ -66,16 +56,19 @@ export const createEmptyTicket = (): Partial<Ticket> => ({
  * 새 티켓 생성 팩토리 함수
  */
 export const createNewTicket = (
-  ticketData: CreateTicketData, 
+  ticketData: CreateTicketData,
   user_id: string
 ): Ticket => {
   const now = new Date();
-  
+  const status = ticketData.status ?? DEFAULT_TICKET_VALUES.STATUS;
+
   return {
     id: IdGenerator.ticket(),
+    user_id,
     createdAt: now,
     updatedAt: now,
     ...ticketData,
+    status,
     review: ticketData.review ? {
       ...ticketData.review,
       createdAt: now,
@@ -90,11 +83,11 @@ export const createNewTicket = (
  */
 export const createUpdatedTicket = (
   existingTicket: Ticket,
-  updateData: UpdateTicketData
+  updateData: UpdateTicketData // 바꾸고 싶은 필드만 들어있는 부분 업데이트 데이터
 ): Ticket => {
   const now = new Date();
   
-  console.log('🔧 createUpdatedTicket 호출:', {
+  console.log('createUpdatedTicket 호출:', {
     existingTicket: existingTicket.title,
     updateData
   });
@@ -110,7 +103,7 @@ export const createUpdatedTicket = (
     } : existingTicket.review,
   };
   
-  console.log('🔧 createUpdatedTicket 결과:', updatedTicket);
+  console.log('createUpdatedTicket 결과:', updatedTicket);
   return updatedTicket;
 };
 
@@ -118,19 +111,8 @@ export const createUpdatedTicket = (
  * 티켓 필터링 조건 검증
  */
 export const TICKET_FILTER_FIELDS = [
-  'status',
-  'category', 
+  'status', 
   'dateRange',
-  'searchText'
+  'searchText',
+  'genre',
 ] as const;
-
-/**
- * 티켓 통계 계산을 위한 필드 정의
- */
-export const TICKET_STATS_FIELDS = {
-  TOTAL: 'total',
-  PUBLIC: 'public',
-  PRIVATE: 'private',
-  WITH_REVIEWS: 'withReviews',
-  WITH_IMAGES: 'withImages',
-} as const;

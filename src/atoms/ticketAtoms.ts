@@ -75,9 +75,9 @@ export const privateTicketsAtom = createTicketsByStatusAtom(TicketStatus.PRIVATE
  */
 export const ticketFilterOptionsAtom = atom<TicketFilterOptions>({
   status: undefined,
-  category: undefined,
   dateRange: undefined,
   searchText: undefined,
+  genre: undefined,
 });
 
 /**
@@ -249,7 +249,6 @@ export const ticketsWithImagesAtom = atom<Ticket[]>((get) => {
   return tickets.filter(ticket => ticket.images && ticket.images.length > 0);
 });
 
-// ============= 유틸리티 Atoms =============
 
 /**
  * 동적 필터링 atom 생성 함수 (최적화된 버전)
@@ -272,15 +271,13 @@ export const updateFilterOptionsAtom = atom(
 );
 
 /**
- * 티켓 통계 정보 (최적화된 버전)
- * 통합 계산 함수 사용으로 성능 향상
+ * 티켓 통계 정보
  */
 export const ticketStatsAtom = atom((get) => {
   const tickets = get(ticketsAtom);
   return calculateTicketStats(tickets);
 });
 
-// ============= 유틸리티 Atoms =============
 
 /**
  * 모든 필터 초기화
@@ -290,9 +287,9 @@ export const resetFiltersAtom = atom(
   (get, set): void => {
     set(ticketFilterOptionsAtom, {
       status: undefined,
-      category: undefined,
       dateRange: undefined,
       searchText: undefined,
+      genre: undefined,
     });
   }
 );
