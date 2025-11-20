@@ -1,8 +1,3 @@
-/**
- * 사용자 관련 타입 정의
- * 프로필, 설정, 인증 정보를 분리하여 관리
- */
-
 import { UserRole, AccountVisibility } from './enums';
 
 /**
@@ -25,16 +20,14 @@ export interface UserProfile {
 export interface UserSettings {
   readonly user_id: string;
   accountVisibility: AccountVisibility;
-  allowFriendRequests: boolean;
-  showTicketsToFriends: boolean;
-  emailNotifications: boolean;
-  pushNotifications: boolean;
+  //TODO: 친구 요청 기능 구현 시 사용될 예정
+  //allowFriendRequests: boolean;
   language: 'ko' | 'en';
   updatedAt: Date;
 }
 
 /**
- * 사용자 인증 정보 (민감한 정보)
+ * 사용자 인증 정보
  */
 export interface UserAuth {
   readonly user_id: string;
@@ -45,7 +38,7 @@ export interface UserAuth {
 }
 
 /**
- * 완전한 사용자 정보 (모든 정보 포함)
+ * 완전한 사용자 정보
  */
 export interface User {
   profile: UserProfile;
@@ -56,15 +49,15 @@ export interface User {
 /**
  * 사용자 프로필 업데이트용 데이터
  */
-export interface UpdateUserProfileData extends Partial<Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>> {}
+export interface UpdateUserProfileData extends Partial<Omit<UserProfile, 'createdAt' | 'updatedAt'>> {}
 
 /**
  * 사용자 설정 업데이트용 데이터
  */
-export interface UpdateUserSettingsData extends Partial<Omit<UserSettings, 'userId' | 'updatedAt'>> {}
+export interface UpdateUserSettingsData extends Partial<Omit<UserSettings, 'user_id' | 'updatedAt'>> {}
 
 /**
- * 사용자 생성용 데이터
+ * 새로운 사용자 생성용 데이터
  */
 export interface CreateUserData extends Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> {
   password: string;
