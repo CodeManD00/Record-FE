@@ -2,34 +2,25 @@ import { TicketStatus, TicketCategory } from './enums';
 export { TicketStatus, TicketCategory } from './enums';
 
 /**
- * 티켓 리뷰 인터페이스
- */
-export interface TicketReview {
-  reviewText: string;
-  createdAt: Date;
-  updatedAt?: Date;
-}
-
-/**
- * 기본 티켓 인터페이스 - 공통 속성 정의
+ * 기본 티켓 인터페이스
  */
 export interface BaseTicket {
   readonly id: string;
+  readonly user_id: string;
+  readonly createdAt: Date;
+  readonly updatedAt?: Date;
   title: string;
   performedAt: Date;
-  place?: string;
+  venue?: string;
   artist?: string;
   seat?: string;
   bookingSite?: string;
-  genre: string | null;
-  status: TicketStatus;
-  readonly user_id: string;
-  readonly createdAt: Date;
-  updatedAt?: Date;
+  genre: string;
+  status?: TicketStatus;
 }
 
 /**
- * 완전한 티켓 인터페이스 - 추가 속성 포함
+ * 완전한 티켓 인터페이스
  */
 export interface Ticket extends BaseTicket {
   review?: TicketReview;
@@ -38,9 +29,19 @@ export interface Ticket extends BaseTicket {
 }
 
 /**
+ * 티켓 리뷰 인터페이스
+ */
+export interface TicketReview {
+  reviewText: string;
+  readonly createdAt: Date;
+  readonly updatedAt?: Date;
+}
+
+
+/**
  * 티켓 생성용 데이터 인터페이스 (티켓 생성)
 */
-export interface CreateTicketData extends Omit<BaseTicket, 'id' | 'userId' | 'createdAt'> {
+export interface CreateTicketData extends Omit<BaseTicket, 'id' | 'user_id' | 'createdAt' | 'updatedAt'> {
   review?: Omit<TicketReview, 'createdAt'>;
   images?: string[];
 }
@@ -48,12 +49,12 @@ export interface CreateTicketData extends Omit<BaseTicket, 'id' | 'userId' | 'cr
 /**
  * 티켓 업데이트용 데이터 인터페이스 (티켓 수정)
  */
-export interface UpdateTicketData extends Partial<Omit<Ticket, 'id' | 'userId' | 'createdAt'>> {}
+export interface UpdateTicketData extends Partial<Omit<Ticket, 'id' | 'user_id' | 'createdAt' | 'updatedAt'>> {}
 
 /**
  * 티켓 폼 데이터 인터페이스
  */
-export interface TicketFormData extends Pick<BaseTicket, 'title' | 'performedAt' | 'place' | 'artist' | 'genre'> {
+export interface TicketFormData extends Pick<BaseTicket, 'title' | 'performedAt' | 'venue' | 'artist' | 'genre'> {
   reviewText?: string;
   images?: string[];
 }
@@ -63,7 +64,6 @@ export interface TicketFormData extends Pick<BaseTicket, 'title' | 'performedAt'
  */
 export interface TicketFilterOptions {
   status?: TicketStatus;
-  category?: TicketCategory;
   dateRange?: { start: Date; end: Date };
   searchText?: string;
   genre?: string;
