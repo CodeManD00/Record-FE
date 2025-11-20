@@ -17,6 +17,7 @@ export interface ImageGenerationRequest {
   size?: string;
   n?: number;
   basePrompt?: string;
+  model?: string; // 이미지 생성 모델 (예: "dall-e-3", "dall-e-2")
 }
 
 /**
@@ -50,9 +51,24 @@ export const imageGenerationService = {
       };
     }
 
-    console.log('🖼 이미지 생성 요청:', request);
+    // DALL-E 3 모델 지정 (기본값)
+    const requestWithModel = {
+      ...request,
+      model: request.model || 'dall-e-3',
+    };
 
-    return apiClient.post<ImageGenerationResponse>('/generate-image', request, {
+    console.log('🖼 이미지 생성 요청:', JSON.stringify(requestWithModel, null, 2));
+    console.log('🖼 요청 필드 확인:', {
+      title: requestWithModel.title,
+      reviewLength: requestWithModel.review?.length || 0,
+      genre: requestWithModel.genre,
+      location: requestWithModel.location,
+      date: requestWithModel.date,
+      basePromptLength: requestWithModel.basePrompt?.length || 0,
+      model: requestWithModel.model,
+    });
+
+    return apiClient.post<ImageGenerationResponse>('/generate-image', requestWithModel, {
       timeoutMs: 60000,
     });
   },

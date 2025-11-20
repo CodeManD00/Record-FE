@@ -66,11 +66,26 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
    *           질문 가져오기
    *  =============================== */
   useEffect(() => {
-    apiClient.ensureAuthToken?.();
-
     const fetchQuestions = async () => {
       try {
         setIsLoadingQuestions(true);
+
+        // 인증 토큰을 먼저 확실히 로드
+        await apiClient.ensureAuthToken();
+        
+        // 인증 토큰 확인
+        const token = await apiClient.getStoredToken();
+        console.log('인증 토큰 존재 여부:', token ? '있음' : '없음');
+        
+        if (!token) {
+          console.warn('⚠️ 인증 토큰이 없습니다. 기본 질문을 사용합니다.');
+          setQuestions([
+            '이 공연을 보게 된 계기는?',
+            '가장 인상 깊었던 순간은?',
+            '다시 본다면 어떤 점이 기대되나요?',
+          ]);
+          return;
+        }
 
         /**
          * AddTicketPage에서 선택한 장르를 백엔드 API 형식으로 매핑
@@ -97,12 +112,16 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         };
 
         const genre = mapGenre(ticketData.genre);
+        const apiUrl = `/review-questions?genre=${encodeURIComponent(genre)}`;
+        
         console.log('=== 질문 가져오기 시작 ===');
         console.log('AddTicketPage에서 받은 장르:', ticketData.genre);
         console.log('백엔드로 전달할 장르:', genre);
-        console.log('API 요청 URL:', `/review-questions?genre=${encodeURIComponent(genre)}`);
+        console.log('API 요청 URL:', apiUrl);
+        console.log('API Base URL:', __DEV__ ? 'http://localhost:8080' : 'https://api.ticketbook.app');
+        console.log('전체 URL:', `${__DEV__ ? 'http://localhost:8080' : 'https://api.ticketbook.app'}${apiUrl}`);
         
-        const result = await apiClient.get<any>(`/review-questions?genre=${encodeURIComponent(genre)}`);
+        const result = await apiClient.get<any>(apiUrl);
         
         console.log('=== /review-questions API 응답 ===');
         console.log('응답 success:', result.success);
@@ -158,6 +177,23 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
             data: result.data,
             error: result.error,
           });
+          
+          // 에러 상세 정보 로깅
+          if (!result.success && result.error) {
+            console.error('❌ 에러 코드:', result.error.code);
+            console.error('❌ 에러 메시지:', result.error.message);
+            console.error('❌ 에러 상세:', result.error.details);
+            console.error('❌ 전체 에러 객체:', JSON.stringify(result.error, null, 2));
+            
+            // 인증 에러인 경우 추가 로깅
+            if (result.error.code === 'VALIDATION_ERROR' && result.error.message.includes('인증')) {
+              console.error('🔒 인증 문제 감지 - 토큰을 다시 확인합니다.');
+              const currentToken = await apiClient.getStoredToken();
+              console.error('현재 토큰:', currentToken ? '존재함' : '없음');
+            }
+          }
+          
+          // 기본 질문 사용 (인증 실패 시에도 계속 진행 가능하도록)
           setQuestions([
             '이 공연을 보게 된 계기는?',
             '가장 인상 깊었던 순간은?',
@@ -252,6 +288,9 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
    *          오디오 파일 선택 + STT 처리
    *  =============================== */
   const handleAudioFilePick = () => {
+    // react-native-image-picker는 오디오 파일 선택을 지원하지 않으므로
+    // mixed 타입으로 선택 후 오디오 파일만 필터링
+    // iOS에서 파일 앱을 열려면 react-native-document-picker의 네이티브 모듈이 필요합니다
     const options = {
       mediaType: 'mixed' as const, // 이미지, 비디오, 오디오 모두 선택 가능
       includeBase64: false,
@@ -262,6 +301,9 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
 
     launchImageLibrary(options, async (response: ImagePickerResponse) => {
       if (response.didCancel || response.errorMessage) {
+        if (response.errorMessage) {
+          console.log('파일 선택 취소 또는 오류:', response.errorMessage);
+        }
         return;
       }
 
@@ -293,6 +335,8 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         // 파일 이름과 타입 추출
         const fileName = asset.fileName || asset.uri.split('/').pop() || 'audio.m4a';
         const fileType = asset.type || 'audio/m4a';
+
+        console.log('🎵 오디오 파일 선택:', { fileName, fileType, uri: asset.uri });
 
         const sttResult = await sttService.transcribeAndSave(asset.uri, fileName, fileType);
 

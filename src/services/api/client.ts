@@ -52,6 +52,9 @@ class ApiClient {
   private async loadTokenFromStorage() {
     // 이미 메모리에 토큰이 있으면 스킵
     if (this.authToken) {
+      if (__DEV__) {
+        console.log('🔑 Token already in memory (길이:', this.authToken.length, ')');
+      }
       return;
     }
 
@@ -59,7 +62,13 @@ class ApiClient {
       const token = await AsyncStorage.getItem('authToken');
       if (token) {
         this.authToken = token;
-        if (__DEV__) console.log('🔑 Token loaded from storage');
+        if (__DEV__) {
+          console.log('🔑 Token loaded from storage (길이:', token.length, ')');
+        }
+      } else {
+        if (__DEV__) {
+          console.warn('⚠️ No token found in storage');
+        }
       }
     } catch (e) {
       console.warn('Failed to load auth token', e);
@@ -128,6 +137,13 @@ class ApiClient {
     // Authorization 적용
     if (this.authToken) {
       headers.Authorization = `Bearer ${this.authToken}`;
+      if (__DEV__) {
+        console.log('🔑 Authorization 헤더 추가됨 (토큰 길이:', this.authToken.length, ')');
+      }
+    } else {
+      if (__DEV__) {
+        console.warn('⚠️ Authorization 헤더 없음 - authToken이 null입니다');
+      }
     }
 
     return headers;
@@ -150,19 +166,50 @@ class ApiClient {
 
       const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
 
+      // 헤더 생성 (토큰 포함 여부 확인)
+      const headers = this.getHeaders(options.headers as Record<string, string>);
+
       if (__DEV__) {
         console.log(`API Request: ${options.method || 'GET'} ${fullUrl}`);
+        console.log('📤 요청 헤더:', {
+          'Content-Type': headers['Content-Type'] || '자동 설정',
+          'Authorization': headers['Authorization'] ? 'Bearer ***' : '없음',
+        });
+        if (options.body) {
+          try {
+            const bodyStr = typeof options.body === 'string' ? options.body : JSON.stringify(options.body);
+            console.log('📤 요청 Body:', bodyStr.substring(0, 200) + (bodyStr.length > 200 ? '...' : ''));
+          } catch (e) {
+            console.log('📤 요청 Body: (파싱 불가)');
+          }
+        }
       }
 
       // 타임아웃 설정
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      const response = await fetch(fullUrl, {
-        ...options,
-        headers: this.getHeaders(options.headers as Record<string, string>),
-        signal: controller.signal,
-      });
+      let response: Response;
+      try {
+        response = await fetch(fullUrl, {
+          ...options,
+          headers,
+          signal: controller.signal,
+        });
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        if (__DEV__) {
+          console.error('❌ fetch 요청 실패:', fetchError);
+          console.error('에러 이름:', fetchError?.name);
+          console.error('에러 메시지:', fetchError?.message);
+          if (fetchError?.name === 'AbortError') {
+            console.error('⏱️ 요청 타임아웃 발생');
+          } else if (fetchError?.message?.includes('Network')) {
+            console.error('🌐 네트워크 연결 오류');
+          }
+        }
+        throw fetchError;
+      }
 
       clearTimeout(timeoutId);
 
@@ -175,7 +222,7 @@ class ApiClient {
 
       // JSON 응답 처리
       if (contentType?.includes('application/json')) {
-        let data: ApiResponse<T>;
+        let data: any;
 
         try {
           data = JSON.parse(responseText);
@@ -185,11 +232,37 @@ class ApiClient {
           );
         }
 
-        if (response.ok && data.success) {
-          return ResultFactory.success(data.data as T);
+        // 200 응답이고 success 필드가 있는 경우 (ApiResponseObject 형태)
+        if (response.ok && data.success !== undefined) {
+          if (data.success) {
+            return ResultFactory.success(data.data as T);
+          } else {
+            // success가 false인 경우 에러 처리
+            if (__DEV__) {
+              console.log('⚠️ API 응답 success=false:', data);
+            }
+            return this.handleHttpError(response.status, data as ApiResponse<T>, fullUrl);
+          }
         }
 
-        return this.handleHttpError(response.status, data);
+        // 200 응답이지만 success 필드가 없는 경우 (직접 데이터 반환)
+        if (response.ok) {
+          if (__DEV__) {
+            console.log('✅ API 응답 (success 필드 없음, 직접 데이터 반환):', data);
+          }
+          return ResultFactory.success(data as T);
+        }
+
+        // 에러 응답 처리
+        if (__DEV__) {
+          console.log('❌ 에러 응답 수신:', {
+            status: response.status,
+            statusText: response.statusText,
+            data: data,
+            rawResponse: responseText.substring(0, 500),
+          });
+        }
+        return this.handleHttpError(response.status, data as ApiResponse<T>, fullUrl);
       }
 
       // JSON 아니면 그냥 텍스트 반환
@@ -197,9 +270,7 @@ class ApiClient {
         return ResultFactory.success(responseText as T);
       }
 
-      return ResultFactory.failure(
-        ErrorFactory.api(`HTTP_${response.status}`, responseText)
-      );
+      return this.handleHttpError(response.status, { error: responseText }, fullUrl);
     } catch (error: any) {
       return this.handleError(error);
     }
@@ -318,24 +389,85 @@ class ApiClient {
   // 에러 처리
   // ----------------------
 
-  private handleHttpError<T>(status: number, data: ApiResponse<T>): Result<T> {
+  private handleHttpError<T>(status: number, data: ApiResponse<T> | any, url?: string): Result<T> {
+    // 로그인 API는 인증이 필요 없으므로 401이 발생하면 아이디/비밀번호 오류로 처리
+    const isLoginEndpoint = url?.includes('/auth/login');
+    
     if (status === 401) {
-      this.clearAuthToken();
-      if (__DEV__) console.warn('🔒 Unauthorized - token cleared');
+      const hadToken = !!this.authToken;
+      
+      // 로그인 엔드포인트가 아니면 토큰 제거
+      if (!isLoginEndpoint) {
+        this.clearAuthToken();
+        if (__DEV__) {
+          console.warn('🔒 Unauthorized - token cleared');
+          console.warn('토큰이 있었는지:', hadToken ? '있었음' : '없었음');
+          if (hadToken) {
+            console.warn('토큰이 있었지만 401 에러 발생 - 토큰이 만료되었거나 유효하지 않을 수 있습니다');
+          }
+        }
+      } else {
+        if (__DEV__) {
+          console.warn('🔒 로그인 API 401 - 아이디/비밀번호가 올바르지 않을 수 있습니다');
+        }
+      }
     }
 
-    const errorMessage = data?.message || data?.error?.message || '오류가 발생했습니다';
+    // 에러 상세 로깅
+    if (__DEV__) {
+      console.error(`❌ HTTP ${status} 에러 발생`);
+      console.error('에러 응답 데이터:', JSON.stringify(data, null, 2));
+      if (isLoginEndpoint) {
+        console.error('📍 로그인 API 엔드포인트 - 401은 아이디/비밀번호 오류일 수 있습니다');
+        console.error('📋 백엔드 응답 상세:', {
+          error: data?.error,
+          message: data?.message,
+          data: data?.data,
+          전체응답: data,
+        });
+      }
+    }
+
+    // 에러 메시지 추출 (다양한 형태 지원)
+    let errorMessage = '';
+    if (typeof data === 'string') {
+      errorMessage = data;
+    } else if (data?.message) {
+      errorMessage = data.message;
+    } else if (data?.error?.message) {
+      errorMessage = data.error.message;
+    } else if (data?.error) {
+      errorMessage = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+    } else {
+      errorMessage = `서버 오류가 발생했습니다 (${status})`;
+    }
 
     switch (status) {
       case 400:
         return ResultFactory.failure(ErrorFactory.validation(errorMessage));
       case 401:
-        return ResultFactory.failure(ErrorFactory.unauthorized(errorMessage));
+        // 로그인 API의 경우 다른 메시지 사용
+        if (isLoginEndpoint) {
+          return ResultFactory.failure(
+            ErrorFactory.unauthorized('아이디 또는 비밀번호가 올바르지 않습니다.')
+          );
+        }
+        return ResultFactory.failure(
+          ErrorFactory.unauthorized(
+            errorMessage === 'Unauthorized' 
+              ? '인증이 만료되었습니다. 다시 로그인해주세요.' 
+              : errorMessage
+          )
+        );
       case 403:
         return ResultFactory.failure(ErrorFactory.forbidden(errorMessage));
       case 404:
         return ResultFactory.failure(ErrorFactory.notFound('리소스', errorMessage));
       case 500:
+        if (__DEV__) {
+          console.error('🔴 서버 내부 오류 (500)');
+          console.error('에러 상세:', data);
+        }
         return ResultFactory.failure(ErrorFactory.server(errorMessage));
       default:
         return ResultFactory.failure(

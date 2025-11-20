@@ -19,6 +19,7 @@ import {
   ImageGenerationRequest,
   ApiResponse,
 } from '../../services/api';
+import { apiClient } from '../../services/api/client';
 import { useAtom } from 'jotai';
 import { basePromptAtom } from '../../atoms';
 import {
@@ -88,27 +89,46 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
         return;
       }
 
+      // 인증 토큰 확인 및 로드
+      await apiClient.ensureAuthToken();
+      const token = await apiClient.getStoredToken();
+      
+      if (!token) {
+        console.error('❌ 인증 토큰이 없습니다.');
+        Alert.alert('인증 오류', '로그인이 필요합니다. 다시 로그인해주세요.');
+        setIsGenerating(false);
+        return;
+      }
+
+      console.log('🔑 인증 토큰 확인 완료');
+
       // performedAt이 Date라면 문자열로 변환
       const dateValue =
         ticketData?.performedAt instanceof Date
           ? ticketData.performedAt.toISOString()
           : ticketData?.performedAt ?? '';
 
+      // 요청 데이터 정리 (빈 값 제거)
       const requestData: ImageGenerationRequest = {
         title: ticketData.title,
         review: reviewData.reviewText,
-        genre: mapGenreForBackend(ticketData.genre || ''),
-        location: ticketData.place || '',
-        date: dateValue,
-        cast: [],
-        basePrompt: basePrompt || undefined, // basePrompt 추가
+        ...(mapGenreForBackend(ticketData.genre || '') && {
+          genre: mapGenreForBackend(ticketData.genre || ''),
+        }),
+        ...(ticketData.place && ticketData.place.trim() && {
+          location: ticketData.place.trim(),
+        }),
+        ...(dateValue && { date: dateValue }),
+        ...(basePrompt && basePrompt.trim() && {
+          basePrompt: basePrompt.trim(),
+        }),
       };
 
-      console.log('🔍 이미지 생성 요청 데이터:', requestData);
+      console.log('🔍 이미지 생성 요청 데이터:', JSON.stringify(requestData, null, 2));
       console.log('📋 basePrompt:', basePrompt);
+      console.log('📋 basePrompt 길이:', basePrompt?.length || 0);
 
-      const result: ApiResponse<any> =
-        await imageGenerationService.generateImage(requestData);
+      const result = await imageGenerationService.generateImage(requestData);
 
       if (result.success && result.data) {
         const imageData = result.data;
@@ -118,7 +138,15 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
 
         if (imageData.prompt) setCurrentPrompt(imageData.prompt);
       } else {
-        Alert.alert('오류', result.error?.message || 'AI 이미지 생성에 실패했습니다.');
+        console.error('❌ 이미지 생성 실패');
+        console.error('응답 success:', result.success);
+        console.error('응답 data:', result.data);
+        console.error('에러 코드:', result.error?.code);
+        console.error('에러 메시지:', result.error?.message);
+        console.error('에러 상세:', result.error?.details);
+        
+        const errorMessage = result.error?.message || 'AI 이미지 생성에 실패했습니다.';
+        Alert.alert('오류', errorMessage);
       }
     } catch (error) {
       console.error('❌ 이미지 생성 중 오류:', error);
@@ -139,23 +167,44 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
     setGeneratedImage(null);
 
     try {
+      // 인증 토큰 확인 및 로드
+      await apiClient.ensureAuthToken();
+      const token = await apiClient.getStoredToken();
+      
+      if (!token) {
+        console.error('❌ 인증 토큰이 없습니다.');
+        Alert.alert('인증 오류', '로그인이 필요합니다. 다시 로그인해주세요.');
+        setIsGenerating(false);
+        return;
+      }
+
+      console.log('🔑 인증 토큰 확인 완료');
+
       const dateValue =
         ticketData?.performedAt instanceof Date
           ? ticketData.performedAt.toISOString()
           : ticketData?.performedAt ?? '';
 
+      // 요청 데이터 정리 (빈 값 제거)
       const requestData: ImageGenerationRequest = {
         title: ticketData.title,
         review: reviewData.reviewText,
-        genre: mapGenreForBackend(ticketData.genre || ''),
-        location: ticketData.place || '',
-        date: dateValue,
-        cast: [],
-        basePrompt: basePrompt || undefined, // basePrompt 추가
-        imageRequest: regenerationRequest.trim() || undefined, // 사용자 요구사항 추가
+        ...(mapGenreForBackend(ticketData.genre || '') && {
+          genre: mapGenreForBackend(ticketData.genre || ''),
+        }),
+        ...(ticketData.place && ticketData.place.trim() && {
+          location: ticketData.place.trim(),
+        }),
+        ...(dateValue && { date: dateValue }),
+        ...(basePrompt && basePrompt.trim() && {
+          basePrompt: basePrompt.trim(),
+        }),
+        ...(regenerationRequest.trim() && {
+          imageRequest: regenerationRequest.trim(),
+        }),
       };
 
-      console.log('🔄 재생성 요청:', requestData);
+      console.log('🔄 재생성 요청:', JSON.stringify(requestData, null, 2));
       console.log('📝 사용자 요구사항:', regenerationRequest);
       console.log('📋 basePrompt:', basePrompt);
 

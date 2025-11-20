@@ -81,24 +81,44 @@ class AuthService {
    *  로그인
    * ============================ */
   async signIn(id: string, password: string): Promise<Result<AuthResponse>> {
-    const result = await apiClient.post<AuthResponse>('/auth/login', {
-      id,
-      password,
-    });
+    console.log('🔵 signIn 시작:', { id, passwordLength: password.length });
+    console.log('🔵 API Base URL:', __DEV__ ? 'http://localhost:8080' : 'https://api.ticketbook.app');
+    console.log('🔵 전체 URL:', `${__DEV__ ? 'http://localhost:8080' : 'https://api.ticketbook.app'}/auth/login`);
+    
+    try {
+      const result = await apiClient.post<AuthResponse>('/auth/login', {
+        id,
+        password,
+      });
 
-    if (!result.success || !result.data) {
-      return ResultFactory.failure(
-        ErrorFactory.unauthorized(result.error?.message || '아이디 또는 비밀번호가 올바르지 않습니다.')
-      );
+      console.log('🔵 로그인 API 응답:', {
+        success: result.success,
+        hasData: !!result.data,
+        error: result.error,
+      });
+
+      if (!result.success || !result.data) {
+        console.error('❌ 로그인 실패:', result.error);
+        return ResultFactory.failure(
+          ErrorFactory.unauthorized(result.error?.message || '아이디 또는 비밀번호가 올바르지 않습니다.')
+        );
+      }
+
+      const data = result.data;
+      console.log('✅ 로그인 성공, 토큰 저장 중...');
+      apiClient.setAuthToken(data.token);
+      this.accessToken = data.token;
+      console.log('✅ 토큰 저장 완료');
+
+      // 프로필은 로그인 페이지에서 별도로 로드하도록 변경 (중복 호출 방지)
+
+      return ResultFactory.success(data);
+    } catch (error) {
+      console.error('❌ 로그인 중 예외 발생:', error);
+      console.error('에러 타입:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('에러 메시지:', error instanceof Error ? error.message : String(error));
+      throw error;
     }
-
-    const data = result.data;
-    apiClient.setAuthToken(data.token);
-    this.accessToken = data.token;
-
-    // 프로필은 로그인 페이지에서 별도로 로드하도록 변경 (중복 호출 방지)
-
-    return ResultFactory.success(data);
   }
 
   /** ============================
