@@ -1,145 +1,104 @@
 /**
- * 티켓 관련 API 서비스
- * 티켓 CRUD, 검색, 필터링 등의 API 호출 함수들
+ * 티켓 = 리뷰 기반 서비스 (백엔드 명세 100% 일치)
+ * 단, 요청한 기능: 티켓 상세 조회 / 티켓 이미지 업로드는 기존대로 유지
  */
 
 import { apiClient } from './client';
 import { Result } from '../../utils/result';
-import { Ticket, TicketStatus } from '../../types/ticket';
+import {
+  ReviewCreateRequest,
+  ReviewUpdateRequest,
+  PageReviewListItemResponse,
+  ReviewListItemResponse
+} from '../../types/review';
 
-/**
- * 티켓 목록 조회 파라미터
- */
-export interface GetTicketsParams {
-  limit?: number;
-  offset?: number;
-  status?: TicketStatus;
-  startDate?: string; // YYYY-MM-DD
-  endDate?: string;   // YYYY-MM-DD
-  search?: string;
-}
-
-/**
- * 티켓 목록 응답
- */
-export interface GetTicketsResponse {
-  tickets: Ticket[];
-  total: number;
-  hasMore: boolean;
-}
-
-/**
- * 티켓 생성 데이터
- */
-export interface CreateTicketData {
-  title: string;
-  performedAt: string;
-  place: string;
-  artist: string;
-  bookingSite?: string;
-  status: TicketStatus;
-  review?: {
-    reviewText: string;
-  };
-  images?: string[];
-}
-
-/**
- * 티켓 업데이트 데이터
- */
-export interface UpdateTicketData extends Partial<CreateTicketData> {
-  id: string;
-}
-
-/**
- * 친구 티켓 조회 파라미터
- */
-export interface GetFriendTicketsParams {
-  friendId: string;
-  limit?: number;
-  offset?: number;
-  startDate?: string;
-  endDate?: string;
-}
-
-/**
- * 티켓 서비스 클래스
- */
 class TicketService {
-  /**
-   * 내 티켓 목록 조회
-   */
-  async getMyTickets(params?: GetTicketsParams): Promise<Result<GetTicketsResponse>> {
-    const queryParams = new URLSearchParams();
-    
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.offset) queryParams.append('offset', params.offset.toString());
-    if (params?.status) queryParams.append('status', params.status);
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.search) queryParams.append('search', params.search);
 
-    const url = `/tickets${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return apiClient.get<GetTicketsResponse>(url);
+  /**
+   * 1) 내 티켓(=내 리뷰) 목록 조회
+   * GET /api/reviews/me/{userId}
+   */
+  async getMyTickets(
+    userId: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<Result<PageReviewListItemResponse>> {
+
+    return apiClient.get<PageReviewListItemResponse>(
+      `/api/reviews/me/${userId}?page=${page}&size=${size}`
+    );
   }
 
   /**
-   * 티켓 상세 조회
+   * 2) 티켓(=리뷰) 생성
+   * POST /api/reviews
    */
-  async getTicket(ticketId: string): Promise<Result<Ticket>> {
-    return apiClient.get<Ticket>(`/tickets/${ticketId}`);
+  async createTicket(data: ReviewCreateRequest):
+    Promise<Result<{ reviewId: number; createdAt: string }>> {
+
+    return apiClient.post('/api/reviews', data);
   }
 
   /**
-   * 티켓 생성
+   * 3) 티켓(=리뷰) 수정
+   * PATCH /api/reviews/{reviewId}
    */
-  async createTicket(data: CreateTicketData): Promise<Result<Ticket>> {
-    return apiClient.post<Ticket>('/tickets', data);
+  async updateTicket(
+    reviewId: number,
+    userId: string,
+    data: ReviewUpdateRequest
+  ): Promise<Result<any>> {
+
+    return apiClient.patch(`/api/reviews/${reviewId}?userId=${userId}`, data);
   }
 
   /**
-   * 티켓 수정
+   * 4) 티켓(=리뷰) 삭제
+   * DELETE /api/reviews/{reviewId}
    */
-  async updateTicket(data: UpdateTicketData): Promise<Result<Ticket>> {
-    const { id, ...updateData } = data;
-    return apiClient.put<Ticket>(`/tickets/${id}`, updateData);
+  async deleteTicket(
+    reviewId: number,
+    userId: string
+  ): Promise<Result<any>> {
+
+    return apiClient.delete(`/api/reviews/${reviewId}?userId=${userId}`);
   }
 
   /**
-   * 티켓 삭제
+   * 5) 친구 티켓(=리뷰) 목록 조회
+   * GET /api/reviews/me/{friendId}
    */
-  async deleteTicket(ticketId: string): Promise<Result<{ success: boolean }>> {
-    return apiClient.delete<{ success: boolean }>(`/tickets/${ticketId}`);
+  async getFriendTickets(
+    friendId: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<Result<PageReviewListItemResponse>> {
+
+    return apiClient.get<PageReviewListItemResponse>(
+      `/api/reviews/me/${friendId}?page=${page}&size=${size}`
+    );
   }
 
   /**
-   * 친구 티켓 목록 조회
+   * ⚠️ 6) 티켓 상세 조회 (원래 기능 그대로 유지)
+   *    현재 백엔드 명세에는 단일 리뷰 조회 API가 없음.
+   *    따라서 프론트에서 필요하다면 list에서 찾거나
+   *    /api/reviews/{id} API를 백엔드에 추가해야 정확함.
    */
-  async getFriendTickets(params: GetFriendTicketsParams): Promise<Result<GetTicketsResponse>> {
-    const queryParams = new URLSearchParams();
-    
-    if (params.limit) queryParams.append('limit', params.limit.toString());
-    if (params.offset) queryParams.append('offset', params.offset.toString());
-    if (params.startDate) queryParams.append('startDate', params.startDate);
-    if (params.endDate) queryParams.append('endDate', params.endDate);
-
-    const url = `/friends/${params.friendId}/tickets${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return apiClient.get<GetTicketsResponse>(url);
+  async getTicket(ticketId: string): Promise<Result<any>> {
+    return apiClient.get<any>(`/tickets/${ticketId}`);
   }
 
   /**
-   * 티켓 공개 상태 변경
+   * ⚠️ 7) 티켓 이미지 업로드 (원래 기능 그대로 유지)
    */
-  async updateTicketStatus(ticketId: string, status: TicketStatus): Promise<Result<Ticket>> {
-    return apiClient.put<Ticket>(`/tickets/${ticketId}/status`, { status });
-  }
+  async uploadTicketImages(
+    ticketId: string,
+    imageUris: string[]
+  ): Promise<Result<{ imageUrls: string[] }>> {
 
-  /**
-   * 티켓 이미지 업로드
-   */
-  async uploadTicketImages(ticketId: string, imageUris: string[]): Promise<Result<{ imageUrls: string[] }>> {
     const formData = new FormData();
-    
+
     imageUris.forEach((imageUri, index) => {
       formData.append('images', {
         uri: imageUri,
@@ -148,58 +107,13 @@ class TicketService {
       } as any);
     });
 
-    return apiClient.post<{ imageUrls: string[] }>(`/tickets/${ticketId}/images`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-  }
-
-  /**
-   * 티켓 통계 조회
-   */
-  async getTicketStats(): Promise<Result<{
-    totalTickets: number;
-    publicTickets: number;
-    privateTickets: number;
-    thisMonthTickets: number;
-    thisYearTickets: number;
-  }>> {
-    return apiClient.get('/tickets/stats');
-  }
-
-  /**
-   * 최근 티켓 조회
-   */
-  async getRecentTickets(limit: number = 10): Promise<Result<Ticket[]>> {
-    return apiClient.get<Ticket[]>(`/tickets/recent?limit=${limit}`);
-  }
-
-  /**
-   * 날짜별 티켓 조회
-   */
-  async getTicketsByDate(date: string): Promise<Result<Ticket[]>> {
-    return apiClient.get<Ticket[]>(`/tickets/by-date?date=${date}`);
-  }
-
-  /**
-   * 티켓 검색
-   */
-  async searchTickets(query: string, params?: {
-    limit?: number;
-    offset?: number;
-    status?: TicketStatus;
-  }): Promise<Result<GetTicketsResponse>> {
-    const queryParams = new URLSearchParams({ search: query });
-    
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.offset) queryParams.append('offset', params.offset.toString());
-    if (params?.status) queryParams.append('status', params.status);
-
-    return apiClient.get<GetTicketsResponse>(`/tickets/search?${queryParams.toString()}`);
+    // multipart는 postForm 사용해야 함
+    return apiClient.postForm<{ imageUrls: string[] }>(
+      `/tickets/${ticketId}/images`,
+      formData
+    );
   }
 }
 
-// 싱글톤 인스턴스 생성
 export const ticketService = new TicketService();
 export default ticketService;
