@@ -115,6 +115,7 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
       console.log('이미지 URI: ', imageUri);
       console.log('OCR 시작:', imageUri);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       
       // Asset 객체 생성
       const asset: any = {
@@ -123,6 +124,8 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
         fileName: imageUri.split('/').pop() || 'ticket.jpg',
       };
       
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
       const result = await ocrService.extractTicket(asset);
@@ -162,6 +165,7 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
       const formatted: CreateTicketData = {
         title: ocrData.title ?? '',
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         artist: ocrData.artist ?? '', // OCR에서 아티스트 정보 추출
         place: ocrData.venue ?? ocrData.place ?? '',
         seat: ocrData.seat ?? '',
@@ -170,12 +174,17 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
           : new Date(),
         genre: null,
 =======
+=======
+>>>>>>> Stashed changes
         artist: ocrData.artist ?? '', // 백엔드에서 artist 받기
         place: ocrData.venue ?? '', // 백엔드는 venue로 보냄
         seat: ocrData.seat ?? '',
         performedAt: performedAt,
         bookingSite: '',
         genre: '밴드', // 기본값 (null 금지)
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         status: TicketStatus.PUBLIC,
       };

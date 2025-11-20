@@ -23,6 +23,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../styles/designSystem';
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 =======
 
 >>>>>>> Stashed changes
@@ -46,6 +50,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   const [reviewText, setReviewText] = useState('');
   const [isPublic, setIsPublic] = useState(true);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [isProcessingSTT, setIsProcessingSTT] = useState(false);
@@ -54,6 +59,8 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCardVisible, setIsCardVisible] = useState(true);
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 
@@ -96,6 +103,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
           return 'COMMON';
         };
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
         const genre = mapGenreForBackend(ticketData.genre || '');
         console.log('=== 질문 가져오기 시작 ===');
@@ -143,6 +151,8 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
             '다시 본다면 어떤 점이 기대되나요?',
           ]);
 =======
+=======
+>>>>>>> Stashed changes
         const genre = mapGenre(ticketData.genre || '');
         console.log('🎭 질문 가져오기 | 장르:', genre);
 
@@ -155,6 +165,9 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
             setQuestions(result.data.data);
             return;
           }
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         }
 
@@ -248,6 +261,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
 
   /** ===============================
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
    *          오디오 파일 선택 + STT 처리
    *  =============================== */
   const handleAudioFilePick = () => {
@@ -327,6 +341,97 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     if (!textToUse) {
       Alert.alert('알림', '정리할 텍스트가 없습니다.');
       return;
+=======
+   *        리뷰 정리 (Organize)
+   *  =============================== */
+  const handleOrganizeReview = async (
+    textOverride?: string,
+    transcriptionIdOverride?: number,
+    options?: { showAlert?: boolean }
+  ) => {
+    const textToUse = (textOverride ?? reviewText).trim();
+
+    if (!textToUse) {
+      Alert.alert('알림', '정리할 텍스트가 없습니다.');
+      return;
+    }
+
+    try {
+      setIsOrganizing(true);
+      const organizeResult = await sttService.organizeReview(
+        textToUse,
+        transcriptionIdOverride ?? transcriptionId
+      );
+
+      if (organizeResult.success && organizeResult.data) {
+        const organizedText =
+          organizeResult.data.finalReview ??
+          organizeResult.data.summary ??
+          organizeResult.data.transcript ??
+          textToUse;
+
+        setReviewText(organizedText);
+
+        if (organizeResult.data.id) {
+          setTranscriptionId(organizeResult.data.id);
+        }
+
+        if (options?.showAlert ?? true) {
+          Alert.alert('완료', '내용을 정리했어요.');
+        }
+
+        return organizedText;
+      } else {
+        // 에러 메시지 분석
+        const errorMessage = organizeResult.error?.message || '정리에 실패했습니다.';
+        const errorCode = organizeResult.error?.code || '';
+        
+        // 타임아웃 오류
+        const isTimeout = errorCode === 'TIMEOUT_ERROR' || errorMessage.includes('timeout') || errorMessage.includes('Aborted');
+        // OpenAI API 오류
+        const isOpenAIError = errorMessage.includes('OpenAI') || errorMessage.includes('Retries exhausted');
+        
+        let alertMessage = errorMessage;
+        if (isTimeout) {
+          alertMessage = '요청 시간이 초과되었습니다.\n\nAI 처리가 오래 걸리고 있습니다. 잠시 후 다시 시도해주세요.';
+        } else if (isOpenAIError) {
+          alertMessage = 'AI 서비스에 일시적인 문제가 발생했습니다.\n\n잠시 후 다시 시도해주세요.';
+        }
+        
+        Alert.alert(
+          '정리 실패',
+          alertMessage,
+          [
+            { text: '취소', style: 'cancel' },
+            {
+              text: '다시 시도',
+              onPress: () => handleOrganizeReview(textOverride, transcriptionIdOverride, options),
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('정리 요청 오류:', error);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('Aborted');
+      
+      Alert.alert(
+        '오류',
+        isTimeout
+          ? '요청 시간이 초과되었습니다.\n\n네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.'
+          : '정리 요청 중 문제가 발생했습니다.\n\n네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.',
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '다시 시도',
+            onPress: () => handleOrganizeReview(textOverride, transcriptionIdOverride, options),
+          },
+        ]
+      );
+      return undefined;
+    } finally {
+      setIsOrganizing(false);
+>>>>>>> Stashed changes
     }
 
     try {
@@ -489,6 +594,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   };
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   const handleSummary = async () => {
     if (!reviewText || reviewText.trim().length === 0) {
       Alert.alert('알림', '요약할 후기 내용을 먼저 작성해주세요.');
@@ -545,6 +651,11 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
    *                 UI
    *  =============================== */
 >>>>>>> Stashed changes
+=======
+  /** ===============================
+   *                 UI
+   *  =============================== */
+>>>>>>> Stashed changes
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* HEADER */}
@@ -559,8 +670,13 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
       </View>
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       {/* 질문 카드 스와이프 */}
       {isCardVisible && !isLoadingQuestions && questions.length > 0 && (
+=======
+      {/* 질문 카드 */}
+      {questions.length > 0 && (
+>>>>>>> Stashed changes
 =======
       {/* 질문 카드 */}
       {questions.length > 0 && (
@@ -658,6 +774,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
           disabled={isProcessingSTT}
         >
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
           <Text style={styles.audioUploadButtonIcon}>
             {isProcessingSTT ? '⏳' : '🎵'}
           </Text>
@@ -670,6 +787,12 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         onClose={() => setShowSummaryModal(false)}
         summaryText={summaryText || "이곳에 요약된 결과가 나옵니다."}
       />
+=======
+          <Text style={styles.recordButtonIcon}>{isProcessingSTT ? '⏳' : '🎵'}</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
+
+>>>>>>> Stashed changes
 =======
           <Text style={styles.recordButtonIcon}>{isProcessingSTT ? '⏳' : '🎵'}</Text>
         </TouchableOpacity>
@@ -775,9 +898,12 @@ const styles = StyleSheet.create({
   reviewListButtonIcon: { fontSize: 18, marginRight: 6 },
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   // 오디오 파일 업로드 버튼
   audioUploadButton: {
 =======
+=======
+>>>>>>> Stashed changes
   recordButton: {
 >>>>>>> Stashed changes
     position: 'absolute',
@@ -792,6 +918,7 @@ const styles = StyleSheet.create({
     ...Shadows.medium,
   },
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   audioUploadButtonProcessing: {
     backgroundColor: '#FFA500',
     opacity: 0.7,
@@ -799,6 +926,10 @@ const styles = StyleSheet.create({
   audioUploadButtonIcon: {
     fontSize: 24,
   },
+=======
+  recordButtonProcessing: { backgroundColor: '#FFA500', opacity: 0.7 },
+  recordButtonIcon: { fontSize: 24 },
+>>>>>>> Stashed changes
 =======
   recordButtonProcessing: { backgroundColor: '#FFA500', opacity: 0.7 },
   recordButtonIcon: { fontSize: 24 },
