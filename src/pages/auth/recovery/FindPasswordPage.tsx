@@ -13,41 +13,57 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../styles/designSystem';
+import { apiClient } from '../../../services/api/client'; // ⭐ 직접 API 사용
 
 const FindPasswordPage = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(''); // UI 유지용 (백엔드에서 사용하지 않음)
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFindPassword = async () => {
     if (!email.trim()) {
-      Alert.alert('입력 오류', '이메일을 입력해주세요.', [{ text: '확인' }]);
+      Alert.alert('입력 오류', '이메일을 입력해주세요.');
       return;
     }
     if (!username.trim()) {
-      Alert.alert('입력 오류', '아이디를 입력해주세요.', [{ text: '확인' }]);
+      Alert.alert('입력 오류', '아이디를 입력해주세요.');
       return;
     }
 
     setIsLoading(true);
+
     try {
-      // TODO: Implement API call to reset password
-      // This is a mock implementation
-      await new Promise<void>((resolve: (value: void | PromiseLike<void>) => void) => setTimeout(resolve, 1000));
-      Alert.alert(
-        '비밀번호 재설정',
-        '비밀번호 재설정 링크가 이메일로 전송되었습니다.',
-        [{ 
-          text: '확인',
-          onPress: () => navigation.goBack()
-        }]
-      );
+      console.log('🔐 임시 비밀번호 발급 요청:', { email });
+
+      const result = await apiClient.post('/auth/forgot/temporary-password', {
+        email: email,
+      });
+
+      console.log('📩 서버 응답:', result);
+
+      if (result.success) {
+        Alert.alert(
+          '임시 비밀번호 발급 완료',
+          '입력하신 이메일로 임시 비밀번호가 발송되었습니다.',
+          [
+            {
+              text: '확인',
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          '오류',
+          result.error?.message || '임시 비밀번호 발급에 실패했습니다.'
+        );
+      }
     } catch (error) {
+      console.error('❌ 임시 비밀번호 발급 요청 오류:', error);
       Alert.alert(
         '오류 발생',
-        '비밀번호 찾기 중 오류가 발생했습니다. 다시 시도해주세요.',
-        [{ text: '확인' }]
+        '임시 비밀번호 발급 중 문제가 발생했습니다.\n다시 시도해주세요.'
       );
     } finally {
       setIsLoading(false);
@@ -56,17 +72,19 @@ const FindPasswordPage = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
             <Text style={styles.title}>비밀번호 찾기</Text>
-            <Text style={styles.subtitle}>가입 시 사용한 이메일과 아이디를 입력해주세요.</Text>
+            <Text style={styles.subtitle}>
+              가입 시 사용한 이메일과 아이디를 입력해주세요.
+            </Text>
           </View>
 
           <View style={styles.formSection}>
@@ -105,7 +123,7 @@ const FindPasswordPage = () => {
               disabled={isLoading}
             >
               <Text style={styles.submitButtonText}>
-                {isLoading ? '처리 중...' : '비밀번호 재설정'}
+                {isLoading ? '처리 중...' : '임시 비밀번호 받기'}
               </Text>
             </TouchableOpacity>
 

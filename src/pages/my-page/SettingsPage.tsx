@@ -1,3 +1,4 @@
+//check
 import React, { useState } from 'react';
 import {
   View,
@@ -15,15 +16,30 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+
 import { useAtom } from 'jotai';
 import { userProfileAtom, resetUserDataAtom } from '../../atoms/userAtoms';
-import { ticketsAtom } from '../../atoms/ticketAtoms';
+import { ticketsAtom, basePromptAtom } from '../../atoms/ticketAtoms';
 import { logoutAtom, deleteAccountAtom } from '../../atoms/userAtomsApi';
+
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
+import { resolveImageUrl } from '../../utils/resolveImageUrl';
+
+import {
+  Colors,
+  Typography,
+  Spacing,
+  BorderRadius,
+  Shadows,
+  ComponentStyles,
+} from '../../styles/designSystem';
+
 import ModalHeader from '../../components/ModalHeader';
 import { useUserProfileData } from '../../hooks/useApiData';
 import { UserProfile } from '../../types/user';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+import { fetchMyProfileAtom } from '../../atoms/userAtomsApi';
 
 interface SettingsPageProps {
   navigation: any;
@@ -31,139 +47,132 @@ interface SettingsPageProps {
 
 const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  
-  // 사용자 프로필 데이터 가져오기 (백엔드에서 자동으로 로드)
-  const { data: profile } = useUserProfileData({
-    autoFetch: true,
-  });
-  
-  const [userProfile] = useAtom(userProfileAtom);
-  const [tickets] = useAtom(ticketsAtom);
-  
-  // 백엔드에서 가져온 프로필이 있으면 사용, 없으면 atom 값 사용
-  const actualProfile = (profile || userProfile || {}) as UserProfile;
-  
-  // 실제 티켓 개수 계산
-  const realTickets = tickets.filter(ticket => !isPlaceholderTicket(ticket));
 
-  // 로그아웃 atom
+  // 백엔드 프로필 불러오기
+  const { data: profile } = useUserProfileData({ autoFetch: true });
+  const [, fetchMyProfile] = useAtom(fetchMyProfileAtom);
+
+  // 화면 포커스 시 프로필 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyProfile(true);
+    }, [fetchMyProfile])
+  );
+
+  // local atom 데이터
+  const [localProfile] = useAtom(userProfileAtom);
+  const [tickets] = useAtom(ticketsAtom);
+
+  // 최종 프로필 결정 (백엔드 → 로컬 atom → fallback)
+  const actualProfile: UserProfile =
+    profile ??
+    localProfile ?? {
+      id: '',
+      nickname: '사용자',
+      email: '',
+      profileImage: null,
+      createdAt: null,
+      updatedAt: null,
+      isAccountPrivate: false,
+    };
+
+  // 프로필 이미지 URL 변환
+  const resolvedImageUrl = resolveImageUrl(actualProfile.profileImage);
+
+  // 티켓 계산
+  const realTickets = tickets.filter((t) => !isPlaceholderTicket(t));
+
+  // atoms
   const [, logout] = useAtom(logoutAtom);
   const [, resetUserData] = useAtom(resetUserDataAtom);
   const [, deleteAccount] = useAtom(deleteAccountAtom);
+  const [, setBasePrompt] = useAtom(basePromptAtom);
 
   // 회원탈퇴 모달 상태
   const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false);
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('');
 
-  //로그아웃
+  // 로그아웃
   const handleLogout = async () => {
-    Alert.alert(
-      '로그아웃',
-      '정말 로그아웃 하시겠습니까?',
-      [
-        {
-          text: '취소',
-          style: 'cancel',
+    Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '로그아웃',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await logout();
+            resetUserData();
+            setBasePrompt(null); // 로그아웃 시 basePrompt 초기화
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Login' as never }],
+            });
+          } catch (error) {
+            Alert.alert('오류', '로그아웃 중 문제가 발생했습니다.');
+          }
         },
-        {
-          text: '로그아웃',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // 로그아웃 실행 (토큰 제거, 상태 초기화)
-              await logout();
-              
-              // 사용자 데이터 초기화
-              resetUserData();
-              
-              // 로그인 화면으로 이동
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' as never }],
-              });
-            } catch (error) {
-              console.error('로그아웃 오류:', error);
-              Alert.alert('오류', '로그아웃 중 오류가 발생했습니다.');
-            }
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
-  //회원탈퇴 확인 다이얼로그
+  // 회원탈퇴 alert (iOS = prompt 사용)
   const handleDeleteAccount = () => {
     if (Platform.OS === 'ios') {
-      // iOS는 Alert.prompt 사용
       Alert.prompt(
         '회원 탈퇴',
-        '정말 회원 탈퇴를 하시겠습니까?\n이 작업은 되돌릴 수 없습니다.\n\n비밀번호를 입력해주세요.',
+        '정말 탈퇴하시겠습니까?\n되돌릴 수 없습니다.\n\n비밀번호를 입력하세요.',
         [
-          {
-            text: '취소',
-            style: 'cancel',
-          },
+          { text: '취소', style: 'cancel' },
           {
             text: '탈퇴',
             style: 'destructive',
             onPress: async (password) => {
-              if (!password || password.trim() === '') {
-                Alert.alert('오류', '비밀번호를 입력해주세요.');
-                return;
-              }
-              await executeDeleteAccount(password.trim());
+              if (!password) return;
+              executeDeleteAccount(password);
             },
           },
         ],
-        'secure-text' // 비밀번호 입력 모드
+        'secure-text'
       );
     } else {
-      // Android는 커스텀 모달 사용
       setDeleteAccountModalVisible(true);
     }
   };
 
-  // 회원탈퇴 실행
+  // 실제 탈퇴 실행
   const executeDeleteAccount = async (password: string) => {
     try {
-      // 회원탈퇴 실행
       const result = await deleteAccount(password);
-      
+
       if (result.success) {
-        // 사용자 데이터 초기화
         resetUserData();
-        
-        // 모달 닫기
         setDeleteAccountModalVisible(false);
         setDeleteAccountPassword('');
-        
-        // 로그인 화면으로 이동
+
         navigation.reset({
           index: 0,
           routes: [{ name: 'Login' as never }],
         });
       } else {
-        Alert.alert(
-          '회원탈퇴 실패',
-          result.error?.message || '회원탈퇴 중 오류가 발생했습니다.'
-        );
+        Alert.alert('오류', result.error?.message || '탈퇴 실패');
       }
-    } catch (error) {
-      console.error('회원탈퇴 오류:', error);
-      Alert.alert('오류', '회원탈퇴 중 오류가 발생했습니다.');
+    } catch {
+      Alert.alert('오류', '회원탈퇴 중 문제가 발생했습니다.');
     }
   };
 
-  // Android용 회원탈퇴 모달에서 확인 버튼 클릭
+  // Android 모달 확인
   const handleDeleteAccountConfirm = () => {
-    if (!deleteAccountPassword || deleteAccountPassword.trim() === '') {
+    if (!deleteAccountPassword.trim()) {
       Alert.alert('오류', '비밀번호를 입력해주세요.');
       return;
     }
     executeDeleteAccount(deleteAccountPassword.trim());
   };
 
-  //설정 페이지 리스트
+  // 설정 리스트
   const settingsOptions = [
     {
       id: 1,
@@ -196,27 +205,20 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
       textColor: '#FF3B30',
     },
   ];
-  
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      {/* 헤더 */}
-      <ModalHeader
-        title="설정"
-        onBack={() => navigation.goBack()}
-      />
-      
-      {/* 화면 구성 */}
+    <SafeAreaView style={styles.container}>
+      <ModalHeader title="설정" onBack={() => navigation.goBack()} />
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        
-        {/* 사용자 프로필 */}
+        {/* 유저 섹션 */}
         <View style={styles.userSection}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.avatarContainer}
             onPress={() => navigation.navigate('PersonalInfoEdit')}
           >
-            {actualProfile.profileImage ? (
-              <Image source={{ uri: actualProfile.profileImage }} style={styles.avatarImage} />
+            {resolvedImageUrl ? (
+              <Image source={{ uri: resolvedImageUrl }} style={styles.avatarImage} />
             ) : (
               <View style={[styles.avatarImage, styles.defaultAvatar]}>
                 <Text style={styles.defaultAvatarText}>👤</Text>
@@ -224,11 +226,10 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
             )}
           </TouchableOpacity>
 
-          {/* 사용자 이름 */}
           <Text style={styles.username}>{actualProfile.nickname}</Text>
         </View>
 
-        {/* 설정 리스트 */}
+        {/* 옵션 리스트 */}
         <View style={styles.optionsContainer}>
           {settingsOptions.map((option) => (
             <TouchableOpacity
@@ -247,37 +248,33 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
                   {option.title}
                 </Text>
               </View>
-              {option.showArrow && (
-                <Text style={styles.optionArrow}>→</Text>
-              )}
+
+              {option.showArrow && <Text style={styles.optionArrow}>→</Text>}
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* 앱 버젼 */}
+        {/* 버전 정보 */}
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>버전 1.0.0</Text>
         </View>
       </ScrollView>
 
-      {/* Android용 회원탈퇴 비밀번호 입력 모달 */}
+      {/* Android 탈퇴 모달 */}
       <Modal
         visible={deleteAccountModalVisible}
-        transparent={true}
+        transparent
         animationType="fade"
-        onRequestClose={() => {
-          setDeleteAccountModalVisible(false);
-          setDeleteAccountPassword('');
-        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>회원 탈퇴</Text>
             <Text style={styles.modalMessage}>
-              정말 회원 탈퇴를 하시겠습니까?{'\n'}
-              이 작업은 되돌릴 수 없습니다.{'\n\n'}
+              정말 탈퇴하시겠습니까?{'\n'}
+              되돌릴 수 없습니다.{'\n\n'}
               비밀번호를 입력해주세요.
             </Text>
+
             <TextInput
               style={styles.modalInput}
               placeholder="비밀번호"
@@ -285,8 +282,8 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
               value={deleteAccountPassword}
               onChangeText={setDeleteAccountPassword}
               secureTextEntry
-              autoFocus
             />
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonCancel]}
@@ -297,6 +294,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
               >
                 <Text style={styles.modalButtonCancelText}>취소</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonDelete]}
                 onPress={handleDeleteAccountConfirm}
@@ -311,21 +309,19 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
   );
 };
 
+// 스타일 정의
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
   },
-
   content: {
     flex: 1,
   },
   userSection: {
     backgroundColor: Colors.systemBackground,
     alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: Spacing.xxxl,
-    paddingBottom: Spacing.xxxl,
     borderBottomColor: Colors.systemGray5,
     borderBottomWidth: 0.5,
     marginBottom: Spacing.sectionSpacing,
@@ -346,7 +342,6 @@ const styles = StyleSheet.create({
     fontSize: 48,
     color: Colors.secondaryLabel,
   },
-
   username: {
     ...Typography.title1,
     fontWeight: 'bold',
@@ -358,7 +353,6 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
-    padding: 0,
   },
   optionItem: {
     flexDirection: 'row',
@@ -394,20 +388,16 @@ const styles = StyleSheet.create({
     ...Typography.footnote,
     color: Colors.tertiaryLabel,
   },
-  // 회원탈퇴 모달 스타일
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    alignItems: 'center',
     padding: Spacing.xl,
   },
   modalContent: {
     backgroundColor: Colors.systemBackground,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
-    width: '100%',
-    maxWidth: 400,
     ...Shadows.large,
   },
   modalTitle: {
@@ -435,8 +425,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
-    minWidth: 80,
-    alignItems: 'center',
   },
   modalButtonCancel: {
     backgroundColor: Colors.systemGray5,

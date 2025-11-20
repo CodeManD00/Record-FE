@@ -2,6 +2,14 @@
  * OCRPage.tsx
  * 티켓 이미지에서 공연 정보를 자동으로 추출하는 페이지
  */
+ console.log("🔥 __DEV__ =", __DEV__);
+ console.log("🔥 API_BASE_URL =", API_BASE_URL);
+ console.log("🔥 DEVICE =", Platform.OS);
+
+
+
+import { API_BASE_URL } from '../../services/api/client';
+
 
 import React, { useState } from 'react';
 import {
@@ -15,7 +23,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { launchCamera, launchImageLibrary, Asset } from 'react-native-image-picker';
 import {
   Colors,
   Typography,
@@ -24,7 +32,8 @@ import {
   Shadows,
 } from '../../styles/designSystem';
 import { CreateTicketData, TicketStatus } from '../../atoms';
-import { ocrService, OCRResult as OCRResultType } from '../../services/api';
+import ocrService, { OCRResult as OCRResultType } from '../../services/api/ocrService';
+
 
 interface OCRPageProps {
   navigation: any;
@@ -59,9 +68,11 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
         saveToPhotos: false,
       });
 
-      if (result.assets && result.assets[0].uri) {
-        setSelectedImage(result.assets[0].uri);
-        processOCR(result.assets[0].uri);
+      const asset = result.assets?.[0];
+
+      if (asset?.uri) {
+        setSelectedImage(asset.uri);
+        processOCR(asset);
       }
     } catch (error) {
       console.error('Camera error:', error);
@@ -74,12 +85,16 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
     try {
       const result = await launchImageLibrary({
         mediaType: 'photo',
-        quality: 0.9,
+        includeBase64: true,
+        quality: 1.0,
+        includeExtra: true,
       });
 
-      if (result.assets && result.assets[0].uri) {
-        setSelectedImage(result.assets[0].uri);
-        processOCR(result.assets[0].uri);
+      const asset = result.assets?.[0];
+
+      if (asset?.uri) {
+        setSelectedImage(asset.uri);
+        processOCR(asset);
       }
     } catch (error) {
       console.error('Gallery error:', error);
@@ -88,11 +103,18 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
   };
 
   /* OCR 처리 */
-  const processOCR = async (imageUri: string) => {
+  const processOCR = async (asset: Asset) => {
+    const imageUri = asset.uri;
+    if (!imageUri) {
+      Alert.alert('오류', '이미지를 불러올 수 없습니다.');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       console.log('이미지 URI: ', imageUri);
       console.log('OCR 시작:', imageUri);
+<<<<<<< Updated upstream
       
       // Asset 객체 생성
       const asset: any = {
@@ -101,19 +123,45 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
         fileName: imageUri.split('/').pop() || 'ticket.jpg',
       };
       
+=======
+>>>>>>> Stashed changes
       const result = await ocrService.extractTicket(asset);
 
       console.log('🔍 OCR 서비스 응답:', result);
 
-      if (!result.success || !result.data) {
-        throw new Error(result.error?.message || 'OCR 결과가 없습니다.');
+      if (!result.success) {
+        throw new Error(result.error?.message || 'OCR 처리 실패');
       }
 
       const ocrData = result.data;
+
       console.log('📋 추출된 OCR 데이터:', ocrData);
+
+      /**
+       * 백엔드 응답 형식:
+       * {
+       *   "title": "Yet to Come in BUSAN",
+       *   "artist": "BTS",
+       *   "date": "2022-10-15",
+       *   "time": "18:00",
+       *   "venue": "부산 아시아드 주경기장",
+       *   "seat": "3층 N63구역 14열 23번"
+       * }
+       */
+      
+      // date와 time을 합쳐서 performedAt 생성
+      let performedAt = new Date();
+      if (ocrData.date) {
+        const dateStr = ocrData.date;
+        const timeStr = ocrData.time || '19:00'; // time이 없으면 기본값 19:00
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        performedAt = new Date(dateStr);
+        performedAt.setHours(hours || 19, minutes || 0, 0, 0);
+      }
 
       const formatted: CreateTicketData = {
         title: ocrData.title ?? '',
+<<<<<<< Updated upstream
         artist: ocrData.artist ?? '', // OCR에서 아티스트 정보 추출
         place: ocrData.venue ?? ocrData.place ?? '',
         seat: ocrData.seat ?? '',
@@ -121,6 +169,14 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
           ? new Date(ocrData.date + (ocrData.time ? `T${ocrData.time}` : ''))
           : new Date(),
         genre: null,
+=======
+        artist: ocrData.artist ?? '', // 백엔드에서 artist 받기
+        place: ocrData.venue ?? '', // 백엔드는 venue로 보냄
+        seat: ocrData.seat ?? '',
+        performedAt: performedAt,
+        bookingSite: '',
+        genre: '밴드', // 기본값 (null 금지)
+>>>>>>> Stashed changes
         status: TicketStatus.PUBLIC,
       };
 
@@ -298,10 +354,6 @@ const styles = StyleSheet.create({
     minHeight: 140,
     ...Shadows.medium,
   },
-  imageButtonIcon: {
-    fontSize: 48,
-    marginBottom: Spacing.sm,
-  },
   imageButtonText: {
     ...Typography.body,
     fontWeight: '600',
@@ -309,7 +361,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // 사진 미리보기
   previewContainer: {
     margin: 28,
   },
@@ -320,7 +371,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.systemGray6,
   },
 
-  // 로딩화면
   processingOverlay: {
     position: 'absolute',
     top: 0,
@@ -339,48 +389,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // 결과
-  resultContainer: {
-    backgroundColor: Colors.systemBackground,
-    marginTop: Spacing.md,
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
-    ...Shadows.small,
-  },
-  resultTitle: {
-    ...Typography.title3,
-    fontWeight: '600',
-    color: Colors.label,
-    marginBottom: Spacing.md,
-  },
-  resultItem: {
-    flexDirection: 'row',
-    marginBottom: Spacing.sm,
-  },
-  resultLabel: {
-    ...Typography.body,
-    color: Colors.secondaryLabel,
-    width: 100,
-  },
-  resultValue: {
-    ...Typography.body,
-    color: Colors.label,
-    fontWeight: '500',
-    flex: 1,
-  },
-
-  // 다시 선택하기 버튼
   retryButtonContainer: {
     paddingHorizontal: 24,
     paddingVertical: 36,
     alignItems: 'center',
   },
-
   retryButton: {
     width: '116%',
     backgroundColor: '#8E8E93',
     paddingVertical: 16,
-    paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
   },
@@ -388,19 +405,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '600',
-  },
-  manualInputHint: {
-    margin: Spacing.sectionSpacing,
-    padding: Spacing.lg,
-    backgroundColor: Colors.systemGray6,
-    borderRadius: BorderRadius.md,
-    alignItems: 'center',
-  },
-  manualInputText: {
-    ...Typography.footnote,
-    color: Colors.secondaryLabel,
-    textAlign: 'center',
-    lineHeight: 20,
   },
 });
 

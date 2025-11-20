@@ -1,3 +1,4 @@
+//check
 import React, { useState } from 'react';
 import {
   View,
@@ -28,6 +29,7 @@ const LoginPage = () => {
 
   const handleLogin = async () => {
     // 입력 검증
+    console.log("🔵 handleLogin 실행됨, id:", id, "pw:", password);
     if (!id.trim()) {
       Alert.alert('입력 오류', '아이디를 입력해주세요.', [{ text: '확인' }]);
       return;

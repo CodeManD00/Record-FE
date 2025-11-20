@@ -1,4 +1,6 @@
+//check
 import React, { useState, useRef, useMemo } from 'react';
+import { resolveImageUrl } from '../../utils/resolveImageUrl';
 import {
   View,
   Text,
@@ -28,45 +30,49 @@ import {
   Shadows,
 } from '../../styles/designSystem';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+import { fetchMyProfileAtom } from '../../atoms/userAtomsApi';
 
-// 마이 페이지 Props 타입 정의
 interface MyPageProps {
   navigation: any;
 }
 
-// 백엔드 사용자 프로필 타입 (SignupRequest 기준)
 interface UserProfile {
-  user_id: string;          // 로그인 아이디
-  email: string;       // 이메일
-  nickname: string;    // 닉네임
+  id: string;
+  email: string;
+  nickname: string;
   profileImage?: string;
   createdAt: string;
   updatedAt: string;
-  isAccountPrivate: false,
+  isAccountPrivate: boolean;
 }
 
 const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
-  // 로컬 상태 관리 atoms 사용
   const [myTickets] = useAtom(ticketsAtom);
   const [friendsList] = useAtom(friendsAtom);
 
-  // 사용자 프로필 데이터 가져오기
   const {
     data: profileData,
     loading: profileLoading,
-    error: profileError,
   } = useUserProfileData();
 
-  // 안전한 타입 캐스팅
+  const [, fetchMyProfile] = useAtom(fetchMyProfileAtom);
+
+  // 화면 포커스 시 프로필 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyProfile(true);
+    }, [fetchMyProfile])
+  );
+
   const profile = profileData as UserProfile | undefined;
 
-  // 기본값으로 안전하게 처리
   const actualTickets: Ticket[] = (myTickets || []) as Ticket[];
   const actualFriends = (friendsList || []) as any[];
 
-  // 사용자 프로필 (없을 때 기본값)
   const actualProfile: UserProfile = profile || {
-    user_id: '',
+    id: '',
     email: '',
     nickname: '사용자',
     profileImage: undefined,
@@ -75,43 +81,31 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
     isAccountPrivate: false,
   };
 
-  // 로딩 상태
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
-  // 스크롤 애니메이션을 위한 Animated.Value
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // 최신순으로 정렬
   const realTickets = useMemo(() => {
     return [...actualTickets].sort((a: Ticket, b: Ticket) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
+      return (
+        (b.createdAt ? new Date(b.createdAt).getTime() : 0) -
+        (a.createdAt ? new Date(a.createdAt).getTime() : 0)
+      );
     });
   }, [actualTickets]);
 
-  // 디버깅용 로그
-  console.log('===== MyPage 티켓 디버깅 =====');
-  console.log('actualTickets:', actualTickets);
-  console.log('realTickets (정렬 후):', realTickets);
-  console.log('TicketGrid 전달용 티켓 수:', realTickets.length);
+  if (profileLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <LoadingSpinner loading />
+      </SafeAreaView>
+    );
+  }
 
-  // 티켓 모달 열기
-  const handleTicketPress = (ticket: Ticket) => {
-    setSelectedTicket(ticket);
-    setModalVisible(true);
-  };
-
-  // 티켓 모달 닫기
-  const handleCloseModal = () => {
-    setModalVisible(false);
-    setSelectedTicket(null);
-  };
-
-  // 헤더 애니메이션
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 100, 200],
     outputRange: [1, 0.5, 0.2],
@@ -130,20 +124,9 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
     extrapolate: 'clamp',
   });
 
-  // 프로필 로딩 처리
-  if (profileLoading) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <LoadingSpinner loading />
-    </SafeAreaView>
-  );
-}
-
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* 애니메이션 헤더 - 스크롤에 따라 투명도 변화 */}
       <GNB
-        // 헤더 중앙에는 닉네임이 보이게, 없으면 아이디
         centerTitle={actualProfile.nickname}
         centerTitleOpacity={centerIdOpacity}
         headerStyle={{
@@ -153,28 +136,12 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
           }),
         }}
         rightContent={
-          <Animated.View
-            style={[styles.headerIcons, { opacity: headerIconsOpacity }]}
-          >
-            {/* 친구 추가 버튼 */}
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => navigation.navigate('AddFriend')}
-            >
-              <Image
-                source={require('../../assets/person_add.png')}
-                style={styles.iconImage}
-              />
+          <Animated.View style={[styles.headerIcons, { opacity: headerIconsOpacity }]}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('AddFriend')}>
+              <Image source={require('../../assets/person_add.png')} style={styles.iconImage} />
             </TouchableOpacity>
-            {/* 설정 버튼 */}
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => navigation.navigate('Settings')}
-            >
-              <Image
-                source={require('../../assets/settings.png')}
-                style={styles.iconImage}
-              />
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Settings')}>
+              <Image source={require('../../assets/settings.png')} style={styles.iconImage} />
             </TouchableOpacity>
           </Animated.View>
         }
@@ -193,31 +160,32 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
           { paddingBottom: tabBarHeight + insets.bottom },
         ]}
       >
+
         {/* 사용자 프로필 섹션 */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
-            {actualProfile.profileImage ? (
-              <Image
-                source={{ uri: actualProfile.profileImage }}
-                style={styles.avatarImage}
-              />
-            ) : (
-              <View style={[styles.avatarImage, styles.defaultAvatar]}>
-                <Text style={styles.defaultAvatarText}>👤</Text>
-              </View>
-            )}
+            {(() => {
+              const resolvedUrl = resolveImageUrl(actualProfile.profileImage);
+              return resolvedUrl ? (
+                <Image source={{ uri: resolvedUrl }} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarImage, styles.defaultAvatar]}>
+                  <Text style={styles.defaultAvatarText}>👤</Text>
+                </View>
+              );
+            })()}
           </View>
 
-          {/* 티켓 개수 뱃지 */}
+          {/* 티켓 개수 */}
           <View style={styles.badgeWrapper}>
             <Text style={styles.badgeEmoji}>🎟️</Text>
             <Text style={styles.badgeText}>{realTickets.length}</Text>
           </View>
 
-          {/* 사용자 닉네임 */}
+          {/* 닉네임 */}
           <Text style={styles.username}>{actualProfile.nickname}</Text>
 
-          {/* 사용자 통계 */}
+          {/* 통계 */}
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <Text style={styles.statLabel}>tickets</Text>
@@ -233,18 +201,20 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
           </View>
         </View>
 
-        {/* 티켓 그리드 섹션 */}
+        {/* 티켓 그리드 */}
         <View style={styles.ticketGridSection}>
-          <TicketGrid tickets={realTickets} onTicketPress={handleTicketPress} />
+          <TicketGrid tickets={realTickets} onTicketPress={(t) => {
+            setSelectedTicket(t);
+            setModalVisible(true);
+          }} />
         </View>
       </Animated.ScrollView>
 
-      {/* 티켓 상세 모달 */}
       {selectedTicket && (
         <TicketDetailModal
           visible={modalVisible}
           ticket={selectedTicket}
-          onClose={handleCloseModal}
+          onClose={() => setModalVisible(false)}
           isMine={true}
         />
       )}
@@ -276,12 +246,10 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
 
-  // 프로필 섹션 스타일
   profileSection: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: Spacing.xxxl,
-    paddingBottom: Spacing.xxxl,
     borderBottomColor: Colors.systemGray5,
     borderBottomWidth: 0.5,
   },
@@ -292,6 +260,13 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     backgroundColor: Colors.systemGray5,
+  },
+  defaultAvatar: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  defaultAvatarText: {
+    fontSize: 48,
   },
 
   badgeWrapper: {
@@ -319,7 +294,6 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
     marginTop: Spacing.md,
     gap: 40,
   },
@@ -329,33 +303,18 @@ const styles = StyleSheet.create({
   statLabel: {
     ...Typography.subheadline,
     color: Colors.secondaryLabel,
-    marginBottom: Spacing.xs,
   },
   statValue: {
     ...Typography.callout,
     fontWeight: 'bold',
-    color: Colors.label,
   },
 
   username: {
     ...Typography.title1,
     fontWeight: 'bold',
-    color: Colors.label,
-  },
-  defaultAvatar: {
-    backgroundColor: Colors.systemGray5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  defaultAvatarText: {
-    fontSize: 48,
-    color: Colors.secondaryLabel,
   },
 
-  // 티켓 그리드 섹션
   ticketGridSection: {
-    flex: 1,
-    backgroundColor: Colors.systemBackground,
     paddingTop: Spacing.xs,
   },
 });

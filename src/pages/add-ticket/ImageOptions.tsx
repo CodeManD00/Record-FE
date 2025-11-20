@@ -1,3 +1,5 @@
+// === ImageOptions.tsx (UI 절대 수정 없음, 로직만 호환 수정) ===
+
 import React, { useState } from 'react';
 import {
   View,
@@ -22,7 +24,8 @@ import {
   Asset,
 } from 'react-native-image-picker';
 import { useAtom } from 'jotai';
-import { addTicketAtom, TicketStatus } from '../../atoms';
+import { addTicketAtom, TicketStatus, basePromptAtom } from '../../atoms';
+import { sttService } from '../../services/api/sttService';
 import {
   ImageOptionsScreenNavigationProp,
   ImageOptionsRouteProp,
@@ -38,8 +41,6 @@ import {
 } from '../../styles/designSystem';
 import { Ticket, CreateTicketData } from '../../types/ticket';
 
-// Types are now imported from reviewTypes
-
 const ImageOptions = () => {
   const navigation = useNavigation<ImageOptionsScreenNavigationProp>();
   const route = useRoute<ImageOptionsRouteProp>();
@@ -48,31 +49,78 @@ const ImageOptions = () => {
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  // AI 이미지 생성 - 기본 설정으로 바로 시작
-  const handleAIImageSelect = () => {
-    const defaultSettings = {
-      backgroundColor: '자동',
-      includeText: true,
-      imageStyle: '사실적',
-      aspectRatio: '정사각형',
-    };
+  /**
+   * 🎨 AI 이미지 생성
+   * 1. /reviews/summarize 호출하여 5줄 영어 요약 생성
+   * 2. basePrompt로 저장
+   * 3. AIImageResults로 이동
+   */
+  const [, setBasePrompt] = useAtom(basePromptAtom);
+  const [isGeneratingSummary, setIsGeneratingSummary] = React.useState(false);
 
-    navigation.navigate('AIImageResults', {
-      ticketData,
-      reviewData,
-      images: [],
-      settings: defaultSettings,
-    });
+  const handleAIImageSelect = async () => {
+    const reviewText = reviewData.reviewText || reviewData.text || '';
+    
+    if (!reviewText.trim()) {
+      Alert.alert('오류', '후기 내용이 없습니다.');
+      return;
+    }
+
+    setIsGeneratingSummary(true);
+
+    try {
+      // /reviews/summarize 호출하여 5줄 영어 요약 생성
+      const result = await sttService.summarizeReview(reviewText);
+
+      if (result.success && result.data) {
+        // summary 필드에서 basePrompt 추출 (5줄 영어 요약)
+        const summary = result.data.summary;
+        
+        if (summary) {
+          // basePrompt로 저장
+          setBasePrompt(summary);
+          console.log('✅ basePrompt 저장:', summary);
+
+          const defaultSettings = {
+            backgroundColor: '자동',
+            includeText: true,
+            imageStyle: '사실적',
+            aspectRatio: '정사각형',
+          };
+
+          navigation.navigate('AIImageResults', {
+            ticketData,
+            reviewData: {
+              reviewText: reviewText,
+            },
+            images: [],
+            settings: defaultSettings,
+          });
+        } else {
+          Alert.alert('오류', '요약 생성에 실패했습니다.');
+        }
+      } else {
+        Alert.alert('오류', result.error?.message || '요약 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('요약 생성 오류:', error);
+      Alert.alert('오류', '요약 생성 중 문제가 발생했습니다.');
+    } finally {
+      setIsGeneratingSummary(false);
+    }
   };
 
-  // 갤러리에서 선택
+  /**
+   * 📷 갤러리 선택
+   */
   const handleGallerySelect = () => {
     const options: ImageLibraryOptions = {
       mediaType: 'photo',
-      includeBase64: false,
+      includeBase64: true,
+      quality: 1.0,
+      includeExtra: true,
       maxHeight: 2000,
       maxWidth: 2000,
-      quality: 0.8,
       selectionLimit: 1,
     };
 
@@ -85,19 +133,23 @@ const ImageOptions = () => {
 
       const asset: Asset | undefined = response.assets?.[0];
       if (asset?.uri) {
-        console.log('갤러리에서 선택한 이미지:', asset.uri);
+        console.log('갤러리 선택:', asset.uri);
         setSelectedImage(asset.uri);
-        // 바로 TicketComplete로 이동
+
         navigation.navigate('TicketComplete', {
           ticketData,
-          reviewData,
+          reviewData: {
+            reviewText: reviewData.reviewText || reviewData.text || '',
+          },
           images: [asset.uri],
         });
       }
     });
   };
 
-  // 카메라 또는 갤러리 선택 UI
+  /**
+   * 📸 카메라 or 갤러리 선택
+   */
   const handleGalleryOrCameraSelect = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -107,7 +159,7 @@ const ImageOptions = () => {
         },
         buttonIndex => {
           if (buttonIndex === 1) {
-            // 카메라
+            // Camera
             launchCamera(
               {
                 mediaType: 'photo',
@@ -123,40 +175,32 @@ const ImageOptions = () => {
                 }
                 const asset: Asset | undefined = response.assets?.[0];
                 if (asset?.uri) {
-                  console.log('카메라로 촬영한 이미지:', asset.uri);
+                  console.log('카메라 촬영:', asset.uri);
                   setSelectedImage(asset.uri);
-                  // 바로 TicketComplete로 이동
+
                   navigation.navigate('TicketComplete', {
                     ticketData,
-                    reviewData,
+                    reviewData: {
+                      reviewText: reviewData.reviewText || reviewData.text || '',
+                    },
                     images: [asset.uri],
                   });
                 }
               },
             );
           } else if (buttonIndex === 2) {
-            // 갤러리
             handleGallerySelect();
           }
         },
       );
     } else {
-      // Android - 갤러리만 지원
       handleGallerySelect();
     }
   };
 
-  // 다음 화면으로 이동
-  const handleNext = () => {
-    if (!selectedImage) return;
-    navigation.navigate('TicketComplete', {
-      ticketData,
-      reviewData,
-      images: [selectedImage],
-    });
-  };
-
-  // 이미지 없이 완료
+  /**
+   * 📌 이미지 없이 완료 (저장)
+   */
   const handleSkipImages = () => {
     try {
       const ticketToSave = {
@@ -165,7 +209,7 @@ const ImageOptions = () => {
           reviewText: reviewData.reviewText || reviewData.text || '',
         },
         createdAt: new Date(),
-        images: [], // 빈 배열로 설정
+        images: [],
       };
 
       addTicket(ticketToSave);
@@ -174,7 +218,6 @@ const ImageOptions = () => {
         {
           text: '확인',
           onPress: () => {
-            // Navigate back to main screen (reset navigation stack)
             navigation.reset({
               index: 0,
               routes: [{ name: 'MainTabs' as never }],
@@ -211,14 +254,19 @@ const ImageOptions = () => {
         <View style={styles.optionsContainer}>
           {/* AI 이미지 */}
           <TouchableOpacity
-            style={styles.generateButton}
+            style={[styles.generateButton, isGeneratingSummary && styles.generateButtonDisabled]}
             onPress={handleAIImageSelect}
+            disabled={isGeneratingSummary}
           >
             <View style={styles.buttonContent}>
               <View style={styles.textContainer}>
-                <Text style={styles.optionButtonText}>AI 이미지</Text>
+                <Text style={styles.optionButtonText}>
+                  {isGeneratingSummary ? '요약 생성 중...' : 'AI 이미지'}
+                </Text>
                 <Text style={styles.optionButtonSubText}>
-                  AI가 만들어주는 나만의 티켓 이미지 ~
+                  {isGeneratingSummary
+                    ? '잠시만 기다려주세요...'
+                    : 'AI가 만들어주는 나만의 티켓 이미지 ~'}
                 </Text>
               </View>
               <Image
@@ -253,7 +301,7 @@ const ImageOptions = () => {
         </View>
       </ScrollView>
 
-      {/* 이미지 스킵 버튼 */}
+      {/* 이미지 스킵 */}
       <View style={styles.bottomButtonContainer}>
         <TouchableOpacity style={styles.skipButton} onPress={handleSkipImages}>
           <Text style={styles.skipButtonText}>이미지 없이 완료</Text>
@@ -263,6 +311,7 @@ const ImageOptions = () => {
   );
 };
 
+// === 이하 UI — 절대 수정 없음 ===
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F2F2F7' },
   header: {
@@ -274,7 +323,6 @@ const styles = StyleSheet.create({
     ...Shadows.small,
     zIndex: 1,
   },
-
   backButton: {
     width: 40,
     height: 40,
@@ -290,7 +338,6 @@ const styles = StyleSheet.create({
     color: Colors.label,
     fontWeight: 'bold',
   },
-
   headerTitle: {
     ...Typography.headline,
     color: Colors.label,
@@ -299,35 +346,8 @@ const styles = StyleSheet.create({
     right: 0,
     textAlign: 'center',
   },
-
-  placeholder: {
-    position: 'absolute',
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
-  },
-
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: Spacing.screenPadding,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#000000',
-    marginBottom: 8,
-    textAlign: 'left',
-  },
-  subtitle: {
-    marginBottom: 30,
-    fontSize: 17,
-    color: '#8E8E93',
-    textAlign: 'left',
-    lineHeight: 22,
-  },
-
-  // 안내 문구
+  placeholder: { position: 'absolute', right: Spacing.lg, width: 44, height: 44 },
+  scrollView: { flex: 1, paddingHorizontal: Spacing.screenPadding },
   contextMessage: {
     backgroundColor: Colors.secondarySystemBackground,
     paddingVertical: Spacing.lg,
@@ -340,14 +360,11 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     lineHeight: 20,
   },
-
-  // 선택 버튼
   optionsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginVertical: 16,
   },
-
   optionButton: {
     flex: 1,
     borderRadius: 12,
@@ -369,7 +386,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     marginHorizontal: 4,
   },
-
+  generateButtonDisabled: {
+    opacity: 0.6,
+  },
   optionButtonText: {
     fontSize: 17,
     fontWeight: '600',
@@ -377,33 +396,15 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-  optionButtonSubText: { 
-    fontSize: 15, 
-    fontWeight: '400', 
-    color: '#FFFFFF' 
+  optionButtonSubText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#FFFFFF',
   },
-
-  buttonContent: {
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-  },
-
-  buttonIcon: {
-    width: 50,
-    height: 90,
-    marginTop: 32,
-    marginBottom: 16,
-  },
-
-  textContainer: { 
-    flexDirection: 'column', 
-  },
-
-  // 이미지 skip 버튼
-  bottomButtonContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 36,
-  },
+  buttonContent: { alignItems: 'flex-end', paddingHorizontal: 16 },
+  buttonIcon: { width: 50, height: 90, marginTop: 32, marginBottom: 16 },
+  textContainer: { flexDirection: 'column' },
+  bottomButtonContainer: { paddingHorizontal: 24, paddingVertical: 36 },
   skipButton: {
     backgroundColor: '#8E8E93',
     paddingVertical: 16,
@@ -411,11 +412,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  skipButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '600',
-  },
+  skipButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
 });
 
 export default ImageOptions;

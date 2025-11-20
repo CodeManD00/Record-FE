@@ -24,7 +24,7 @@ target 'TicketBookApp' do
     :path => config[:reactNativePath],
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/..",
-    # Enable New Architecture (Fabric + TurboModules) so Nitro Modules (예: react-native-nitro-sound) 를 사용할 수 있습니다.
+    # Enable New Architecture (Fabric + TurboModules)
     # New Architecture는 Fabric(UI 렌더링)과 TurboModules(네이티브 모듈)로 구성되어 있습니다.
     :fabric_enabled => true,
     :new_arch_enabled => true

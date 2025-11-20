@@ -11,6 +11,7 @@
 		3B6EA3DE9559E1433720B884 /* libPods-TicketBookApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FC5A6AF2EDF0F9CD137B9C52 /* libPods-TicketBookApp.a */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		AABEF0A92ECED1B0009F3577 /* teststt.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AABEF0A82ECED1B0009F3577 /* teststt.m4a */; };
 		FA2A6FB474ACB8706AA8845E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -22,6 +23,7 @@
 		388AEF3DEE58712C074B7C58 /* Pods-TicketBookApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TicketBookApp.debug.xcconfig"; path = "Target Support Files/Pods-TicketBookApp/Pods-TicketBookApp.debug.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = TicketBookApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = TicketBookApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		AABEF0A82ECED1B0009F3577 /* teststt.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = teststt.m4a; sourceTree = "<group>"; };
 		D032E71EA7861F02ED8CC66F /* Pods-TicketBookApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TicketBookApp.release.xcconfig"; path = "Target Support Files/Pods-TicketBookApp/Pods-TicketBookApp.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FC5A6AF2EDF0F9CD137B9C52 /* libPods-TicketBookApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-TicketBookApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -42,6 +44,7 @@
 		13B07FAE1A68108700A75B9A /* TicketBookApp */ = {
 			isa = PBXGroup;
 			children = (
+				AABEF0A62ECED16A009F3577 /* New Group */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -87,6 +90,14 @@
 				13B07F961A680F5B00A75B9A /* TicketBookApp.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		AABEF0A62ECED16A009F3577 /* New Group */ = {
+			isa = PBXGroup;
+			children = (
+				AABEF0A82ECED1B0009F3577 /* teststt.m4a */,
+			);
+			path = "New Group";
 			sourceTree = "<group>";
 		};
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
@@ -160,6 +171,7 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				AABEF0A92ECED1B0009F3577 /* teststt.m4a in Resources */,
 				FA2A6FB474ACB8706AA8845E /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -191,9 +203,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-TicketBookApp/Pods-TicketBookApp-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-TicketBookApp/Pods-TicketBookApp-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -208,9 +224,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-TicketBookApp/Pods-TicketBookApp-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-TicketBookApp/Pods-TicketBookApp-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

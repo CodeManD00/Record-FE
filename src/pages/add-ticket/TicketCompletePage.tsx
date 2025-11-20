@@ -7,21 +7,16 @@ import {
   Dimensions,
   StatusBar,
   Image,
-  ImageBackground,
 } from 'react-native';
-import {
-  SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
-import { addTicketAtom, TicketStatus } from '../../atoms';
+import { addTicketAtom, TicketStatus, basePromptAtom } from '../../atoms';
 import {
   Colors,
   Typography,
   Spacing,
   BorderRadius,
   Shadows,
-  ComponentStyles,
-  Layout,
 } from '../../styles/designSystem';
 
 interface TicketCompletePageProps {
@@ -44,63 +39,68 @@ const { width, height } = Dimensions.get('window');
 const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, route }) => {
   const ticketData = route?.params?.ticketData;
   const reviewData = route?.params?.reviewData;
-  const images = route?.params?.images;
+  const images = route?.params?.images ?? [];
   const [, addTicket] = useAtom(addTicketAtom);
+  const [, setBasePrompt] = useAtom(basePromptAtom);
 
-  // 이미지 우선순위: route params images > ticketData images
-  const ticketImage = 
-    (images && images.length > 0) ? images[0] : 
-    (ticketData?.images && ticketData.images.length > 0) ? ticketData.images[0] : 
-    null;
+  /** 표시될 이미지 선택 */
+  const ticketImage =
+    images.length > 0
+      ? images[0]
+      : ticketData?.images?.length > 0
+      ? ticketData.images[0]
+      : null;
 
   console.log('=== TicketCompletePage 이미지 디버깅 ===');
-  console.log('route.params.images:', images);
+  console.log('전달받은 images:', images);
   console.log('ticketData.images:', ticketData?.images);
   console.log('최종 표시할 이미지:', ticketImage);
 
   useEffect(() => {
-    // Save the complete ticket with review and images
-    if (ticketData) {
-      console.log('=== 티켓 추가 시작 ===');
-      console.log('ticketData:', ticketData);
-      console.log('reviewData:', reviewData);
-      console.log('images:', images);
-      console.log('전달받은 이미지 배열:', images);
-      console.log('첫 번째 이미지 (표시될 이미지):', images?.[0]);
+    if (!ticketData) {
+      console.warn('ticketData가 없습니다!');
+      return;
+    }
 
-      // ReviewData를 TicketReview 형식으로 변환
-      const ticketReview = reviewData?.reviewText || reviewData?.text 
-        ? { 
+    console.log('=== 티켓 저장 시작 ===');
+    console.log('ticketData:', ticketData);
+    console.log('reviewData:', reviewData);
+
+    /** 리뷰 데이터 정규화 */
+    const ticketReview =
+      reviewData?.reviewText || reviewData?.text
+        ? {
             reviewText: reviewData.reviewText || reviewData.text || '',
             createdAt: new Date(),
           }
         : undefined;
 
-      const ticketToAdd = {
-        ...ticketData,
-        review: ticketReview,
-        images: images || [],
-        status: reviewData?.isPublic === false ? TicketStatus.PRIVATE : TicketStatus.PUBLIC,
-      };
+    /** 상태: 기본 공개, isPublic=false일 때만 PRIVATE */
+    const status =
+      reviewData?.isPublic === false ? TicketStatus.PRIVATE : TicketStatus.PUBLIC;
 
-      console.log('최종 티켓 데이터:', ticketToAdd);
-      console.log('최종 티켓의 이미지 배열:', ticketToAdd.images);
+    /** 최종 티켓 데이터 */
+    const ticketToAdd = {
+      ...ticketData,
+      review: ticketReview,
+      images: images ?? [],
+      status,
+    };
 
-      const result = addTicket(ticketToAdd);
+    console.log('▶ 최종 저장할 티켓:', ticketToAdd);
 
-      // Result 패턴 처리
-      if (!result.success) {
-        console.error('티켓 추가 실패:', result.error);
-        // 에러 발생 시에도 홈으로 이동 (사용자 경험 개선)
-      } else {
-        console.log('티켓 추가 성공:', result.data);
-        console.log('저장된 티켓의 이미지:', result.data?.images);
-      }
+    const result = addTicket(ticketToAdd);
+
+    if (!result.success) {
+      console.error('❌ 티켓 저장 실패:', result.error);
     } else {
-      console.warn('ticketData가 없습니다!');
+      console.log('✅ 티켓 저장 성공:', result.data);
+      // 티켓 저장 완료 시 basePrompt 초기화
+      setBasePrompt(null);
+      console.log('🗑️ basePrompt 초기화 완료');
     }
 
-    // Auto-navigate to home after 3 seconds
+    /** 3초 후 홈으로 이동 */
     const timer = setTimeout(() => {
       navigation.reset({
         index: 0,
@@ -121,7 +121,7 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
-      
+
       <View style={styles.content}>
         {/* Title */}
         <Text style={styles.title}>새로운 티켓 생성 완료</Text>
@@ -129,23 +129,18 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
 
         {/* Ticket Card */}
         <View style={styles.ticketCard}>
-          {/* Ticket Header */}
           <View style={styles.ticketHeader}>
             <Text style={styles.ticketHeaderText}>{ticketData?.title}</Text>
           </View>
 
-          {/* Main Ticket Content */}
           <View style={styles.ticketMain}>
             {ticketImage ? (
               <Image
                 source={{ uri: ticketImage }}
                 style={styles.ticketImage}
                 resizeMode="cover"
-                onError={(error) => {
-                  console.error('이미지 로드 실패:', error.nativeEvent.error);
-                }}
-                onLoad={() => {
-                  console.log('이미지 로드 성공:', ticketImage);
+                onError={e => {
+                  console.error('이미지 로드 실패:', e.nativeEvent.error);
                 }}
               />
             ) : (
@@ -155,7 +150,6 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
             )}
           </View>
 
-          {/* Ticket Footer */}
           <View style={styles.ticketFooter}>
             <Text style={styles.footerSubtext}>
               {ticketData?.place} •{' '}
@@ -164,8 +158,8 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
                     month: 'long',
                     day: 'numeric',
                   })
-                : '10월 4일'}{' '}
-              • 8PM
+                : ''}
+              {' '}• 8PM
             </Text>
           </View>
         </View>
@@ -175,29 +169,11 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  content: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#7F8C8D',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#2C3E50', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 16, color: '#7F8C8D', textAlign: 'center', marginBottom: 40 },
+
   ticketCard: {
     width: width - 60,
     height: height * 0.6,
@@ -206,35 +182,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
   },
-  ticketHeader: {
-    padding: 20,
-    position: 'relative',
-  },
-  ticketHeaderText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    letterSpacing: 2,
-  },
-  
-  ticketMain: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  ticketImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 12,
-  },
+
+  ticketHeader: { padding: 20 },
+  ticketHeaderText: { fontSize: 18, fontWeight: 'bold', color: '#2C3E50', letterSpacing: 2 },
+
+  ticketMain: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  ticketImage: { width: '100%', height: '100%', borderRadius: 12 },
+
   ticketPlaceholder: {
     width: '100%',
     height: '100%',
@@ -243,31 +201,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
   },
-  placeholderText: {
-    fontSize: 48,
-    color: '#BDC3C7',
-  },
-  noImageText: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginTop: 8,
-  },
-  ticketFooter: {
-    padding: 20,
-    alignItems: 'flex-end',
-  },
-  footerText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2C3E50',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  footerSubtext: {
-    fontSize: 12,
-    color: '#2C3E50',
-    textAlign: 'center',
-  },
+  noImageText: { fontSize: 14, color: '#7F8C8D' },
+
+  ticketFooter: { padding: 20, alignItems: 'flex-end' },
+  footerSubtext: { fontSize: 12, color: '#2C3E50' },
 });
 
-export default TicketCompletePage; 
+export default TicketCompletePage;

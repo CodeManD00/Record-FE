@@ -33,7 +33,7 @@ interface AddTicketPageProps {
       isFirstTicket?: boolean;
       fromEmptyState?: boolean;
       fromAddButton?: boolean;
-      ocrData?: Partial<CreateTicketData>; // OCR 결과 데이터
+      ocrData?: Partial<CreateTicketData>;
     };
   };
 }
@@ -41,22 +41,22 @@ interface AddTicketPageProps {
 const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
   const [, addTicket] = useAtom(addTicketAtom);
 
-  // 라우트 파라미터 추출
   const isFirstTicket = route?.params?.isFirstTicket || false;
   const fromEmptyState = route?.params?.fromEmptyState || false;
   const fromAddButton = route?.params?.fromAddButton || false;
-  const ocrData = route?.params?.ocrData; // OCR 결과
+  const ocrData = route?.params?.ocrData;
 
-  // 입력 방법 선택 모달 상태 (OCR로 온 경우 모달 숨김)
+  /** 입력 방식 모달 (OCR로 진입한 경우 자동 숨김) */
   const [showInputMethodModal, setShowInputMethodModal] = useState(!ocrData);
 
-  // 공연 시간 초기값
+  /** 기본 공연 시간 */
   const getDefaultPerformanceTime = () => {
-    const defaultDate = new Date();
-    defaultDate.setHours(19, 0, 0, 0);
-    return defaultDate;
+    const d = new Date();
+    d.setHours(19, 0, 0, 0);
+    return d;
   };
 
+  /** 폼 상태 */
   const [formData, setFormData] = useState<CreateTicketData>({
     title: '',
     artist: '',
@@ -68,21 +68,24 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
     status: TicketStatus.PUBLIC,
   });
 
+  /** iOS 날짜 피커 전용 */
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  /** 장르 선택 모달 */
   const [showGenreModal, setShowGenreModal] = useState(false);
 
-  // OCR 결과가 있으면 폼에 자동 입력
+  /** OCR 결과 자동 입력 */
   useEffect(() => {
     if (ocrData) {
       setFormData(prev => ({
         ...prev,
-        title: ocrData.title || prev.title,
-        artist: ocrData.artist || prev.artist,
-        place: ocrData.place || prev.place,
-        seat: ocrData.seat || prev.seat,
-        performedAt: ocrData.performedAt || prev.performedAt,
-        bookingSite: ocrData.bookingSite || prev.bookingSite,
-        genre: ocrData.genre || prev.genre,
+        title: ocrData.title ?? prev.title,
+        artist: ocrData.artist ?? prev.artist,
+        place: ocrData.place ?? prev.place,
+        seat: ocrData.seat ?? prev.seat,
+        performedAt: ocrData.performedAt ?? prev.performedAt,
+        bookingSite: ocrData.bookingSite ?? prev.bookingSite,
+        genre: ocrData.genre ?? prev.genre,
       }));
     }
   }, [ocrData]);
@@ -92,17 +95,14 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
     { label: '연극/뮤지컬', value: '연극/뮤지컬' },
   ];
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+  /** 입력 변경 처리 */
+  const handleInputChange = (field: keyof CreateTicketData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  /** 날짜 변경 */
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
+    if (Platform.OS === 'android') setShowDatePicker(false);
     if (selectedDate) {
       setFormData(prev => ({
         ...prev,
@@ -117,23 +117,26 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
     }
   };
 
+  /** 다음 화면 이동 */
   const handleSubmit = () => {
     if (!formData.title.trim()) {
-      Alert.alert('오류', '제목을 입력해주세요');
+      Alert.alert('오류', '제목을 입력해주세요.');
       return;
     }
 
-    if (!formData.genre || !formData.genre.trim()) {
-      Alert.alert('오류', '장르를 선택해주세요');
+    if (!formData.genre?.trim()) {
+      Alert.alert('오류', '장르를 선택해주세요.');
       return;
     }
 
-    navigation.navigate('AddReview', { ticketData: formData });
+    navigation.navigate('AddReview', {
+      ticketData: formData,
+    });
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      {/* 입력 방법 선택 모달 */}
+      {/* 입력 방식 선택 모달 */}
       <InputMethodModal
         visible={showInputMethodModal}
         onClose={() => navigation.goBack()}
@@ -147,16 +150,13 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
           });
         }}
       />
-      {/* 헤더 */}
+
       <ModalHeader
         title="공연 정보 입력하기"
         onBack={() => navigation.goBack()}
-        rightAction={{
-          text: '다음',
-          onPress: handleSubmit,
-        }}
+        rightAction={{ text: '다음', onPress: handleSubmit }}
       />
-      {/* 컨텍스트 메시지 */}
+
       {(fromEmptyState || fromAddButton) && (
         <View style={styles.contextMessage}>
           <Text style={styles.contextSubtitle}>
@@ -165,6 +165,7 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
           </Text>
         </View>
       )}
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.formContainer}>
           {/* 제목 */}
@@ -229,8 +230,7 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
                 ]}
               >
                 {formData.genre
-                  ? genreOptions.find(opt => opt.value === formData.genre)
-                      ?.label
+                  ? genreOptions.find(opt => opt.value === formData.genre)?.label
                   : '밴드'}
               </Text>
             </TouchableOpacity>
@@ -269,13 +269,10 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
             </TouchableOpacity>
           </Modal>
 
-          {/* 공연 날짜 및 시간 */}
+          {/* 공연 일시 */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>공연 일시 *</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={showDateTimePicker}
-            >
+            <TouchableOpacity style={styles.dateButton} onPress={showDateTimePicker}>
               <Text style={styles.dateButtonText}>
                 {formData.performedAt.toLocaleDateString('ko-KR', {
                   year: 'numeric',
@@ -320,19 +317,21 @@ const styles = StyleSheet.create({
   contextSubtitle: {
     ...Typography.footnote,
     color: Colors.secondaryLabel,
-    textAlign: 'left',
     lineHeight: 20,
   },
 
   content: { flex: 1 },
   formContainer: { padding: Spacing.sectionSpacing },
+
   inputGroup: { marginBottom: Spacing.sectionSpacing },
+
   label: {
     ...Typography.callout,
     fontWeight: '500',
     color: Colors.label,
     marginBottom: Spacing.sm,
   },
+
   input: {
     ...ComponentStyles.input,
   },
@@ -349,7 +348,6 @@ const styles = StyleSheet.create({
     color: Colors.label,
   },
 
-  // 장르 선택 모달
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.2)',
@@ -389,17 +387,17 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.label,
   },
-  datePickerContainer: {
-  borderRadius: BorderRadius.sm,
-  marginTop: 6,
-  paddingVertical: 4,
-  paddingHorizontal: 6,
-  backgroundColor: Colors.systemBackground,
-  borderWidth: 1,
-  borderColor: Colors.systemGray5,
-  ...Shadows.small,
-},
 
+  datePickerContainer: {
+    borderRadius: BorderRadius.sm,
+    marginTop: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    backgroundColor: Colors.systemBackground,
+    borderWidth: 1,
+    borderColor: Colors.systemGray5,
+    ...Shadows.small,
+  },
 });
 
 export default AddTicketPage;
