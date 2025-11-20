@@ -207,10 +207,9 @@ export const sendFriendRequestAtom = atom(
           id: `temp_${Date.now()}`,
           fromUserId: 'current_user',
           toUserId: data.toUserId,
-          name: data.name,
-          username: data.username,
+          nickname: data.nickname,
+          user_id: data.user_id,
           status: 'PENDING' as any,
-          message: data.message,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -262,10 +261,9 @@ export const respondToFriendRequestAtom = atom(
           if (currentFriendsState.data) {
             const newFriend: Friend = {
               id: request.fromUserId,
-              name: request.name,
-              username: request.username,
-              avatar: request.avatar,
-              profileImage: request.avatar,
+              nickname: request.nickname,
+              user_id: request.user_id,
+              profileImage: request.profileImage,
               createdAt: new Date(),
               updatedAt: new Date(),
             };

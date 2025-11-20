@@ -30,7 +30,6 @@ export interface UserSettings {
   emailNotifications: boolean;
   pushNotifications: boolean;
   language: 'ko' | 'en';
-  theme: 'light' | 'dark' | 'system';
   updatedAt: Date;
 }
 

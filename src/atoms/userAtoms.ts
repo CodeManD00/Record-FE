@@ -132,7 +132,7 @@ export const profileCompletenessPercentageAtom = atom<number>((get) => {
  */
 const PROFILE_VALIDATION_RULES: ValidationRule<UpdateUserProfileData>[] = [
   {
-    field: 'name',
+    field: 'nickname',
     validator: (name: string) => {
       if (name && name.trim().length === 0) {
         return new Error('이름은 비어있을 수 없습니다');
@@ -329,7 +329,7 @@ export const updateEmailVerificationAtom = atom(
  * 현재 사용자 ID atom
  */
 export const currentUserIdAtom = atom<string>((get) => {
-  return get(userProfileAtom).id;
+  return get(userProfileAtom).user_id;
 });
 
 /**
@@ -337,7 +337,7 @@ export const currentUserIdAtom = atom<string>((get) => {
  */
 export const userDisplayNameAtom = atom<string>((get) => {
   const profile = get(userProfileAtom);
-  return profile.name || profile.username || '사용자';
+  return profile.nickname || '사용자';
 });
 
 /**

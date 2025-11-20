@@ -14,31 +14,30 @@ import { IdGenerator } from '../utils/idGenerator';
 /**
  * 사용자 프로필 기본값
  */
-export const DEFAULT_USER_PROFILE: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'> = {
-  name: '사용자',
-  username: 'user1234',
+export const DEFAULT_USER_PROFILE: Omit<UserProfile, 'user_id' | 'createdAt' | 'updatedAt'> = {
+  nickname: '사용자',
+  id: 'user1234',
   email: 'user@example.com',
   profileImage: undefined,
-  bio: undefined,
+  isAccountPrivate: false,
 } as const;
 
 /**
  * 사용자 설정 기본값
  */
-export const DEFAULT_USER_SETTINGS: Omit<UserSettings, 'userId' | 'updatedAt'> = {
+export const DEFAULT_USER_SETTINGS: Omit<UserSettings, 'user_id' | 'updatedAt'> = {
   accountVisibility: AccountVisibility.PUBLIC,
   allowFriendRequests: true,
   showTicketsToFriends: true,
   emailNotifications: true,
   pushNotifications: true,
   language: 'ko',
-  theme: 'system',
 } as const;
 
 /**
  * 사용자 인증 기본값
  */
-export const DEFAULT_USER_AUTH: Omit<UserAuth, 'userId' | 'createdAt' | 'lastLoginAt'> = {
+export const DEFAULT_USER_AUTH: Omit<UserAuth, 'user_id' | 'createdAt' | 'lastLoginAt'> = {
   role: UserRole.USER,
   isEmailVerified: false,
 } as const;
@@ -48,11 +47,10 @@ export const DEFAULT_USER_AUTH: Omit<UserAuth, 'userId' | 'createdAt' | 'lastLog
  * 새 필드 추가 시 자동으로 완성도 계산에 반영됨
  */
 export const PROFILE_COMPLETENESS_FIELDS = [
-  'name',
-  'username', 
+  'nickname',
+  'user_id', 
   'email',
   'profileImage',
-  'bio'
 ] as const;
 
 /**
@@ -63,7 +61,6 @@ export const PROFILE_FIELD_WEIGHTS = {
   username: 1.5,    // 사용자명도 중요
   email: 1.5,       // 이메일도 중요
   profileImage: 1.0, // 프로필 이미지는 기본 가중치
-  bio: 0.8,         // 자기소개는 상대적으로 덜 중요
 } as const;
 
 /**
@@ -71,23 +68,22 @@ export const PROFILE_FIELD_WEIGHTS = {
  */
 export const createEmptyUserProfile = (): UserProfile => ({
   id: '',
-  name: '',
-  username: '',
+  nickname: '',
+  user_id: '',
   email: '',
   profileImage: undefined,
-  bio: undefined,
   createdAt: new Date(),
   updatedAt: new Date(),
 });
 
 export const createEmptyUserSettings = (): UserSettings => ({
-  userId: '',
+  user_id: '',
   ...DEFAULT_USER_SETTINGS,
   updatedAt: new Date(),
 });
 
 export const createEmptyUserAuth = (): UserAuth => ({
-  userId: '',
+  user_id: '',
   ...DEFAULT_USER_AUTH,
   createdAt: new Date(),
   lastLoginAt: undefined,
@@ -101,7 +97,7 @@ export const createInitialUserProfile = (): UserProfile => {
   const userId = IdGenerator.user();
   
   return {
-    id: userId,
+    user_id: userId,
     ...DEFAULT_USER_PROFILE,
     createdAt: now,
     updatedAt: now,
@@ -109,13 +105,13 @@ export const createInitialUserProfile = (): UserProfile => {
 };
 
 export const createInitialUserSettings = (userId: string): UserSettings => ({
-  userId,
+  user_id: '',
   ...DEFAULT_USER_SETTINGS,
   updatedAt: new Date(),
 });
 
 export const createInitialUserAuth = (userId: string): UserAuth => ({
-  userId,
+  user_id: '',
   ...DEFAULT_USER_AUTH,
   createdAt: new Date(),
   lastLoginAt: new Date(),

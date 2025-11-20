@@ -12,9 +12,9 @@ import { userService } from '../api/userService';
  * 현재 로그인한 사용자 정보
  */
 export interface AuthUser {
-  id: string;
+  user_id: string;
   email: string;
-  name: string;
+  nickname: string;
   profileImage?: string;
   provider: 'email';
 }
@@ -74,7 +74,7 @@ class AuthService {
    * 회원가입
    */
   async signUp(
-    id: string,
+    user_id: string,
     password: string,
     email: string,
     nickname: string
@@ -82,7 +82,7 @@ class AuthService {
     try {
       // Send registration data to backend
       const result = await apiClient.post<AuthResponse>('/auth/signup', {
-        id,
+        user_id,
         email,
         password,
         nickname,

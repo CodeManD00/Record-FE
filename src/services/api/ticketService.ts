@@ -33,14 +33,13 @@ export interface GetTicketsResponse {
  */
 export interface CreateTicketData {
   title: string;
-  performedAt: string; // ISO string
+  performedAt: string;
   place: string;
   artist: string;
   bookingSite?: string;
   status: TicketStatus;
   review?: {
     reviewText: string;
-    rating: number;
   };
   images?: string[];
 }
