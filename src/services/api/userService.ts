@@ -37,6 +37,25 @@ class UserService {
     }
   }
 
+  async updateNickname(nickname: string): Promise<Result<UserProfile>> {
+    try {
+      const result = await apiClient.patch<UserProfile>('/users/nickname', {
+        nickname,
+      });
+
+      if (result.success && result.data) {
+        this.profile = result.data;
+        store.set(userProfileAtom, result.data);
+      }
+
+      return result;
+    } catch {
+      return ResultFactory.failure(
+        ErrorFactory.unknown('닉네임 변경 중 오류가 발생했습니다.')
+      );
+    }
+  }
+
   async updateProfileImage(file: {
     uri: string;
     type: string;

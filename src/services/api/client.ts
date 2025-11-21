@@ -127,26 +127,50 @@ class ApiClient {
   /**
    * ⭐ 기본 헤더 (Content-Type 강제 제거)
    */
-  private getHeaders(customHeaders?: Record<string, string>): Record<string, string> {
+  private getHeaders(
+    customHeaders?: Record<string, string>,
+    skipAuth: boolean = false
+  ): Record<string, string> {
     const headers: Record<string, string> = {
       ...(customHeaders || {}),
     };
 
     // ❗ multipart 요청 때는 Content-Type 자동 생성 → 절대 강제 지정하면 안됨
 
-    // Authorization 적용
-    if (this.authToken) {
+    // Authorization 적용 (skipAuth가 false일 때만)
+    if (!skipAuth && this.authToken) {
       headers.Authorization = `Bearer ${this.authToken}`;
       if (__DEV__) {
         console.log('🔑 Authorization 헤더 추가됨 (토큰 길이:', this.authToken.length, ')');
       }
     } else {
       if (__DEV__) {
-        console.warn('⚠️ Authorization 헤더 없음 - authToken이 null입니다');
+        if (skipAuth) {
+          console.log('🔓 인증 불필요 엔드포인트 - Authorization 헤더 제외');
+        } else {
+          console.warn('⚠️ Authorization 헤더 없음 - authToken이 null입니다');
+        }
       }
     }
 
     return headers;
+  }
+
+  /**
+   * ⭐ JWT 토큰이 필요 없는 엔드포인트 목록
+   */
+  private readonly noAuthEndpoints = [
+    '/auth/',
+    '/users/nickname',
+    '/users/me/profile-image',
+    '/stt/transcribe-and-save',
+  ];
+
+  /**
+   * ⭐ 엔드포인트가 인증이 필요한지 확인
+   */
+  private needsAuth(url: string): boolean {
+    return !this.noAuthEndpoints.some(endpoint => url.startsWith(endpoint));
   }
 
   /**
@@ -158,8 +182,8 @@ class ApiClient {
     timeoutMs: number = API_TIMEOUT
   ): Promise<Result<T>> {
     try {
-      // 인증이 필요 없는 엔드포인트(/auth/)는 토큰 로딩 스킵
-      const needsAuth = !url.startsWith('/auth/');
+      // 인증이 필요한 엔드포인트만 토큰 로딩
+      const needsAuth = this.needsAuth(url);
       if (needsAuth) {
         await this.loadTokenFromStorage();
       }
@@ -167,7 +191,10 @@ class ApiClient {
       const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
 
       // 헤더 생성 (토큰 포함 여부 확인)
-      const headers = this.getHeaders(options.headers as Record<string, string>);
+      const headers = this.getHeaders(
+        options.headers as Record<string, string>,
+        !needsAuth // skipAuth 플래그 전달
+      );
 
       if (__DEV__) {
         console.log(`API Request: ${options.method || 'GET'} ${fullUrl}`);

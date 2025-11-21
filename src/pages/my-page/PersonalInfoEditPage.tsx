@@ -150,21 +150,39 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
         }
       }
 
-      // 프로필 정보 업데이트 (닉네임, 이메일, 공개 설정)
-      const payload: any = {
-        nickname,
-        email,
-        isAccountPrivate,
-      };
-
-      const updateResult = await apiClient.put<UserProfile>('/users/me', payload);
-      if (!updateResult.success) {
-        Alert.alert('오류', updateResult.error?.message || '프로필 정보를 갱신할 수 없습니다.');
-        return;
+      // 닉네임 변경 (PATCH /users/nickname 사용, JWT 토큰 불필요)
+      if (nickname !== actualProfile.nickname) {
+        const nicknameResult = await userService.updateNickname(nickname);
+        if (!nicknameResult.success) {
+          Alert.alert('오류', nicknameResult.error?.message || '닉네임 변경에 실패했습니다.');
+          setIsSaving(false);
+          return;
+        }
+        if (nicknameResult.data) {
+          await updateUserProfile(nicknameResult.data);
+        }
       }
 
-      if (updateResult.data) {
-        await updateUserProfile(updateResult.data);
+      // 이메일 또는 공개 설정 변경 (PUT /users/me 사용)
+      if (
+        email !== actualProfile.email ||
+        isAccountPrivate !== actualProfile.isAccountPrivate
+      ) {
+        const payload: any = {
+          email,
+          isAccountPrivate,
+        };
+
+        const updateResult = await apiClient.put<UserProfile>('/users/me', payload);
+        if (!updateResult.success) {
+          Alert.alert('오류', updateResult.error?.message || '프로필 정보를 갱신할 수 없습니다.');
+          setIsSaving(false);
+          return;
+        }
+
+        if (updateResult.data) {
+          await updateUserProfile(updateResult.data);
+        }
       }
 
       // 최종 프로필 정보 동기화
