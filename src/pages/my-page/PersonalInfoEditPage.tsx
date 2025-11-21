@@ -152,7 +152,12 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
 
       // 닉네임 변경 (PATCH /users/nickname 사용, JWT 토큰 불필요)
       if (nickname !== actualProfile.nickname) {
-        const nicknameResult = await userService.updateNickname(nickname);
+        if (!userId) {
+          Alert.alert('오류', '사용자 아이디가 필요합니다.');
+          setIsSaving(false);
+          return;
+        }
+        const nicknameResult = await userService.updateNickname(userId, nickname);
         if (!nicknameResult.success) {
           Alert.alert('오류', nicknameResult.error?.message || '닉네임 변경에 실패했습니다.');
           setIsSaving(false);

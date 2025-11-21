@@ -37,9 +37,10 @@ class UserService {
     }
   }
 
-  async updateNickname(nickname: string): Promise<Result<UserProfile>> {
+  async updateNickname(userId: string, nickname: string): Promise<Result<UserProfile>> {
     try {
       const result = await apiClient.patch<UserProfile>('/users/nickname', {
+        userId,
         nickname,
       });
 
