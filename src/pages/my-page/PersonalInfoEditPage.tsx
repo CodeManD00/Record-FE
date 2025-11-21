@@ -132,11 +132,19 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
     try {
       // 프로필 이미지 업로드 (있는 경우)
       if (profileImageFile) {
-        const uploadResult = await userService.updateProfileImage({
-          uri: profileImageFile.uri,
-          type: profileImageFile.type,
-          name: profileImageFile.name,
-        });
+        if (!userId) {
+          Alert.alert('오류', '사용자 아이디가 필요합니다.');
+          setIsSaving(false);
+          return;
+        }
+        const uploadResult = await userService.updateProfileImage(
+          {
+            uri: profileImageFile.uri,
+            type: profileImageFile.type,
+            name: profileImageFile.name,
+          },
+          userId
+        );
 
         if (!uploadResult.success) {
           Alert.alert('오류', uploadResult.error?.message || '이미지 업로드 실패');

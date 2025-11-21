@@ -57,14 +57,18 @@ class UserService {
     }
   }
 
-  async updateProfileImage(file: {
-    uri: string;
-    type: string;
-    name: string;
-  }): Promise<Result<UserProfile>> {
+  async updateProfileImage(
+    file: {
+      uri: string;
+      type: string;
+      name: string;
+    },
+    userId: string
+  ): Promise<Result<UserProfile>> {
 
     const formData = new FormData();
     formData.append('file', file as any);
+    formData.append('userId', userId);
 
     const result = await apiClient.putForm<UserProfile>(
       '/users/me/profile-image',
