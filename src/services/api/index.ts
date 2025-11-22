@@ -5,6 +5,7 @@
 
 export { apiClient } from './client';
 
+export { authService } from '../auth/authService';
 export { friendService } from './friendService';
 export { ticketService } from './ticketService';
 export { userService } from './userService';

@@ -20,13 +20,12 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ticket, UpdateTicketData } from '../types/ticket';
 import { useAtom } from 'jotai';
 import {
-  deleteTicketAtom,
-  updateTicketAtom,
   TicketStatus,
   TICKET_STATUS_LABELS,
   getTicketByIdAtom,
   ticketsAtom,
 } from '../atoms';
+import { deleteTicketAtom, updateTicketAtom } from '../atoms/ticketsAtomsApi';
 import { TicketDetailModalProps } from '../types/componentProps';
 import PrivacySelectionModal from './PrivacySelectionModal';
 import {
@@ -115,7 +114,11 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   const hintOpacity = useRef(new Animated.Value(1)).current;
   const detailsAnimation = useRef(new Animated.Value(1)).current;
 
-  if (!ticket) return null;
+  // 티켓이 없거나 ID가 없으면 조기 반환
+  if (!ticket || !ticket.id) {
+    console.warn('⚠️ TicketDetailModal: 티켓 또는 티켓 ID가 없습니다', { ticket, propTicket });
+    return null;
+  }
 
   const getStatusColor = (status: TicketStatus) =>
     status === TicketStatus.PUBLIC ? '#d7fffcff' : '#FF6B6B';
@@ -170,7 +173,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     try {
       await Share.share({
         message: `${ticket.title}\n ${ticket.artist}\n ${
-          ticket.place
+          ticket.venue || ''
         }\n ${ticket.performedAt.toLocaleDateString('ko-KR')}`,
         title: `${ticket.title} 티켓`,
       });
@@ -187,7 +190,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     setEditedTicket({
       title: ticket.title,
       artist: ticket.artist,
-      place: ticket.place,
+      venue: ticket.venue || '',
       performedAt: ticket.performedAt,
       review: ticket.review
         ? {
@@ -200,7 +203,22 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
   // 티켓 수정 함수
   const handleSaveEdit = async () => {
-    if (!ticket || !editedTicket) return;
+    if (!ticket) {
+      console.error('❌ 티켓이 없습니다');
+      Alert.alert('오류', '티켓 정보를 찾을 수 없습니다.');
+      return;
+    }
+
+    if (!ticket.id) {
+      console.error('❌ 티켓 ID가 없습니다:', ticket);
+      Alert.alert('오류', '티켓 ID를 찾을 수 없습니다.');
+      return;
+    }
+
+    console.log('✏️ 티켓 수정 저장 시작');
+    console.log('✏️ 티켓 ID:', ticket.id);
+    console.log('✏️ 원본 티켓:', ticket);
+    console.log('✏️ 수정된 티켓:', editedTicket);
 
     const title =
       editedTicket.title !== undefined ? editedTicket.title : ticket.title;
@@ -213,7 +231,32 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     }
 
     try {
-      const result = updateTicket(ticket.id, editedTicket);
+      // 이미지 URL 처리 (editedTicket.images 또는 ticket.images 사용)
+      const images = editedTicket.images !== undefined 
+        ? editedTicket.images 
+        : ticket.images;
+
+      // reviewText 처리
+      const reviewText = editedTicket.review?.reviewText !== undefined
+        ? editedTicket.review.reviewText
+        : ticket.review?.reviewText;
+
+      const result = await updateTicket({
+        id: ticket.id,
+        ...editedTicket,
+        title,
+        genre,
+        images,
+        review: reviewText !== undefined ? {
+          reviewText,
+          rating: editedTicket.review?.rating || ticket.review?.rating || 0,
+          createdAt: editedTicket.review?.createdAt || ticket.review?.createdAt || new Date(),
+          updatedAt: new Date(),
+        } : undefined,
+      });
+
+      console.log('✏️ 티켓 수정 결과:', result);
+
       if (result?.success) {
         setIsEditing(false);
         setEditedTicket({});
@@ -231,6 +274,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         );
       }
     } catch (error) {
+      console.error('❌ 티켓 수정 중 예외 발생:', error);
       Alert.alert('오류', '티켓 수정 중 오류가 발생했습니다.');
     }
   };
@@ -267,6 +311,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
   // 티켓 삭제 함수
   const handleDelete = () => {
+    console.log('🗑️ 티켓 삭제 버튼 클릭됨');
+    console.log('🗑️ 삭제할 티켓 ID:', ticket.id);
     Alert.alert(
       '티켓 삭제',
       `"${ticket.title}" 티켓을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
@@ -275,16 +321,25 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         {
           text: '삭제',
           style: 'destructive',
-          onPress: () => {
-            const result = deleteTicket(ticket.id);
-            if (result.success) {
-              onClose();
-              Alert.alert('완료', '티켓이 삭제되었습니다.');
-            } else {
-              Alert.alert(
-                '오류',
-                result.error?.message || '티켓 삭제에 실패했습니다.',
-              );
+          onPress: async () => {
+            console.log('🗑️ 삭제 확인됨, API 호출 시작...');
+            try {
+              const result = await deleteTicket(ticket.id);
+              console.log('🗑️ 삭제 결과:', result);
+              if (result.success) {
+                console.log('✅ 티켓 삭제 성공');
+                onClose();
+                Alert.alert('완료', '티켓이 삭제되었습니다.');
+              } else {
+                console.error('❌ 티켓 삭제 실패:', result.error);
+                Alert.alert(
+                  '오류',
+                  result.error?.message || '티켓 삭제에 실패했습니다.',
+                );
+              }
+            } catch (error) {
+              console.error('❌ 티켓 삭제 중 예외 발생:', error);
+              Alert.alert('오류', '티켓 삭제 중 오류가 발생했습니다.');
             }
           },
         },
@@ -293,15 +348,34 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     setShowDropdown(false);
   };
 
-  const handlePrivacySelect = (newStatus: TicketStatus) => {
-    const result = updateTicket(ticket.id, { status: newStatus });
-    if (result?.success) {
-      Alert.alert(
-        '완료',
-        `후기가 성공적으로 "${TICKET_STATUS_LABELS[newStatus]}"로 변경되었습니다.`,
-      );
-    } else {
-      Alert.alert('오류', '상태 변경에 실패했습니다.');
+  const handlePrivacySelect = async (newStatus: TicketStatus) => {
+    if (!ticket || !ticket.id) {
+      console.error('❌ 티켓 또는 티켓 ID가 없습니다');
+      Alert.alert('오류', '티켓 정보를 찾을 수 없습니다.');
+      setShowPrivacyModal(false);
+      return;
+    }
+
+    console.log('🔒 공개 범위 변경 시작');
+    console.log('🔒 티켓 ID:', ticket.id);
+    console.log('🔒 새로운 상태:', newStatus);
+    try {
+      const result = await updateTicket({ 
+        id: ticket.id, 
+        status: newStatus 
+      });
+      console.log('🔒 공개 범위 변경 결과:', result);
+      if (result?.success) {
+        Alert.alert(
+          '완료',
+          `후기가 성공적으로 "${TICKET_STATUS_LABELS[newStatus]}"로 변경되었습니다.`,
+        );
+      } else {
+        Alert.alert('오류', result?.error?.message || '상태 변경에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('❌ 공개 범위 변경 중 예외 발생:', error);
+      Alert.alert('오류', '상태 변경 중 오류가 발생했습니다.');
     }
     setShowPrivacyModal(false);
   };
@@ -330,7 +404,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   const backAnimatedStyle = { transform: [{ rotateY: backInterpolate }] };
 
   // n회차 관람 뱃지를 위한 로직
-  const viewCount = allTickets.filter(t => t.title === ticket.title).length;
+  const viewCount = ticket ? allTickets.filter(t => t.title === ticket.title).length : 0;
 
   return (
     <Modal
@@ -684,14 +758,14 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   {isEditing ? (
                     <TextInput
                       style={styles.detailInput}
-                      value={editedTicket.place ?? ticket.place}
+                      value={editedTicket.venue ?? ticket.venue ?? ''}
                       onChangeText={text =>
-                        setEditedTicket(prev => ({ ...prev, place: text }))
+                        setEditedTicket(prev => ({ ...prev, venue: text }))
                       }
                       placeholder="공연 장소"
                     />
                   ) : (
-                    <Text style={styles.detailValue}>{ticket.place}</Text>
+                    <Text style={styles.detailValue}>{ticket.venue || '장소 없음'}</Text>
                   )}
                 </View>
                 <View style={styles.detailRow}>
@@ -710,7 +784,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                   )}
                 </View>
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>출연</Text>
+                  <Text style={styles.detailLabel}>아티스트</Text>
                   {isEditing ? (
                     <TextInput
                       style={styles.detailInput}
@@ -718,7 +792,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       onChangeText={text =>
                         setEditedTicket(prev => ({ ...prev, artist: text }))
                       }
-                      placeholder="출연진"
+                      placeholder="아티스트"
                     />
                   ) : (
                     <Text style={styles.detailValue}>{ticket.artist}</Text>

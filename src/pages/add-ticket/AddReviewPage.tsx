@@ -22,13 +22,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../styles/designSystem';
-import { launchImageLibrary, ImagePickerResponse, Asset } from 'react-native-image-picker';
+import DocumentPicker from 'react-native-document-picker';
 import { sttService } from '../../services/api/sttService';
 import { apiClient } from '../../services/api/client';
 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/reviewTypes';
 import ReviewSummaryModal from '../../components/ReviewSummaryModal';
+import ModalHeader from '../../components/ModalHeader';
+import { useAtom } from 'jotai';
+import { userProfileAtom } from '../../atoms/userAtoms';
+import { useUserProfileData } from '../../hooks/useApiData';
 
 type AddReviewPageProps = NativeStackScreenProps<RootStackParamList, 'AddReview'>;
 
@@ -39,6 +43,11 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
    *              상태값
    *  =============================== */
   const { ticketData } = route.params;
+
+  // 사용자 프로필 가져오기
+  const { data: userProfile } = useUserProfileData({ fetchOnMount: true });
+  const [localProfile] = useAtom(userProfileAtom);
+  const currentUser = userProfile || localProfile;
 
   const [reviewText, setReviewText] = useState('');
   const [isPublic, setIsPublic] = useState(true);
@@ -51,6 +60,19 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCardVisible, setIsCardVisible] = useState(true);
   const [isOrganizing, setIsOrganizing] = useState(false);
+  const [selectedAudioUri, setSelectedAudioUri] = useState<string | null>(null);
+  const [selectedAudioFileName, setSelectedAudioFileName] = useState<string | null>(null);
+  const [selectedAudioFileType, setSelectedAudioFileType] = useState<string | null>(null);
+
+  // reviewText 변경 추적 (디버깅)
+  useEffect(() => {
+    console.log('📝 reviewText 상태 변경됨:', {
+      reviewText,
+      length: reviewText?.length || 0,
+      type: typeof reviewText,
+      isEmpty: !reviewText || reviewText.trim().length === 0,
+    });
+  }, [reviewText]);
 
   /** ===============================
    *       Navigation Warning Fix
@@ -285,80 +307,146 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   ).current;
 
   /** ===============================
-   *          오디오 파일 선택 + STT 처리
+   *          오디오 파일 선택
    *  =============================== */
-  const handleAudioFilePick = () => {
-    // react-native-image-picker는 오디오 파일 선택을 지원하지 않으므로
-    // mixed 타입으로 선택 후 오디오 파일만 필터링
-    // iOS에서 파일 앱을 열려면 react-native-document-picker의 네이티브 모듈이 필요합니다
-    const options = {
-      mediaType: 'mixed' as const, // 이미지, 비디오, 오디오 모두 선택 가능
-      includeBase64: false,
-      quality: 1.0 as const,
-      includeExtra: true,
-      selectionLimit: 1,
-    };
+  const handleAudioFilePick = async () => {
+    try {
+      const result = await DocumentPicker.pick({
+        type: [DocumentPicker.types.audio],
+        copyTo: 'cachesDirectory',
+      });
 
-    launchImageLibrary(options, async (response: ImagePickerResponse) => {
-      if (response.didCancel || response.errorMessage) {
-        if (response.errorMessage) {
-          console.log('파일 선택 취소 또는 오류:', response.errorMessage);
+      if (result && result.length > 0) {
+        const file = result[0];
+
+        // 파일 정보 저장
+        const fileName = file.name || file.uri.split('/').pop() || 'audio.m4a';
+        const fileType = file.type || 'audio/m4a';
+        const fileUri = file.uri;
+
+        setSelectedAudioUri(fileUri);
+        setSelectedAudioFileName(fileName);
+        setSelectedAudioFileType(fileType);
+
+        Alert.alert('완료', '오디오 파일이 선택되었습니다.\n"STT 변환 실행" 버튼을 눌러 변환하세요.');
+      }
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        // 사용자가 취소함
+        console.log('파일 선택 취소');
+      } else {
+        console.error('파일 선택 오류:', err);
+        Alert.alert('오류', '파일 선택 중 문제가 발생했습니다.');
+      }
+    }
+  };
+
+  /** ===============================
+   *        STT 변환 실행
+   *  =============================== */
+  const handleSTTConversion = async () => {
+    if (!selectedAudioUri || !selectedAudioFileName || !selectedAudioFileType) {
+      Alert.alert('알림', '먼저 오디오 파일을 선택해주세요.');
+      return;
+    }
+
+    if (!currentUser?.id) {
+      Alert.alert('오류', '사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+      return;
+    }
+
+    try {
+      setIsProcessingSTT(true);
+
+      console.log('🎵 STT 변환 시작:', {
+        fileName: selectedAudioFileName,
+        fileType: selectedAudioFileType,
+        uri: selectedAudioUri,
+        userId: currentUser.id,
+      });
+
+      const sttResult = await sttService.transcribeAndSave(
+        selectedAudioUri,
+        selectedAudioFileName,
+        selectedAudioFileType,
+        currentUser.id
+      );
+
+      if (sttResult.success && sttResult.data) {
+        console.log('🎤 STT 변환 성공 - 전체 응답:', JSON.stringify(sttResult.data, null, 2));
+        console.log('🎤 sttResult.data 타입:', typeof sttResult.data);
+        console.log('🎤 sttResult.data 키들:', Object.keys(sttResult.data || {}));
+        
+        // resultText가 있으면 우선 사용, 없으면 transcript 사용
+        // 응답 구조가 다를 수 있으므로 여러 방법으로 시도
+        const resultText = 
+          sttResult.data.resultText || 
+          sttResult.data.transcript || 
+          (sttResult.data as any)?.resultText ||
+          (sttResult.data as any)?.transcript ||
+          '';
+        
+        console.log('🎤 추출된 resultText:', resultText);
+        console.log('🎤 resultText 타입:', typeof resultText);
+        console.log('🎤 resultText 길이:', resultText?.length);
+        console.log('🎤 현재 reviewText:', reviewText);
+        console.log('🎤 현재 reviewText 타입:', typeof reviewText);
+        
+        if (!resultText || (typeof resultText === 'string' && resultText.trim().length === 0)) {
+          console.error('❌ resultText가 비어있습니다!');
+          console.error('❌ sttResult.data:', sttResult.data);
+          Alert.alert('오류', '변환된 텍스트를 가져올 수 없습니다.');
+          return;
         }
-        return;
+        
+        // 문자열로 변환 (혹시 모를 타입 문제 방지)
+        const resultTextString = String(resultText);
+        
+        // 기존 텍스트가 있으면 새 줄로 추가, 없으면 그대로 설정
+        const updatedText = reviewText?.trim() 
+          ? `${reviewText}\n${resultTextString}` 
+          : resultTextString;
+        
+        console.log('🎤 업데이트될 텍스트:', updatedText);
+        console.log('🎤 업데이트될 텍스트 길이:', updatedText?.length);
+        console.log('🎤 업데이트될 텍스트 타입:', typeof updatedText);
+
+        // 상태 업데이트 - 강제로 즉시 반영
+        // React의 상태 업데이트를 확실히 하기 위해 함수형 업데이트 사용
+        setReviewText(prev => {
+          console.log('🎤 setReviewText 함수형 업데이트 호출');
+          console.log('🎤 이전 reviewText:', prev);
+          console.log('🎤 새로운 reviewText:', updatedText);
+          return updatedText;
+        });
+        
+        console.log('🎤 setReviewText 호출 완료. updatedText:', updatedText);
+
+        const newTranscriptionId = sttResult.data.id ?? transcriptionId;
+        if (newTranscriptionId) setTranscriptionId(newTranscriptionId);
+
+        // 변환 완료 후 선택된 파일 정보 초기화
+        setSelectedAudioUri(null);
+        setSelectedAudioFileName(null);
+        setSelectedAudioFileType(null);
+
+        // 상태 업데이트가 완료된 후 Alert 표시
+        // requestAnimationFrame을 사용하여 다음 렌더링 사이클에 실행
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            Alert.alert('완료', '오디오 파일을 텍스트로 변환했어요.');
+            console.log('🎤 Alert 표시 완료');
+          }, 100);
+        });
+      } else {
+        Alert.alert('오류', sttResult.error?.message || 'STT 변환 실패');
       }
-
-      const asset: Asset | undefined = response.assets?.[0];
-      if (!asset?.uri) {
-        return;
-      }
-
-      // 오디오 파일인지 확인 (파일 확장자 또는 타입으로)
-      const uri = asset.uri.toLowerCase();
-      const isAudioFile = 
-        uri.endsWith('.m4a') || 
-        uri.endsWith('.mp3') || 
-        uri.endsWith('.wav') || 
-        uri.endsWith('.aac') ||
-        uri.endsWith('.flac') ||
-        uri.endsWith('.mpeg') ||
-        uri.endsWith('.ogg') ||
-        asset.type?.startsWith('audio/');
-
-      if (!isAudioFile) {
-        Alert.alert('알림', '오디오 파일만 선택할 수 있습니다.\n\n(.m4a, .mp3, .wav, .aac, .flac 형식의 파일을 선택해주세요.)');
-        return;
-      }
-
-      try {
-        setIsProcessingSTT(true);
-
-        // 파일 이름과 타입 추출
-        const fileName = asset.fileName || asset.uri.split('/').pop() || 'audio.m4a';
-        const fileType = asset.type || 'audio/m4a';
-
-        console.log('🎵 오디오 파일 선택:', { fileName, fileType, uri: asset.uri });
-
-        const sttResult = await sttService.transcribeAndSave(asset.uri, fileName, fileType);
-
-        if (sttResult.success && sttResult.data) {
-          const transcript = sttResult.data.transcript;
-          const updatedText = reviewText ? `${reviewText}\n${transcript}` : transcript;
-          setReviewText(updatedText);
-
-          const newTranscriptionId = sttResult.data.id ?? transcriptionId;
-          if (newTranscriptionId) setTranscriptionId(newTranscriptionId);
-
-          Alert.alert('완료', '오디오 파일을 텍스트로 변환했어요.');
-        } else {
-          Alert.alert('오류', sttResult.error?.message || 'STT 변환 실패');
-        }
-      } catch (error) {
-        console.error('오디오 파일 처리 오류:', error);
-        Alert.alert('오류', '오디오 파일 처리 중 문제가 발생했습니다.');
-      } finally {
-        setIsProcessingSTT(false);
-      }
-    });
+    } catch (error) {
+      console.error('STT 변환 오류:', error);
+      Alert.alert('오류', 'STT 변환 중 문제가 발생했습니다.');
+    } finally {
+      setIsProcessingSTT(false);
+    }
   };
 
   /** ===============================
@@ -369,7 +457,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     transcriptionIdOverride?: number,
     options?: { showAlert?: boolean }
   ) => {
-    const textToUse = (textOverride ?? reviewText).trim();
+    const textToUse = ((textOverride ?? reviewText) || '').trim();
 
     if (!textToUse) {
       Alert.alert('알림', '정리할 텍스트가 없습니다.');
@@ -464,29 +552,6 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
     });
   };
 
-  const handleSummary = async () => {
-    if (!reviewText || reviewText.trim().length === 0) {
-      Alert.alert('알림', '요약할 후기 내용을 먼저 작성해주세요.');
-      return;
-    }
-
-    try {
-      Alert.alert('처리중', '후기를 요약하는 중입니다...');
-      
-      const result = await sttService.summarizeReview(reviewText);
-      
-      if (result.success && result.data) {
-        const summary = result.data.summary || result.data.finalReview || result.data.transcript || reviewText;
-        setSummaryText(summary);
-        setShowSummaryModal(true);
-      } else {
-        Alert.alert('오류', result.error?.message || '요약 생성에 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('Summary error:', error);
-      Alert.alert('오류', '요약 생성 중 오류가 발생했습니다.');
-    }
-  };
 
   const handleCloseCard = () => {
     Animated.parallel([
@@ -521,17 +586,28 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>후기 작성하기</Text>
-        <TouchableOpacity onPress={handleSubmit}>
-          <Text style={styles.nextButtonText}>다음</Text>
-        </TouchableOpacity>
-      </View>
+      <ModalHeader
+        title="후기 작성하기"
+        onBack={() => navigation.goBack()}
+        rightAction={{ text: '다음', onPress: handleSubmit }}
+      />
 
-      {/* 질문 카드 스와이프 */}
+      {/* 진행 표시기 */}
+      {isCardVisible && !isLoadingQuestions && questions.length > 0 && (
+        <View style={styles.progressDots}>
+          {questions.map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.progressDot,
+                i === currentIndex && styles.progressDotActive,
+              ]}
+            />
+          ))}
+        </View>
+      )}
+
+      {/* 질문 카드 */}
       {isCardVisible && !isLoadingQuestions && questions.length > 0 && (
         <Animated.View
           style={[
@@ -545,35 +621,24 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
             },
           ]}
         >
-          {/* Swipe Indicators */}
-          <View style={styles.dots}>
-            {questions.map((_, i) => (
-              <Animated.View
-                key={i}
-                style={[
-                  styles.dot,
-                  {
-                    width: scrollX.interpolate({
-                      inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-                      outputRange: [6, 12, 6],
-                      extrapolate: 'clamp',
-                    }),
-                    backgroundColor: scrollX.interpolate({
-                      inputRange: [(i - 1) * width, i * width, (i + 1) * width],
-                      outputRange: ['#ccc', '#000', '#ccc'],
-                      extrapolate: 'clamp',
-                    }),
-                  },
-                ]}
-              />
-            ))}
-          </View>
-
-          {/* 카드 */}
-          <Animated.View style={[styles.animatedCard, { transform: [...pan.getTranslateTransform(), { scale: cardScale }] }]} {...panResponder.panHandlers}>
+          <Animated.View
+            style={[
+              styles.animatedCard,
+              { transform: [...pan.getTranslateTransform(), { scale: cardScale }] },
+            ]}
+            {...panResponder.panHandlers}
+          >
             <View style={styles.questionCard}>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={handleCloseCard}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
               <View style={styles.questionHeaderRow}>
-                <Image source={require('../../assets/cat.png')} style={styles.catImage} />
+                <View style={styles.questionIconContainer}>
+                  <Text style={styles.questionIcon}>✈️</Text>
+                </View>
                 <View style={styles.textContainer}>
                   <Text style={styles.questionLabel}>질문 {currentIndex + 1}</Text>
                   <Text style={styles.questionText}>{questions[currentIndex]}</Text>
@@ -584,49 +649,66 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         </Animated.View>
       )}
 
-      {/* Text Input / Recording */}
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <Animated.View style={[styles.reviewContainer, { transform: [{ translateY: reviewTranslateY }] }]}>
+      {/* Text Input */}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.reviewContainer}>
           <TextInput
             style={styles.reviewInput}
             placeholder="후기를 입력하세요..."
-            placeholderTextColor="#999"
+            placeholderTextColor={Colors.tertiaryLabel}
             multiline
-            value={reviewText}
-            onChangeText={setReviewText}
+            value={reviewText || ''}
+            onChangeText={(text) => {
+              console.log('📝 TextInput onChangeText 호출:', text?.substring(0, 50));
+              setReviewText(text);
+            }}
+            textAlignVertical="top"
+            key={reviewText ? 'has-text' : 'empty'} // 강제 리렌더링을 위한 key
           />
+        </View>
+      </KeyboardAvoidingView>
 
-          <TouchableOpacity
-            style={[
-              styles.reviewListButton,
-              (isOrganizing || isProcessingSTT) && styles.reviewListButtonDisabled,
-            ]}
-            onPress={() => handleOrganizeReview()}
-            disabled={isOrganizing || isProcessingSTT}
-          >
-            <Text style={styles.reviewListButtonIcon}>📝</Text>
-            <Text style={styles.reviewListButtonText}>
-              {isOrganizing ? '정리 중...' : '정리하기'}
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* 오디오 파일 업로드 버튼 */}
+      {/* 하단 버튼들 */}
+      <View style={styles.bottomButtons}>
         <TouchableOpacity
-          style={[
-            styles.audioUploadButton,
-            isProcessingSTT && styles.audioUploadButtonProcessing,
-            styles.recordButton,
-            isProcessingSTT && styles.recordButtonProcessing,
-          ]}
+          style={[styles.bottomButton, styles.bottomButtonWhite]}
+          onPress={() => handleOrganizeReview()}
+          disabled={!reviewText?.trim() || isOrganizing}
+        >
+          <Text style={styles.bottomButtonIcon}>🎫</Text>
+          <Text style={[styles.bottomButtonText, styles.bottomButtonTextDark]}>
+            후기 정리하기
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.bottomButton, styles.bottomButtonWhite]}
           onPress={handleAudioFilePick}
           disabled={isProcessingSTT}
         >
-          <Text style={styles.audioUploadButtonIcon}>
-            {isProcessingSTT ? '⏳' : '🎵'}
+          <Text style={styles.bottomButtonIcon}>🎵</Text>
+          <Text style={[styles.bottomButtonText, styles.bottomButtonTextDark]}>
+            오디오 파일 선택
           </Text>
         </TouchableOpacity>
-      </KeyboardAvoidingView>
+
+        <TouchableOpacity
+          style={[
+            styles.bottomButton,
+            styles.bottomButtonPrimary,
+            (isProcessingSTT || !selectedAudioUri) && styles.bottomButtonDisabled,
+          ]}
+          onPress={handleSTTConversion}
+          disabled={isProcessingSTT || !selectedAudioUri}
+        >
+          <Text style={[styles.bottomButtonText, styles.bottomButtonTextWhite]}>
+            STT 변환 실행
+          </Text>
+        </TouchableOpacity>
+      </View>
         
       {/* 후기 요약 모달 */}
       <ReviewSummaryModal
@@ -643,130 +725,153 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
  *                  Styles
  *  ============================================ */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
+  container: { flex: 1, backgroundColor: Colors.systemBackground },
 
-  header: {
+  // 진행 표시기
+  progressDots: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    alignItems: 'center',
-    ...Shadows.small,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.round,
-    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    ...Shadows.small,
+    paddingVertical: Spacing.md,
+    gap: Spacing.xs,
   },
-  backButtonText: { ...Typography.title3 },
-  headerTitle: { ...Typography.headline },
-  nextButtonText: {
-    ...Typography.body,
-    color: '#B11515',
-    fontWeight: '600',
+  progressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.systemGray4,
   },
-  nextButtonDisabled: {
-    color: '#999',
+  progressDotActive: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.label,
   },
 
+  // 질문 섹션
   questionSection: {
-    marginTop: 16,
-    marginHorizontal: 20,
-  },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  dot: { height: 6, borderRadius: 3, marginHorizontal: Spacing.xs },
-
-  animatedCard: { width: '100%' },
-
+  animatedCard: {
+    width: '100%',
+  },
   questionCard: {
     width: '100%',
-    backgroundColor: '#ececec',
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: Colors.systemGray5,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     ...Shadows.small,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: Colors.secondaryLabel,
+    fontWeight: '300',
   },
   questionHeaderRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingRight: Spacing.xl,
+  },
+  questionIconContainer: {
+    marginRight: Spacing.md,
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  catImage: { width: 60, height: 50, marginRight: 12 },
-  textContainer: { flex: 1 },
-  questionLabel: { fontSize: 16, fontWeight: '600', color: '#000' },
-  questionText: { fontSize: 18, fontWeight: '500', color: '#000', marginTop: 4 },
+  questionIcon: {
+    fontSize: 20,
+  },
+  textContainer: {
+    flex: 1,
+  },
+  questionLabel: {
+    ...Typography.subheadline,
+    fontWeight: '600',
+    color: Colors.label,
+    marginBottom: Spacing.xs,
+  },
+  questionText: {
+    ...Typography.body,
+    fontWeight: '500',
+    color: Colors.label,
+  },
 
+  // 키보드 뷰
+  keyboardView: {
+    flex: 1,
+  },
+
+  // 후기 입력 영역
   reviewContainer: {
     flex: 1,
-    marginHorizontal: 20,
-    marginTop: -20,
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.md,
   },
   reviewInput: {
-    minHeight: 450,
-    backgroundColor: '#ececec',
-    borderRadius: 12,
-    padding: 20,
-    fontSize: 16,
-    color: '#000',
-    textAlignVertical: 'top',
+    flex: 1,
+    backgroundColor: Colors.systemGray5,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    ...Typography.body,
+    color: Colors.label,
+    minHeight: 300,
   },
-  reviewListButton: {
-    marginTop: -60,
-    alignSelf: 'center',
-    width: 140,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    ...Shadows.medium,
-  },
-  reviewListButtonDisabled: {
-    opacity: 0.6,
-  },
-  reviewListButtonText: { fontSize: 14, fontWeight: '600', color: '#000' },
-  reviewListButtonIcon: { fontSize: 18, marginRight: 6 },
 
-  // 오디오 파일 업로드 버튼
-  audioUploadButton: {
-    position: 'absolute',
-    bottom: 40,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+  // 하단 버튼들
+  bottomButtons: {
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    gap: Spacing.md,
+    backgroundColor: Colors.systemBackground,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.systemGray5,
+  },
+  bottomButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    ...Shadows.medium,
-  },
-  audioUploadButtonProcessing: {
-    backgroundColor: '#FFA500',
-    opacity: 0.7,
-  },
-  audioUploadButtonIcon: {
-    fontSize: 24,
-  },
-  recordButton: {
-    position: 'absolute',
-    bottom: 40,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#fff',
     justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.medium,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
+    borderRadius: BorderRadius.lg,
+    gap: Spacing.sm,
+    ...Shadows.small,
   },
-  recordButtonProcessing: { backgroundColor: '#FFA500', opacity: 0.7 },
-  recordButtonIcon: { fontSize: 24 },
+  bottomButtonWhite: {
+    backgroundColor: Colors.white,
+  },
+  bottomButtonPrimary: {
+    backgroundColor: Colors.primary,
+  },
+  bottomButtonDisabled: {
+    opacity: 0.5,
+  },
+  bottomButtonIcon: {
+    fontSize: 20,
+  },
+  bottomButtonText: {
+    ...Typography.subheadline,
+    fontWeight: '600',
+  },
+  bottomButtonTextDark: {
+    color: Colors.label,
+  },
+  bottomButtonTextWhite: {
+    color: Colors.white,
+  },
 });
 
 export default AddReviewPage;

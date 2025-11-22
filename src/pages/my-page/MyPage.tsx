@@ -15,7 +15,8 @@ import {
 } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
 import { ticketsAtom } from '../../atoms/ticketAtoms';
-import { friendsAtom } from '../../atoms/friendsAtoms';
+import { fetchMyTicketsAtom, myTicketsAtom } from '../../atoms/ticketsAtomsApi';
+import { friendsAtom, fetchFriendsAtom } from '../../atoms';
 import { Ticket } from '../../types/ticket';
 import TicketDetailModal from '../../components/TicketDetailModal';
 import GNB from '../../components/GNB';
@@ -50,7 +51,10 @@ interface UserProfile {
 
 const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   const [myTickets] = useAtom(ticketsAtom);
+  const [apiTickets] = useAtom(myTicketsAtom);
+  const [, fetchMyTickets] = useAtom(fetchMyTicketsAtom);
   const [friendsList] = useAtom(friendsAtom);
+  const [, fetchFriends] = useAtom(fetchFriendsAtom);
 
   const {
     data: profileData,
@@ -59,16 +63,19 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
 
   const [, fetchMyProfile] = useAtom(fetchMyProfileAtom);
 
-  // 화면 포커스 시 프로필 새로고침
+  // 화면 포커스 시 프로필, 티켓, 친구 목록 새로고침
   useFocusEffect(
     useCallback(() => {
       fetchMyProfile(true);
-    }, [fetchMyProfile])
+      fetchMyTickets(true); // 티켓 데이터도 백엔드에서 가져오기
+      fetchFriends(true); // 친구 목록도 백엔드에서 가져오기
+    }, [fetchMyProfile, fetchMyTickets, fetchFriends])
   );
 
   const profile = profileData as UserProfile | undefined;
 
-  const actualTickets: Ticket[] = (myTickets || []) as Ticket[];
+  // API 티켓이 있으면 우선 사용, 없으면 로컬 티켓 사용
+  const actualTickets: Ticket[] = (apiTickets.length > 0 ? apiTickets : myTickets || []) as Ticket[];
   const actualFriends = (friendsList || []) as any[];
 
   const actualProfile: UserProfile = profile || {

@@ -29,6 +29,8 @@ import {
   BorderRadius,
   Shadows,
 } from '../../styles/designSystem';
+import { resolveImageUrl } from '../../utils/resolveImageUrl';
+import { sanitizePrompt } from '../../utils/sanitizePrompt';
 
 interface AIImageResultsProps {
   navigation: any;
@@ -108,6 +110,9 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
           ? ticketData.performedAt.toISOString()
           : ticketData?.performedAt ?? '';
 
+      // basePrompt 정제 (OpenAI 안전 정책 준수)
+      const sanitizedBasePrompt = basePrompt ? sanitizePrompt(basePrompt) : null;
+
       // 요청 데이터 정리 (빈 값 제거)
       const requestData: ImageGenerationRequest = {
         title: ticketData.title,
@@ -115,26 +120,39 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
         ...(mapGenreForBackend(ticketData.genre || '') && {
           genre: mapGenreForBackend(ticketData.genre || ''),
         }),
-        ...(ticketData.place && ticketData.place.trim() && {
-          location: ticketData.place.trim(),
+        ...(ticketData.venue && ticketData.venue.trim() && {
+          location: ticketData.venue.trim(),
         }),
         ...(dateValue && { date: dateValue }),
-        ...(basePrompt && basePrompt.trim() && {
-          basePrompt: basePrompt.trim(),
+        ...(sanitizedBasePrompt && sanitizedBasePrompt.trim() && {
+          basePrompt: sanitizedBasePrompt.trim(),
         }),
       };
 
       console.log('🔍 이미지 생성 요청 데이터:', JSON.stringify(requestData, null, 2));
-      console.log('📋 basePrompt:', basePrompt);
-      console.log('📋 basePrompt 길이:', basePrompt?.length || 0);
+      console.log('📋 원본 basePrompt:', basePrompt);
+      console.log('📋 정제된 basePrompt:', sanitizedBasePrompt);
+      console.log('📋 basePrompt 길이:', sanitizedBasePrompt?.length || 0);
 
       const result = await imageGenerationService.generateImage(requestData);
 
       if (result.success && result.data) {
         const imageData = result.data;
 
-        setGeneratedImage(imageData.imageUrl);
-        setGenerationHistory(prev => [imageData.imageUrl, ...prev]);
+        // 상대 경로를 전체 URL로 변환
+        const resolvedImageUrl = resolveImageUrl(imageData.imageUrl);
+        console.log('🖼 원본 imageUrl:', imageData.imageUrl);
+        console.log('🖼 변환된 imageUrl:', resolvedImageUrl);
+
+        if (resolvedImageUrl) {
+          setGeneratedImage(resolvedImageUrl);
+          setGenerationHistory(prev => [resolvedImageUrl, ...prev]);
+        } else {
+          console.error('❌ 이미지 URL 변환 실패');
+          Alert.alert('오류', '이미지 URL을 가져올 수 없습니다.');
+          setIsGenerating(false);
+          return;
+        }
 
         if (imageData.prompt) setCurrentPrompt(imageData.prompt);
       } else {
@@ -185,6 +203,9 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
           ? ticketData.performedAt.toISOString()
           : ticketData?.performedAt ?? '';
 
+      // basePrompt 정제 (OpenAI 안전 정책 준수)
+      const sanitizedBasePrompt = basePrompt ? sanitizePrompt(basePrompt) : null;
+
       // 요청 데이터 정리 (빈 값 제거)
       const requestData: ImageGenerationRequest = {
         title: ticketData.title,
@@ -192,29 +213,41 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
         ...(mapGenreForBackend(ticketData.genre || '') && {
           genre: mapGenreForBackend(ticketData.genre || ''),
         }),
-        ...(ticketData.place && ticketData.place.trim() && {
-          location: ticketData.place.trim(),
+        ...(ticketData.venue && ticketData.venue.trim() && {
+          location: ticketData.venue.trim(),
         }),
         ...(dateValue && { date: dateValue }),
-        ...(basePrompt && basePrompt.trim() && {
-          basePrompt: basePrompt.trim(),
+        ...(sanitizedBasePrompt && sanitizedBasePrompt.trim() && {
+          basePrompt: sanitizedBasePrompt.trim(),
         }),
         ...(regenerationRequest.trim() && {
-          imageRequest: regenerationRequest.trim(),
+          imageRequest: sanitizePrompt(regenerationRequest.trim()),
         }),
       };
 
       console.log('🔄 재생성 요청:', JSON.stringify(requestData, null, 2));
       console.log('📝 사용자 요구사항:', regenerationRequest);
-      console.log('📋 basePrompt:', basePrompt);
+      console.log('📋 원본 basePrompt:', basePrompt);
+      console.log('📋 정제된 basePrompt:', sanitizedBasePrompt);
 
       const result = await imageGenerationService.generateImage(requestData);
 
       if (result.success && result.data) {
         const imageData = result.data;
 
-        setGeneratedImage(imageData.imageUrl);
-        setGenerationHistory(prev => [imageData.imageUrl, ...prev]);
+        // 상대 경로를 전체 URL로 변환
+        const resolvedImageUrl = resolveImageUrl(imageData.imageUrl);
+        console.log('🔄 재생성 - 원본 imageUrl:', imageData.imageUrl);
+        console.log('🔄 재생성 - 변환된 imageUrl:', resolvedImageUrl);
+
+        if (resolvedImageUrl) {
+          setGeneratedImage(resolvedImageUrl);
+          setGenerationHistory(prev => [resolvedImageUrl, ...prev]);
+        } else {
+          console.error('❌ 이미지 URL 변환 실패');
+          Alert.alert('오류', '이미지 URL을 가져올 수 없습니다.');
+          return;
+        }
 
         if (imageData.prompt) setCurrentPrompt(imageData.prompt);
 
@@ -269,7 +302,15 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
           <Text style={styles.generatingTitle}>AI 이미지 생성 중...</Text>
         </View>
       ) : (
-        <ScrollView style={styles.content}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+          bounces={true}
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
+        >
           {generatedImage && (
             <>
               {/* 메시지 */}
@@ -391,7 +432,13 @@ const styles = StyleSheet.create({
   nextButton: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
   nextButtonText: { ...Typography.callout, color: '#b11515', fontWeight: '600' },
 
-  content: { flex: 1 },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: Spacing.xxxl * 2,
+  },
 
   loadingFullScreen: {
     flex: 1,

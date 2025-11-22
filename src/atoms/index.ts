@@ -60,7 +60,24 @@ export {
   resetUserDataAtom,
 } from './userAtoms';
 
-// 친구 관련 atoms
+// 친구 관련 atoms (API 연동 버전 우선)
+export {
+  // API 연동 atoms
+  friendsAtom,
+  receivedFriendRequestsAtom,
+  sentFriendRequestsAtom,
+  friendSearchResultsAtom,
+  searchFriendsAtom,
+  sendFriendRequestAtom,
+  respondToFriendRequestAtom,
+  removeFriendAtom,
+  fetchFriendsAtom,
+  fetchReceivedRequestsAtom,
+  fetchSentRequestsAtom,
+  cancelFriendRequestAtom,
+} from './friendsAtomsApi';
+
+// 친구 관련 atoms (로컬 상태 관리용 - 필요시 사용)
 export {
   // 기본 상태
   friendsMapAtom,
@@ -69,22 +86,15 @@ export {
   friendTicketsMapAtom,
   
   // 파생 atoms (읽기 전용)
-  friendsAtom,
   friendsCountAtom,
-  receivedFriendRequestsAtom,
-  sentFriendRequestsAtom,
   getFriendByIdAtom,
   getFriendTicketsAtom,
   friendTicketsAtom,
   
   // 쓰기 atoms (액션)
-  sendFriendRequestAtom,
-  respondToFriendRequestAtom,
-  removeFriendAtom,
   updateFriendTicketsAtom,
   
   // 유틸리티 atoms
-  searchFriendsAtom,
   friendStatsAtom,
 } from './friendsAtoms';
 

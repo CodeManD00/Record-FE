@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
-import { friendsMapAtom, removeFriendAtom, receivedFriendRequestsAtom, respondToFriendRequestAtom } from '../../atoms';
+import { 
+  friendsAtom, 
+  removeFriendAtom, 
+  receivedFriendRequestsAtom, 
+  respondToFriendRequestAtom,
+  fetchReceivedRequestsAtom,
+  fetchFriendsAtom,
+} from '../../atoms';
 import { Friend, FriendRequest } from '../../types/friend';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
@@ -20,30 +27,48 @@ interface FriendsListPageProps {
 }
 
 const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
-  const [friendsMap] = useAtom(friendsMapAtom);
+  const [friends] = useAtom(friendsAtom);
   const [, removeFriend] = useAtom(removeFriendAtom);
   const [friendRequests] = useAtom(receivedFriendRequestsAtom);
   const [, respondToRequest] = useAtom(respondToFriendRequestAtom);
-  
-  const friends = Array.from(friendsMap.values());
+  const [, fetchReceivedRequests] = useAtom(fetchReceivedRequestsAtom);
+  const [, fetchFriends] = useAtom(fetchFriendsAtom);
+
+  // 페이지 로드 시 데이터 가져오기
+  useEffect(() => {
+    fetchReceivedRequests(true);
+    fetchFriends(true);
+  }, []);
 
   const friendRequestsCount = friendRequests.length;
   const friendsCount = friends.length;
 
   // 친구 삭제
-  const handleDeleteFriend = (friendId: string) => {
+  const handleDeleteFriend = async (friendId: string) => {
     Alert.alert('친구 삭제', '정말로 친구를 삭제하시겠어요?', [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제',
         style: 'destructive',
-        onPress: () => removeFriend({ friendId }),
+        onPress: async () => {
+          try {
+            const result = await removeFriend(friendId);
+            if (result.success) {
+              Alert.alert('완료', '친구를 삭제했습니다.');
+              fetchFriends(true);
+            } else {
+              Alert.alert('오류', result.error?.message || '친구 삭제 중 오류가 발생했습니다.');
+            }
+          } catch (error) {
+            Alert.alert('오류', '친구 삭제 중 오류가 발생했습니다.');
+          }
+        },
       },
     ]);
   };
 
   // 친구 요청 거절
-  const handleRejectRequest = (request: FriendRequest) => {
+  const handleRejectRequest = async (request: FriendRequest) => {
     Alert.alert(
       '친구 요청 거절',
       `${request.nickname}님의 친구 요청을 거절하시겠어요?`,
@@ -52,10 +77,15 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
         {
           text: '거절',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             try {
-              respondToRequest({ requestId: request.id, accept: false });
-              Alert.alert('완료', '친구 요청을 거절했습니다.');
+              const result = await respondToRequest({ requestId: request.id, accept: false });
+              if (result.success) {
+                Alert.alert('완료', '친구 요청을 거절했습니다.');
+                fetchReceivedRequests(true);
+              } else {
+                Alert.alert('오류', result.error?.message || '친구 요청 거절 중 오류가 발생했습니다.');
+              }
             } catch (error) {
               Alert.alert('오류', '친구 요청 거절 중 오류가 발생했습니다.');
             }
@@ -66,7 +96,17 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
   };
 
   // 친구 프로필로 이동 (모달 닫기 → 풀스크린 열기)
-  const handleNavigateToFriendProfile = (friend: Friend) => {
+  const handleNavigateToFriendProfile = (friendOrRequest: Friend | FriendRequest) => {
+    // FriendRequest를 Friend로 변환
+    const friend: Friend = {
+      id: friendOrRequest.fromUserId || friendOrRequest.id,
+      user_id: friendOrRequest.user_id,
+      nickname: friendOrRequest.nickname,
+      profileImage: friendOrRequest.profileImage,
+      createdAt: friendOrRequest.createdAt,
+      updatedAt: friendOrRequest.updatedAt,
+    };
+    
     // 먼저 현재 모달을 닫기
     navigation.goBack();
     
@@ -77,7 +117,7 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
   };
 
   // 친구 요청 수락
-  const handleAcceptRequest = (request: FriendRequest) => {
+  const handleAcceptRequest = async (request: FriendRequest) => {
     Alert.alert(
       '친구 요청 수락',
       `${request.nickname}님의 친구 요청을 수락하시겠어요?`,
@@ -85,10 +125,16 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
         { text: '취소', style: 'cancel' },
         {
           text: '수락',
-          onPress: () => {
+          onPress: async () => {
             try {
-              respondToRequest({ requestId: request.id, accept: true });
-              Alert.alert('성공', `${request.nickname}님과 친구가 되었습니다! 🎉`);
+              const result = await respondToRequest({ requestId: request.id, accept: true });
+              if (result.success) {
+                Alert.alert('성공', `${request.nickname}님과 친구가 되었습니다! 🎉`);
+                fetchReceivedRequests(true);
+                fetchFriends(true);
+              } else {
+                Alert.alert('오류', result.error?.message || '친구 요청 수락 중 오류가 발생했습니다.');
+              }
             } catch (error) {
               Alert.alert('오류', '친구 요청 수락 중 오류가 발생했습니다.');
             }

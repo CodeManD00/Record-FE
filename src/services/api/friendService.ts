@@ -10,15 +10,141 @@ import {
   CreateFriendRequestData,
   RespondToFriendRequestData,
 } from '../../types/friend';
+import { userProfileAtom } from '../../atoms/userAtomsApi';
+import { getDefaultStore } from 'jotai';
+import { resolveImageUrl } from '../../utils/resolveImageUrl';
+
+const store = getDefaultStore();
 
 class FriendService {
 
   /**
+   * 현재 사용자 ID 가져오기
+   */
+  private getCurrentUserId(): string | null {
+    const profile = store.get(userProfileAtom);
+    return profile?.id || null;
+  }
+
+  /**
    * 친구 목록 조회
    * GET /friendships/{userId}/friends
+   * OpenAPI: userId는 현재 사용자 ID (프로필에서 가져옴)
    */
-  async getFriends(userId: string): Promise<Result<{ friends: Friend[] }>> {
-    return apiClient.get(`/friendships/${userId}/friends`);
+  async getFriends(userId?: string): Promise<Result<{ friends: Friend[] }>> {
+    const targetUserId = userId || this.getCurrentUserId();
+    if (!targetUserId) {
+      return {
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: '사용자 ID를 가져올 수 없습니다.' },
+      };
+    }
+    return apiClient.get(`/friendships/${targetUserId}/friends`);
+  }
+
+  /**
+   * 친구 검색
+   * GET /users/search/{userId}
+   * OpenAPI: userId는 검색할 사용자 ID (정확한 사용자 ID로 검색)
+   * X-User-Id 헤더는 optional
+   */
+  async searchFriends(params: { query: string; limit?: number }): Promise<Result<{ users: Friend[] }>> {
+    const { query } = params;
+    if (!query || !query.trim()) {
+      return {
+        success: false,
+        error: {
+          code: 'INVALID_QUERY',
+          message: '검색어를 입력해주세요.',
+        },
+      };
+    }
+
+    // query를 userId로 사용 (사용자 ID로 검색)
+    // OpenAPI 스펙: GET /users/search/{userId}
+    // 특정 userId로 사용자 조회 (정확한 ID로만 검색 가능)
+    const searchUserId = query.trim();
+    
+    // X-User-Id 헤더는 optional이지만, 현재 사용자 ID가 있으면 포함
+    const currentUserId = this.getCurrentUserId();
+    const headers = currentUserId ? { 'X-User-Id': currentUserId } : undefined;
+    
+    // 경로에 userId 직접 사용 (Spring Boot path variable)
+    // 특수 문자가 포함된 경우를 대비해 인코딩하지 않고 그대로 사용
+    // Spring Boot가 path variable로 올바르게 파싱함
+    const searchUrl = `/users/search/${searchUserId}`;
+    
+    if (__DEV__) {
+      console.log('🔍 사용자 검색 API 호출:', {
+        query,
+        searchUserId,
+        url: searchUrl,
+        fullUrl: `http://localhost:8080${searchUrl}`,
+        headers,
+        currentUserId,
+      });
+    }
+    
+    try {
+      const result = await apiClient.get(searchUrl, {
+        headers,
+      });
+      
+      if (__DEV__) {
+        console.log('🔍 사용자 검색 API 응답:', {
+          success: result.success,
+          hasData: !!result.data,
+          error: result.error,
+        });
+      }
+      
+      return this.processSearchResult(result);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('🔍 사용자 검색 API 에러:', error);
+      }
+      return {
+        success: false,
+        error: {
+          code: 'SEARCH_ERROR',
+          message: '사용자 검색 중 오류가 발생했습니다.',
+        },
+      };
+    }
+  }
+
+  /**
+   * 검색 결과 처리
+   */
+  private processSearchResult(result: Result<any>): Result<{ users: Friend[] }> {
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: result.error || {
+          code: 'SEARCH_FAILED',
+          message: '사용자를 찾을 수 없습니다.',
+        },
+      };
+    }
+
+    // 응답은 ApiResponseObject로 감싸져 있을 수 있음
+    // { success: boolean, data: object, message: string }
+    let responseData = result.data;
+    
+    // ApiResponseObject 구조인 경우 (success, data, message)
+    if (responseData && typeof responseData === 'object' && 'data' in responseData) {
+      responseData = (responseData as any).data;
+    }
+
+    // 사용자 객체 또는 배열로 변환
+    const users = Array.isArray(responseData) 
+      ? responseData 
+      : responseData ? [responseData] : [];
+    
+    return {
+      success: true,
+      data: { users },
+    };
   }
 
   /**
@@ -32,17 +158,155 @@ class FriendService {
   /**
    * 보낸 친구 요청 목록 조회
    * GET /friendships/{userId}/sent-requests
+   * OpenAPI: userId는 현재 사용자 ID
    */
-  async getSentFriendRequests(userId: string): Promise<Result<{ requests: FriendRequest[] }>> {
-    return apiClient.get(`/friendships/${userId}/sent-requests`);
+  async getSentFriendRequests(userId?: string): Promise<Result<{ requests: FriendRequest[] }>> {
+    const targetUserId = userId || this.getCurrentUserId();
+    if (!targetUserId) {
+      return {
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: '사용자 ID를 가져올 수 없습니다.' },
+      };
+    }
+
+    if (__DEV__) {
+      console.log('📤 보낸 친구 요청 목록 조회:', {
+        userId: targetUserId,
+        url: `/friendships/${targetUserId}/sent-requests`,
+      });
+    }
+
+    const result = await apiClient.get(`/friendships/${targetUserId}/sent-requests`);
+
+    if (__DEV__) {
+      console.log('📥 보낸 친구 요청 목록 응답:', {
+        success: result.success,
+        data: result.data,
+        dataType: Array.isArray(result.data) ? 'array' : typeof result.data,
+      });
+    }
+
+    // 응답 형식 처리 (배열이거나 { requests: [] } 형태)
+    if (result.success && result.data) {
+      let requests: any[] = [];
+
+      if (Array.isArray(result.data)) {
+        // 배열 형태로 직접 반환 (백엔드 실제 응답 형식)
+        requests = result.data;
+      } else if (result.data.requests && Array.isArray(result.data.requests)) {
+        // { requests: [] } 형태
+        requests = result.data.requests;
+      } else if (result.data.data && Array.isArray(result.data.data)) {
+        // ApiResponseObject로 감싸진 형태
+        requests = result.data.data;
+      }
+
+      // 백엔드 응답 형식:
+      // { id, userId (보낸 사람), friendId (받은 사람), friendNickname, friendProfileImage, status, ... }
+      // FriendRequest 형식으로 변환
+      const formattedRequests: FriendRequest[] = requests.map((req: any) => ({
+        id: String(req.id || req.friendshipId || ''),
+        fromUserId: String(req.userId || targetUserId), // 보낸 사람 = userId
+        toUserId: String(req.friendId || ''), // 받은 사람 = friendId
+        nickname: req.friendNickname || req.nickname || 'Unknown',
+        user_id: req.friendId || req.user_id || '',
+        profileImage: (req.friendProfileImage || req.profileImage) 
+          ? resolveImageUrl(req.friendProfileImage || req.profileImage) || undefined
+          : undefined,
+        status: (req.status || 'PENDING') as any,
+        message: req.message,
+        createdAt: req.createdAt ? new Date(req.createdAt) : new Date(),
+        updatedAt: req.updatedAt ? new Date(req.updatedAt) : new Date(),
+      }));
+
+      if (__DEV__) {
+        console.log('✅ 변환된 보낸 친구 요청:', formattedRequests);
+      }
+
+      return {
+        success: true,
+        data: { requests: formattedRequests },
+      };
+    }
+
+    return result as Result<{ requests: FriendRequest[] }>;
   }
 
   /**
    * 받은 친구 요청 목록 조회
    * GET /friendships/{userId}/received-requests
+   * OpenAPI: userId는 현재 사용자 ID
    */
-  async getReceivedFriendRequests(userId: string): Promise<Result<{ requests: FriendRequest[] }>> {
-    return apiClient.get(`/friendships/${userId}/received-requests`);
+  async getReceivedFriendRequests(userId?: string): Promise<Result<{ requests: FriendRequest[] }>> {
+    const targetUserId = userId || this.getCurrentUserId();
+    if (!targetUserId) {
+      return {
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: '사용자 ID를 가져올 수 없습니다.' },
+      };
+    }
+
+    if (__DEV__) {
+      console.log('📥 받은 친구 요청 목록 조회:', {
+        userId: targetUserId,
+        url: `/friendships/${targetUserId}/received-requests`,
+      });
+    }
+
+    const result = await apiClient.get(`/friendships/${targetUserId}/received-requests`);
+
+    if (__DEV__) {
+      console.log('📥 받은 친구 요청 목록 응답:', {
+        success: result.success,
+        data: result.data,
+        dataType: Array.isArray(result.data) ? 'array' : typeof result.data,
+      });
+    }
+
+    // 응답 형식 처리 (배열이거나 { requests: [] } 형태)
+    if (result.success && result.data) {
+      let requests: any[] = [];
+
+      if (Array.isArray(result.data)) {
+        // 배열 형태로 직접 반환 (백엔드 실제 응답 형식)
+        requests = result.data;
+      } else if (result.data.requests && Array.isArray(result.data.requests)) {
+        // { requests: [] } 형태
+        requests = result.data.requests;
+      } else if (result.data.data && Array.isArray(result.data.data)) {
+        // ApiResponseObject로 감싸진 형태
+        requests = result.data.data;
+      }
+
+      // 받은 친구 요청의 경우 백엔드 응답 형식이 다를 수 있음
+      // 보낸 요청과 동일한 형식이라면: userId (보낸 사람), friendId (받은 사람 = 나)
+      // FriendRequest 형식으로 변환
+      const formattedRequests: FriendRequest[] = requests.map((req: any) => ({
+        id: String(req.id || req.friendshipId || ''),
+        fromUserId: String(req.userId || req.fromUserId || ''), // 보낸 사람 = userId
+        toUserId: String(req.friendId || req.toUserId || targetUserId), // 받은 사람 = friendId (나)
+        nickname: req.userNickname || req.friendNickname || req.nickname || 'Unknown',
+        user_id: req.userId || req.user_id || '',
+        profileImage: (req.userProfileImage || req.friendProfileImage || req.profileImage)
+          ? resolveImageUrl(req.userProfileImage || req.friendProfileImage || req.profileImage) || undefined
+          : undefined,
+        status: (req.status || 'PENDING') as any,
+        message: req.message,
+        createdAt: req.createdAt ? new Date(req.createdAt) : new Date(),
+        updatedAt: req.updatedAt ? new Date(req.updatedAt) : new Date(),
+      }));
+
+      if (__DEV__) {
+        console.log('✅ 변환된 받은 친구 요청:', formattedRequests);
+      }
+
+      return {
+        success: true,
+        data: { requests: formattedRequests },
+      };
+    }
+
+    return result as Result<{ requests: FriendRequest[] }>;
   }
 
   /**
@@ -56,45 +320,115 @@ class FriendService {
   /**
    * 친구 요청 보내기
    * POST /friendships/send
-   * Header: X-User-Id
+   * OpenAPI: X-User-Id 헤더 필요, requestBody: { targetId: string }
    */
-  async sendFriendRequest(userId: string, data: { targetId: string }): Promise<Result<any>> {
-    return apiClient.post(`/friendships/send`, data, {
-      headers: { 'X-User-Id': userId },
+  async sendFriendRequest(data: CreateFriendRequestData): Promise<Result<any>> {
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: '사용자 ID를 가져올 수 없습니다.' },
+      };
+    }
+
+    if (__DEV__) {
+      console.log('📤 친구 요청 전송:', {
+        currentUserId,
+        targetId: data.toUserId,
+        nickname: data.nickname,
+        user_id: data.user_id,
+      });
+    }
+
+    const result = await apiClient.post('/friendships/send', {
+      targetId: data.toUserId,
+    }, {
+      headers: { 'X-User-Id': currentUserId },
     });
+
+    if (__DEV__) {
+      console.log('📥 친구 요청 응답:', {
+        success: result.success,
+        data: result.data,
+        error: result.error,
+      });
+    }
+
+    return result;
   }
 
   /**
-   * 친구 요청 수락
-   * POST /friendships/{friendshipId}/accept
-   * Header: X-User-Id
+   * 친구 요청 응답 (수락/거절)
+   * POST /friendships/{friendshipId}/accept 또는 /friendships/{friendshipId}/reject
+   * OpenAPI: X-User-Id 헤더 필요, friendshipId는 path parameter
    */
-  async acceptFriendRequest(userId: string, friendshipId: number): Promise<Result<any>> {
-    return apiClient.post(`/friendships/${friendshipId}/accept`, null, {
-      headers: { 'X-User-Id': userId },
-    });
-  }
+  async respondToFriendRequest(data: RespondToFriendRequestData): Promise<Result<any>> {
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: '사용자 ID를 가져올 수 없습니다.' },
+      };
+    }
 
-  /**
-   * 친구 요청 거절
-   * POST /friendships/{friendshipId}/reject
-   * Header: X-User-Id
-   */
-  async rejectFriendRequest(userId: string, friendshipId: number): Promise<Result<any>> {
-    return apiClient.post(`/friendships/${friendshipId}/reject`, null, {
-      headers: { 'X-User-Id': userId },
+    // requestId를 friendshipId로 사용 (백엔드에 따라 조정 필요)
+    const friendshipId = parseInt(data.requestId, 10);
+    if (isNaN(friendshipId)) {
+      return {
+        success: false,
+        error: { code: 'INVALID_REQUEST_ID', message: '유효하지 않은 요청 ID입니다.' },
+      };
+    }
+
+    const endpoint = data.accept 
+      ? `/friendships/${friendshipId}/accept`
+      : `/friendships/${friendshipId}/reject`;
+    
+    return apiClient.post(endpoint, null, {
+      headers: { 'X-User-Id': currentUserId },
     });
   }
 
   /**
    * 친구 관계 삭제
    * DELETE /friendships/{friendshipId}
-   * Header: X-User-Id
+   * OpenAPI: X-User-Id 헤더 필요
    */
-  async removeFriend(userId: string, friendshipId: number): Promise<Result<any>> {
+  async removeFriend(friendId: string): Promise<Result<any>> {
+    const currentUserId = this.getCurrentUserId();
+    if (!currentUserId) {
+      return {
+        success: false,
+        error: { code: 'USER_NOT_FOUND', message: '사용자 ID를 가져올 수 없습니다.' },
+      };
+    }
+
+    // friendId를 friendshipId로 사용 (백엔드에 따라 조정 필요)
+    const friendshipId = parseInt(friendId, 10);
+    if (isNaN(friendshipId)) {
+      return {
+        success: false,
+        error: { code: 'INVALID_FRIEND_ID', message: '유효하지 않은 친구 ID입니다.' },
+      };
+    }
     return apiClient.delete(`/friendships/${friendshipId}`, null, {
-      headers: { 'X-User-Id': userId },
+      headers: { 'X-User-Id': currentUserId },
     });
+  }
+
+  /**
+   * 친구 요청 취소
+   * DELETE /friendships/{friendshipId}/cancel
+   */
+  async cancelFriendRequest(requestId: string): Promise<Result<any>> {
+    const friendshipId = parseInt(requestId, 10);
+    if (isNaN(friendshipId)) {
+      return {
+        success: false,
+        error: { code: 'INVALID_REQUEST_ID', message: '유효하지 않은 요청 ID입니다.' },
+      };
+    }
+    return apiClient.delete(`/friendships/${friendshipId}/cancel`, null);
   }
 }
 

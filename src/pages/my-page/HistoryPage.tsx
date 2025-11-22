@@ -13,6 +13,9 @@ import {
 } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
 import { ticketsAtom } from '../../atoms';
+import { fetchMyTicketsAtom, myTicketsAtom } from '../../atoms/ticketsAtomsApi';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { Ticket } from '../../types/ticket';
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
@@ -26,10 +29,23 @@ type FilterType = 'all' | 'recent' | 'thisMonth' | 'thisYear';
 const HistoryPage: React.FC<HistoryPageProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [tickets] = useAtom(ticketsAtom);
+  const [apiTickets] = useAtom(myTicketsAtom);
+  const [, fetchMyTickets] = useAtom(fetchMyTicketsAtom);
+  
+  // 백엔드 API에서 티켓 데이터 가져오기
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyTickets(true); // 강제 새로고침
+    }, [fetchMyTickets])
+  );
+  
+  // API 티켓이 있으면 우선 사용, 없으면 로컬 티켓 사용
+  const displayTicketsFromApi = apiTickets.length > 0 ? apiTickets : tickets;
+  
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
 
   // 실제 티켓만 필터링
-  const realTickets = tickets.filter(ticket => !isPlaceholderTicket(ticket));
+  const realTickets = displayTicketsFromApi.filter(ticket => !isPlaceholderTicket(ticket));
 
   // 날짜별 필터링 함수
   const getFilteredTickets = () => {
@@ -98,7 +114,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ navigation }) => {
         <Text style={styles.ticketDate}>{formatDate(item.createdAt?.toString())}</Text>
       </View>
       <Text style={styles.ticketLocation} numberOfLines={1}>
-        📍 {item.place || '장소 없음'}
+        📍 {item.venue || '장소 없음'}
       </Text>
       <Text style={styles.ticketTime}>
         🕐 {item.performedAt ? new Date(item.performedAt).toLocaleDateString() : '날짜 없음'}

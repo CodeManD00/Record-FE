@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,9 @@ import {
 } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
 import { ticketsAtom, TicketStatus } from '../../atoms';
+import { fetchMyTicketsAtom, myTicketsAtom } from '../../atoms/ticketsAtomsApi';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useEffect } from 'react';
 import { Ticket } from '../../types/ticket';
 import TicketDetailModal from '../../components/TicketDetailModal';
 import GNB from '../../components/GNB';
@@ -37,6 +40,19 @@ interface MainPageProps {
 const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const [tickets] = useAtom(ticketsAtom);
+  const [apiTickets] = useAtom(myTicketsAtom);
+  const [, fetchMyTickets] = useAtom(fetchMyTicketsAtom);
+  
+  // 백엔드 API에서 티켓 데이터 가져오기
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyTickets(true); // 강제 새로고침
+    }, [fetchMyTickets])
+  );
+  
+  // API 티켓이 있으면 우선 사용, 없으면 로컬 티켓 사용
+  const displayTicketsFromApi = apiTickets.length > 0 ? apiTickets : tickets;
+  
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<
@@ -114,7 +130,7 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
   const getCurrentMonthNumber = () => new Date().getMonth();
   const getCurrentYear = () => new Date().getFullYear();
 
-  const realTickets = tickets.filter(ticket => !isPlaceholderTicket(ticket));
+  const realTickets = displayTicketsFromApi.filter(ticket => !isPlaceholderTicket(ticket));
 
   const currentMonthTickets = realTickets
     .filter(ticket => {
@@ -141,7 +157,7 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
             id: '',
             title: '',
             artist: '',
-            place: '',
+            venue: '',
             performedAt: undefined as any,
             bookingSite: '',
             genre: '',

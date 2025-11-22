@@ -19,58 +19,90 @@ import {
   Layout,
 } from '../../styles/designSystem';
 import { useAtom } from 'jotai';
-import { friendsAtom } from '../../atoms';
+import { 
+  friendsAtom, 
+  friendSearchResultsAtom, 
+  searchFriendsAtom, 
+  sendFriendRequestAtom,
+  sentFriendRequestsAtom,
+  fetchSentRequestsAtom,
+} from '../../atoms';
 import { Friend } from '../../types/friend';
 import ModalHeader from '../../components/ModalHeader';
-
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  isMyProfile?: boolean;
-}
+import { useUserProfileData } from '../../hooks/useApiData';
 
 const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<User[]>([]);
-  const [sentRequests, setSentRequests] = useState<string[]>([]);
+  const [searchResults] = useAtom(friendSearchResultsAtom);
+  const [, searchFriends] = useAtom(searchFriendsAtom);
+  const [, sendFriendRequest] = useAtom(sendFriendRequestAtom);
+  const [sentRequests] = useAtom(sentFriendRequestsAtom);
+  const [, fetchSentRequests] = useAtom(fetchSentRequestsAtom);
   const [friends] = useAtom(friendsAtom);
+  const { data: userProfile } = useUserProfileData({ fetchOnMount: true });
 
-  const myProfile: User = {
-    id: '1',
-    name: 'Re:cord 프로필 공유',
-    username: '@9rmmy',
-    avatar: '👩🏻‍💼',
-    isMyProfile: true,
-  };
-
-  const mockUsers: User[] = [
-    { id: '2', name: '9RMMY', username: '@9rmmy', avatar: '👩🏻‍💼' },
-    { id: '3', name: 'Alice', username: '@alice', avatar: '👩🏻‍💼' },
-    { id: '4', name: 'Bob', username: '@bob', avatar: '👩🏻‍💼' },
-  ];
-
+  // 검색어 변경 시 API 호출
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]); // 검색 전엔 빈 배열, 단 내 프로필은 항상 표시
-    } else {
-      const query = searchQuery.toLowerCase();
-      setSearchResults(
-        mockUsers.filter(
-          user =>
-            user.id.includes(query) ||
-            user.name.toLowerCase().includes(query) ||
-            user.username.toLowerCase().includes(query),
-        ),
-      );
+    if (searchQuery.trim()) {
+      searchFriends(searchQuery);
     }
   }, [searchQuery]);
 
-  const handleSendFriendRequest = (userId: string) => {
-    if (!sentRequests.includes(userId)) {
-      setSentRequests(prev => [...prev, userId]);
-      console.log('Friend request sent to:', userId);
+  // 페이지 로드 시 보낸 요청 목록 가져오기
+  useEffect(() => {
+    fetchSentRequests(true);
+  }, []);
+
+  const handleSendFriendRequest = async (user: Friend) => {
+    if (!userProfile) {
+      Alert.alert('오류', '사용자 정보를 가져올 수 없습니다.');
+      return;
+    }
+
+    // 이미 요청을 보냈는지 확인
+    const alreadySent = sentRequests.some(req => req.toUserId === user.id);
+    if (alreadySent) {
+      Alert.alert('알림', '이미 친구 요청을 보냈습니다.');
+      return;
+    }
+
+    try {
+      if (__DEV__) {
+        console.log('📤 친구 요청 전송 준비:', {
+          user,
+          'user.id': user.id,
+          'user.user_id': user.user_id,
+          'user.nickname': user.nickname,
+        });
+      }
+
+      // 백엔드 curl 테스트에서 targetId: "9rmmy" (user_id 값)로 성공
+      // 백엔드는 user_id를 targetId로 받는 것으로 보임
+      // user.id는 내부 ID이고, user.user_id가 실제 사용자 ID
+      const targetUserId = user.user_id || user.id;
+
+      if (__DEV__) {
+        console.log('📤 친구 요청 전송 - targetUserId 결정:', {
+          'user.id': user.id,
+          'user.user_id': user.user_id,
+          '최종 targetUserId': targetUserId,
+        });
+      }
+
+      const result = await sendFriendRequest({
+        toUserId: targetUserId, // user_id를 targetId로 전송
+        nickname: user.nickname,
+        user_id: user.user_id,
+      });
+
+      if (result.success) {
+        Alert.alert('완료', '친구 요청을 보냈습니다.');
+        fetchSentRequests(true);
+      } else {
+        Alert.alert('오류', result.error?.message || '친구 요청 전송에 실패했습니다.');
+      }
+    } catch (error) {
+      Alert.alert('오류', '친구 요청 전송 중 문제가 발생했습니다.');
     }
   };
 
@@ -118,86 +150,75 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
         {/* 항상 표시되는 내 프로필 */}
 
         {/* 검색 결과 */}
-        {searchResults.map(user => (
-          <View key={user.id} style={styles.userItem}>
-            <View style={styles.userInfo}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{user.avatar}</Text>
+        {searchResults.map(user => {
+          const alreadySent = sentRequests.some(req => req.toUserId === user.id);
+          const isFriend = friends.some(f => f.id === user.id);
+          
+          return (
+            <View key={user.id} style={styles.userItem}>
+              <View style={styles.userInfo}>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {user.profileImage || user.nickname.charAt(0)}
+                  </Text>
+                </View>
+                <View style={styles.userDetails}>
+                  <Text style={styles.userName}>{user.nickname}</Text>
+                  <Text style={styles.userHandle}>{user.user_id}</Text>
+                </View>
               </View>
-              <View style={styles.userDetails}>
-                <Text style={styles.userName}>{user.name}</Text>
-                <Text style={styles.userHandle}>{user.username}</Text>
-              </View>
-            </View>
 
-            <TouchableOpacity
-              style={[
-                styles.addButton,
-                sentRequests.includes(user.id) && styles.sentButton,
-              ]}
-              onPress={() => handleSendFriendRequest(user.id)}
-              disabled={sentRequests.includes(user.id)}
-            >
-              <Text
-                style={[
-                  styles.addButtonText,
-                  sentRequests.includes(user.id) && styles.sentButtonText,
-                ]}
-              >
-                {sentRequests.includes(user.id) ? '보냈음' : '추가'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+              {!isFriend && (
+                <TouchableOpacity
+                  style={[
+                    styles.addButton,
+                    alreadySent && styles.sentButton,
+                  ]}
+                  onPress={() => handleSendFriendRequest(user)}
+                  disabled={alreadySent}
+                >
+                  <Text
+                    style={[
+                      styles.addButtonText,
+                      alreadySent && styles.sentButtonText,
+                    ]}
+                  >
+                    {alreadySent ? '보냈음' : '추가'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })}
 
         {/* 기존 친구들 섹션 */}
         {!searchQuery && friends.length > 0 && (
-          <>
-            <View style={styles.userItem}>
-              <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{myProfile.avatar}</Text>
-                </View>
-                <View style={styles.userDetails}>
-                  <Text style={styles.userName}>{myProfile.name}</Text>
-                  <Text style={styles.userHandle}>{myProfile.username}</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.shareButton}
-                onPress={() => Alert.alert('공유 기능은 준비 중입니다.')}
-              >
-                <Text style={styles.shareText}>↗</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                내 친구들 ({friends.length})
-              </Text>
-            </View>
-            {friends.map(friend => (
-              <TouchableOpacity
-                key={friend.id}
-                style={styles.userItem}
-                onPress={() => navigateToFriendProfile(friend)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.userInfo}>
-                  <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
-                      {friend.profileImage || friend.nickname.charAt(0)}
-                    </Text>
-                  </View>
-                  <View style={styles.userDetails}>
-                    <Text style={styles.userName}>{friend.nickname}</Text>
-                    <Text style={styles.userHandle}>{friend.user_id}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              내 친구들 ({friends.length})
+            </Text>
+          </View>
         )}
+        {!searchQuery && friends.map(friend => (
+          <TouchableOpacity
+            key={friend.id}
+            style={styles.userItem}
+            onPress={() => navigateToFriendProfile(friend)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.userInfo}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {friend.profileImage || friend.nickname.charAt(0)}
+                </Text>
+              </View>
+              <View style={styles.userDetails}>
+                <Text style={styles.userName}>{friend.nickname}</Text>
+                <Text style={styles.userHandle}>{friend.user_id}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
 
         {searchQuery && searchResults.length === 0 && (
           <View style={styles.emptyState}>

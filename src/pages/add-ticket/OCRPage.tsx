@@ -158,15 +158,8 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
 
       const formatted: CreateTicketData = {
         title: ocrData.title ?? '',
-        artist: ocrData.artist ?? '', // OCR에서 아티스트 정보 추출
-        place: ocrData.venue ?? ocrData.place ?? '',
-        seat: ocrData.seat ?? '',
-        performedAt: ocrData.date
-          ? new Date(ocrData.date + (ocrData.time ? `T${ocrData.time}` : ''))
-          : new Date(),
-        genre: null,
-        artist: ocrData.artist ?? '', // 백엔드에서 artist 받기
-        place: ocrData.venue ?? '', // 백엔드는 venue로 보냄
+        artist: ocrData.artist ?? '',
+        venue: ocrData.venue ?? '',
         seat: ocrData.seat ?? '',
         performedAt: performedAt,
         bookingSite: '',

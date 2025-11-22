@@ -11,6 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
 import { addTicketAtom, TicketStatus, basePromptAtom } from '../../atoms';
+import { ticketService } from '../../services/api/index';
+import { userProfileAtom } from '../../atoms/userAtomsApi';
+import { Alert } from 'react-native';
 import {
   Colors,
   Typography,
@@ -42,6 +45,8 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
   const images = route?.params?.images ?? [];
   const [, addTicket] = useAtom(addTicketAtom);
   const [, setBasePrompt] = useAtom(basePromptAtom);
+  const [userProfile] = useAtom(userProfileAtom);
+  const [basePrompt] = useAtom(basePromptAtom);
 
   /** 표시될 이미지 선택 */
   const ticketImage =
@@ -62,43 +67,128 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
       return;
     }
 
-    console.log('=== 티켓 저장 시작 ===');
-    console.log('ticketData:', ticketData);
-    console.log('reviewData:', reviewData);
+    const saveTicketToBackend = async () => {
+      console.log('=== 티켓 저장 시작 (백엔드 API) ===');
+      console.log('ticketData:', ticketData);
+      console.log('reviewData:', reviewData);
+      console.log('images:', images);
 
-    /** 리뷰 데이터 정규화 */
-    const ticketReview =
-      reviewData?.reviewText || reviewData?.text
-        ? {
-            reviewText: reviewData.reviewText || reviewData.text || '',
-            createdAt: new Date(),
-          }
-        : undefined;
+      // 사용자 ID 확인
+      const userId = userProfile?.id;
+      if (!userId) {
+        Alert.alert('오류', '사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+        return;
+      }
 
-    /** 상태: 기본 공개, isPublic=false일 때만 PRIVATE */
-    const status =
-      reviewData?.isPublic === false ? TicketStatus.PRIVATE : TicketStatus.PUBLIC;
+      // performedAt을 Date 객체로 변환
+      const parsePerformedAt = (value: any): Date => {
+        if (!value) return new Date();
+        if (value instanceof Date) return value;
+        if (typeof value === 'string') {
+          const parsed = new Date(value);
+          return isNaN(parsed.getTime()) ? new Date() : parsed;
+        }
+        return new Date();
+      };
 
-    /** 최종 티켓 데이터 */
-    const ticketToAdd = {
-      ...ticketData,
-      review: ticketReview,
-      images: images ?? [],
-      status,
+      const performedAt = parsePerformedAt(ticketData?.performedAt);
+      
+      // viewDate 형식으로 변환 (YYYY-MM-DD)
+      const viewDate = performedAt.toISOString().split('T')[0];
+
+      // genre를 백엔드 형식으로 변환
+      const mapGenreToBackend = (genre: string | null | undefined): string => {
+        if (!genre) return 'MUSICAL'; // 기본값
+        const genreMap: Record<string, string> = {
+          '밴드': 'BAND',
+          '연극/뮤지컬': 'MUSICAL',
+          '뮤지컬': 'MUSICAL',
+          '연극': 'PLAY',
+        };
+        return genreMap[genre] || 'MUSICAL';
+      };
+
+      // 이미지 URL 처리 (상대 경로인 경우 첫 번째 이미지만 사용)
+      let imageUrl: string | null = null;
+      if (images && images.length > 0) {
+        const firstImage = images[0];
+        // 절대 URL인 경우 상대 경로로 변환 필요할 수 있음
+        // 백엔드에 저장된 경로인 경우 그대로 사용
+        if (firstImage.startsWith('http://localhost:8080')) {
+          imageUrl = firstImage.replace('http://localhost:8080', '');
+        } else if (firstImage.startsWith('/uploads/')) {
+          imageUrl = firstImage;
+        } else {
+          // 이미 절대 경로인 경우 그대로 사용
+          imageUrl = firstImage;
+        }
+      }
+
+      // 백엔드 요청 데이터 생성
+      const requestData = {
+        userId: userId,
+        performanceTitle: ticketData?.title || '',
+        venue: ticketData?.venue || '',
+        seat: ticketData?.seat || '',
+        artist: ticketData?.artist || '',
+        posterUrl: ticketData?.posterUrl || null,
+        genre: mapGenreToBackend(ticketData?.genre),
+        viewDate: viewDate,
+        imageUrl: imageUrl,
+        imagePrompt: basePrompt || null,
+        reviewText: reviewData?.reviewText || reviewData?.text || null,
+        isPublic: reviewData?.isPublic !== false, // 기본값은 true
+      };
+
+      console.log('📤 백엔드 API 요청 데이터:', JSON.stringify(requestData, null, 2));
+
+      try {
+        // 백엔드 API 호출
+        const result = await ticketService.createTicket(requestData);
+
+        if (!result.success) {
+          console.error('❌ 티켓 저장 실패:', result.error);
+          Alert.alert('저장 실패', result.error?.message || '티켓 저장에 실패했습니다.');
+          return;
+        }
+
+        console.log('✅ 티켓 저장 성공:', result.data);
+        
+        // 로컬 atom에도 저장 (UI 업데이트용)
+        const ticketReview =
+          reviewData?.reviewText || reviewData?.text
+            ? {
+                reviewText: reviewData.reviewText || reviewData.text || '',
+                createdAt: new Date(),
+              }
+            : undefined;
+
+        const status =
+          reviewData?.isPublic === false ? TicketStatus.PRIVATE : TicketStatus.PUBLIC;
+
+        const ticketToAdd = {
+          ...ticketData,
+          performedAt: performedAt,
+          review: ticketReview,
+          images: images ?? [],
+          status,
+        };
+
+        const localResult = addTicket(ticketToAdd);
+        if (localResult.success) {
+          console.log('✅ 로컬 티켓 저장 성공');
+        }
+
+        // 티켓 저장 완료 시 basePrompt 초기화
+        setBasePrompt(null);
+        console.log('🗑️ basePrompt 초기화 완료');
+      } catch (error) {
+        console.error('❌ 티켓 저장 중 오류:', error);
+        Alert.alert('저장 실패', '티켓 저장 중 오류가 발생했습니다.');
+      }
     };
 
-    console.log('▶ 최종 저장할 티켓:', ticketToAdd);
-
-    const result = addTicket(ticketToAdd);
-
-    if (!result.success) {
-      console.error('❌ 티켓 저장 실패:', result.error);
-    } else {
-      console.log('✅ 티켓 저장 성공:', result.data);
-      // 티켓 저장 완료 시 basePrompt 초기화
-      setBasePrompt(null);
-      console.log('🗑️ basePrompt 초기화 완료');
-    }
+    saveTicketToBackend();
 
     /** 3초 후 홈으로 이동 */
     const timer = setTimeout(() => {
@@ -109,7 +199,7 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [navigation, ticketData, reviewData, images, addTicket]);
+  }, [navigation, ticketData, reviewData, images, userProfile, basePrompt, addTicket, setBasePrompt]);
 
   const handleBackPress = () => {
     navigation.reset({
@@ -152,7 +242,7 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
 
           <View style={styles.ticketFooter}>
             <Text style={styles.footerSubtext}>
-              {ticketData?.place} •{' '}
+              {ticketData?.venue || ''} •{' '}
               {ticketData?.performedAt
                 ? new Date(ticketData.performedAt).toLocaleDateString('ko-KR', {
                     month: 'long',

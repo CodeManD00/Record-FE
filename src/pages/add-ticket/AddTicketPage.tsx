@@ -92,7 +92,7 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
         ...prev,
         title: ocrData.title ?? prev.title,
         artist: ocrData.artist ?? prev.artist,
-        venue: (ocrData as any).place ?? ocrData.venue ?? prev.venue,
+        venue: ocrData.venue ?? prev.venue,
         seat: ocrData.seat ?? prev.seat,
         performedAt: ocrData.performedAt ? parsePerformedAt(ocrData.performedAt) : prev.performedAt,
         bookingSite: ocrData.bookingSite ?? prev.bookingSite,

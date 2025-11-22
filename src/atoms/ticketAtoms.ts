@@ -23,7 +23,7 @@ import {
   processBulkDelete, 
   BulkDeleteResult 
 } from '../utils/ticketHelpers';
-import { currentUserIdAtom } from './userAtoms';
+import { userProfileAtom } from './userAtoms';
 
 // ============= 기본 상태 Atoms =============
 
@@ -124,7 +124,13 @@ export const addTicketAtom = atom(
       if (limitError) throw limitError;
 
       // 새 티켓 생성 (팩토리 함수 사용)
-      const currentUserId = get(currentUserIdAtom);
+      const userProfile = get(userProfileAtom);
+      const currentUserId = userProfile?.id;
+      
+      if (!currentUserId) {
+        throw new Error('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+      }
+      
       const newTicket = createNewTicket(ticketData, currentUserId);
 
       // 최적화된 Map 업데이트
@@ -158,7 +164,12 @@ export const updateTicketAtom = atom(
       }
 
       // 권한 확인 (공통 헬퍼 사용)
-      const currentUserId = get(currentUserIdAtom);
+      const userProfile = get(userProfileAtom);
+      const currentUserId = userProfile?.id;
+      
+      if (!currentUserId) {
+        throw new Error('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+      }
       console.log('현재 사용자 ID:', currentUserId, '티켓 소유자 ID:', existingTicket.userId);
       
       const ownershipError = validateOwnership(existingTicket.userId, currentUserId, '티켓 수정');
@@ -212,7 +223,12 @@ export const deleteTicketAtom = atom(
       }
 
       // 권한 확인 (공통 헬퍼 사용)
-      const currentUserId = get(currentUserIdAtom);
+      const userProfile = get(userProfileAtom);
+      const currentUserId = userProfile?.id;
+      
+      if (!currentUserId) {
+        throw new Error('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+      }
       const ownershipError = validateOwnership(existingTicket.userId, currentUserId, '티켓 삭제');
       if (ownershipError) throw ownershipError;
 

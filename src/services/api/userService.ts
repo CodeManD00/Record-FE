@@ -18,6 +18,30 @@ export interface UserProfile {
   updatedAt: string | null;
 }
 
+export interface ChangePasswordData {
+  userId: string;
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface LoginData {
+  id: string;
+  password: string;
+}
+
+export interface RegisterData {
+  id: string;
+  password: string;
+  email: string;
+  nickname: string;
+}
+
+export interface UpdateProfileData {
+  nickname?: string;
+  email?: string;
+  isAccountPrivate?: boolean;
+}
+
 class UserService {
   private profile: UserProfile | null = null;
 
@@ -103,6 +127,24 @@ class UserService {
     } catch {
       return ResultFactory.failure(
         ErrorFactory.unknown('프로필 수정 중 오류가 발생했습니다.')
+      );
+    }
+  }
+
+  async changePassword(data: ChangePasswordData): Promise<Result<void>> {
+    try {
+      // 백엔드가 토큰 없이 이전 비밀번호만으로 변경을 허용하므로
+      // noAuthEndpoints에 포함되어 있어 토큰 없이 요청 가능
+      const result = await apiClient.post<void>('/auth/password/change', {
+        userId: data.userId,
+        oldPassword: data.oldPassword,
+        newPassword: data.newPassword,
+      });
+
+      return result;
+    } catch {
+      return ResultFactory.failure(
+        ErrorFactory.unknown('비밀번호 변경 중 오류가 발생했습니다.')
       );
     }
   }

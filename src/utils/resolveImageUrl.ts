@@ -7,7 +7,10 @@ export const resolveImageUrl = (url?: string | null): string | null => {
   // 갤러리에서 선택한 로컬 파일은 그대로 사용해야 함
   if (url.startsWith('file://')) return url;
 
-  const BASE_URL = 'http://127.0.0.1:8080';
+  // API 클라이언트와 동일한 BASE_URL 사용
+  const BASE_URL = __DEV__
+    ? 'http://localhost:8080'
+    : 'https://api.ticketbook.app';
 
   const finalUrl = url.startsWith('http') ? url : `${BASE_URL}${url}`;
 

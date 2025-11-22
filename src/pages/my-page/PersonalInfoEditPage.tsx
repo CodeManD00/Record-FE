@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { launchImageLibrary, ImagePickerResponse } from 'react-native-image-picker';
 import { useAtom } from 'jotai';
 import { userProfileAtom, updateUserProfileAtom } from '../../atoms/userAtoms';
+import { changePasswordAtom } from '../../atoms/userAtomsApi';
 import {
   Colors,
   Typography,
@@ -43,6 +44,7 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
   const [localProfile] = useAtom(userProfileAtom);
   const [, updateUserProfile] = useAtom(updateUserProfileAtom);
   const [, fetchMyProfile] = useAtom(fetchMyProfileAtom);
+  const [, changePassword] = useAtom(changePasswordAtom);
 
   const actualProfile = (profile || localProfile || {}) as UserProfile;
 
@@ -196,6 +198,44 @@ const PersonalInfoEditPage: React.FC<PersonalInfoEditPageProps> = ({ navigation 
         if (updateResult.data) {
           await updateUserProfile(updateResult.data);
         }
+      }
+
+      // 비밀번호 변경 (입력된 경우에만)
+      if (currentPassword && newPassword && confirmPassword) {
+        if (newPassword.length < 8) {
+          Alert.alert('오류', '새 비밀번호는 8자 이상이어야 합니다.');
+          setIsSaving(false);
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          Alert.alert('오류', '새 비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+          setIsSaving(false);
+          return;
+        }
+
+        if (!userId) {
+          Alert.alert('오류', '사용자 ID가 필요합니다.');
+          setIsSaving(false);
+          return;
+        }
+
+        const passwordResult = await changePassword({
+          userId: userId,
+          oldPassword: currentPassword,
+          newPassword: newPassword,
+        });
+
+        if (!passwordResult.success) {
+          Alert.alert('오류', passwordResult.error?.message || '비밀번호 변경에 실패했습니다.');
+          setIsSaving(false);
+          return;
+        }
+
+        // 비밀번호 변경 성공 시 필드 초기화
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
       }
 
       // 최종 프로필 정보 동기화

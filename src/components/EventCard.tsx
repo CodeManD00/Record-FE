@@ -21,7 +21,7 @@ const EventCard: React.FC<EventCardProps> = ({ ticket, onPress }) => {
         <Text style={styles.eventTitle}>{ticket.title}</Text>
         {/* 공연 장소와 아티스트 정보 */}
         <Text style={styles.eventDetails}>
-          @{ticket.place || '장소미정'} {ticket.artist ? ticket.artist : ''}
+          @{ticket.venue || '장소미정'} {ticket.artist ? ticket.artist : ''}
         </Text>
       </View>
       {/* 오른쪽 화살표 아이콘 */}

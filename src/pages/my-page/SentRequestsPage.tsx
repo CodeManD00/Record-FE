@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,51 +6,77 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAtom } from 'jotai';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
-
-interface SentRequest {
-  id: string;
-  nickname: string;
-  profileImage: string;
-  isCancelled: boolean;
-}
+import { 
+  sentFriendRequestsAtom,
+  fetchSentRequestsAtom,
+  cancelFriendRequestAtom,
+} from '../../atoms';
+import { FriendRequest } from '../../types/friend';
 
 interface SentRequestsPageProps {
   navigation: any;
 }
 
 const SentRequestsPage: React.FC<SentRequestsPageProps> = ({ navigation }) => {
-  const handleBack = () => {
-    navigation.goBack();
-  };
+  const [sentRequests] = useAtom(sentFriendRequestsAtom);
+  const [, fetchSentRequests] = useAtom(fetchSentRequestsAtom);
+  const [, cancelFriendRequest] = useAtom(cancelFriendRequestAtom);
 
-  // 더미 보낸 친구 요청 데이터
-  const [sentRequests, setSentRequests] = useState<SentRequest[]>([
-    {
-      id: '@9rmmy',
-      nickname: '9RMMY',
-      profileImage: '👩🏻‍💼',
-      isCancelled: false,
-    },
-    {
-      id: '@alice',
-      nickname: 'Alice',
-      profileImage: '👩🏻‍🎤',
-      isCancelled: false,
-    },
-  ]);
+  // 페이지 로드 시 데이터 가져오기
+  useEffect(() => {
+    fetchSentRequests(true);
+  }, []);
 
-  // 요청 상태 토글
-  const handleToggleRequest = (requestId: string) => {
-    setSentRequests(prev =>
-      prev.map(req =>
-        req.id === requestId ? { ...req, isCancelled: !req.isCancelled } : req
-      )
+  // 친구 요청 취소
+  const handleCancelRequest = async (request: FriendRequest) => {
+    Alert.alert(
+      '친구 요청 취소',
+      `${request.nickname}님에게 보낸 친구 요청을 취소하시겠어요?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '취소하기',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await cancelFriendRequest(request.id);
+              if (result.success) {
+                Alert.alert('완료', '친구 요청을 취소했습니다.');
+                fetchSentRequests(true);
+              } else {
+                Alert.alert('오류', result.error?.message || '친구 요청 취소 중 오류가 발생했습니다.');
+              }
+            } catch (error) {
+              Alert.alert('오류', '친구 요청 취소 중 오류가 발생했습니다.');
+            }
+          },
+        },
+      ]
     );
   };
+
+  // 친구 프로필로 이동
+  const handleNavigateToFriendProfile = (request: FriendRequest) => {
+    const friend = {
+      id: request.toUserId || request.id,
+      user_id: request.user_id,
+      nickname: request.nickname,
+      profileImage: request.profileImage,
+      createdAt: request.createdAt,
+      updatedAt: request.updatedAt,
+    };
+    
+    navigation.navigate('FriendProfile', { friend });
+  };
+
+  const activeRequests = sentRequests.filter(r => r.status === 'PENDING');
   
 
   return (
@@ -62,48 +88,68 @@ const SentRequestsPage: React.FC<SentRequestsPageProps> = ({ navigation }) => {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 보낸 요청 섹션 */}
-        <Text style={styles.sectionTitle}>
-          보낸 요청 ({sentRequests.filter(r => !r.isCancelled).length})
-        </Text>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>
+            보낸 요청 ({activeRequests.length})
+          </Text>
+        </View>
 
         {/* 보낸 요청 목록 */}
-        {sentRequests.map((request, index) => (
-          <View 
-            key={request.id} 
-            style={[
-              styles.requestItem,
-              index === sentRequests.length - 1 && styles.lastRequestItem
-            ]}
-          >
-            {/* 프로필 클릭 가능 */}
-            <TouchableOpacity
-              style={styles.requestInfo}
-              onPress={() =>
-                navigation.navigate('FriendProfile', { friend: request })
-              }
-            >
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{request.profileImage}</Text>
-              </View>
-              <View style={styles.requestDetails}>
-                <Text style={styles.requestName}>{request.nickname}</Text>
-                <Text style={styles.requestHandle}>{request.id}</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                request.isCancelled ? styles.requestButton : styles.cancelButton,
-              ]}
-              onPress={() => handleToggleRequest(request.id)}
-            >
-              <Text style={styles.toggleButtonText}>
-                {request.isCancelled ? '요청' : '취소'}
-              </Text>
-            </TouchableOpacity>
+        {sentRequests.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>보낸 친구 요청이 없습니다</Text>
           </View>
-        ))}
+        ) : (
+          sentRequests.map((request, index) => (
+            <View 
+              key={request.id} 
+              style={[
+                styles.requestItem,
+                index === sentRequests.length - 1 && styles.lastRequestItem
+              ]}
+            >
+              {/* 프로필 클릭 가능 */}
+              <TouchableOpacity
+                style={styles.requestInfo}
+                onPress={() => handleNavigateToFriendProfile(request)}
+              >
+                {request.profileImage ? (
+                  <Image
+                    source={{ uri: request.profileImage }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                    <Text style={styles.avatarText}>
+                      {request.nickname?.charAt(0) || '?'}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.requestDetails}>
+                  <Text style={styles.requestName}>{request.nickname}</Text>
+                  <Text style={styles.requestHandle}>{request.user_id}</Text>
+                </View>
+              </TouchableOpacity>
+
+              {request.status === 'PENDING' && (
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => handleCancelRequest(request)}
+                >
+                  <Text style={styles.cancelButtonText}>취소</Text>
+                </TouchableOpacity>
+              )}
+              
+              {request.status === 'ACCEPTED' && (
+                <Text style={styles.acceptedText}>수락됨</Text>
+              )}
+              
+              {request.status === 'REJECTED' && (
+                <Text style={styles.rejectedText}>거절됨</Text>
+              )}
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -118,12 +164,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2C3E50',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+  sectionContainer: {
     backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginTop: 16,
@@ -134,6 +175,22 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#2C3E50',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6C757D',
   },
   requestItem: {
     flexDirection: 'row',
@@ -161,12 +218,17 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: '#E9ECEF',
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 15,
   },
+  avatarPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E9ECEF',
+  },
   avatarText: {
-    fontSize: 24,
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#6C757D',
   },
   requestDetails: {
     flex: 1,
@@ -181,21 +243,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6C757D',
   },
-  toggleButton: {
+  cancelButton: {
+    backgroundColor: '#DC3545',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
-  cancelButton: {
-    backgroundColor: '#DC3545',
-  },
-  requestButton: {
-    backgroundColor: '#B11515',
-  },
-  toggleButtonText: {
+  cancelButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  acceptedText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#28A745',
+    paddingHorizontal: 12,
+  },
+  rejectedText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6C757D',
+    paddingHorizontal: 12,
   },
   lastRequestItem: {
     borderBottomLeftRadius: 12,
@@ -205,3 +274,4 @@ const styles = StyleSheet.create({
 });
 
 export default SentRequestsPage;
+

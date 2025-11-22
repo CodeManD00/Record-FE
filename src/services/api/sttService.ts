@@ -12,7 +12,8 @@ export interface TranscriptionResponse {
   id: number | null;
   fileName: string;
   createdAt: string;
-  transcript: string;
+  transcript?: string;
+  resultText?: string;
   summary: string | null;
   finalReview: string | null;
 }
@@ -29,7 +30,8 @@ class SttService {
   async transcribeAndSave(
     audioUri: string,
     fileName: string = 'recording.m4a',
-    fileType: string = 'audio/m4a'
+    fileType: string = 'audio/m4a',
+    userId: string
   ): Promise<Result<TranscriptionResponse>> {
 
     const formData = new FormData();
@@ -38,6 +40,7 @@ class SttService {
       type: fileType,
       name: fileName,
     } as any);
+    formData.append('userId', userId);
 
     console.log('🎤 STT transcribe-and-save 요청 → FormData 생성 완료');
 

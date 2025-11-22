@@ -158,9 +158,16 @@ class ApiClient {
 
   /**
    * ⭐ JWT 토큰이 필요 없는 엔드포인트 목록
+   * 인증이 필요한 엔드포인트는 제외해야 함
    */
   private readonly noAuthEndpoints = [
-    '/auth/',
+    '/auth/login',
+    '/auth/signup',
+    '/auth/forgot-id',
+    '/auth/forgot/temporary-password',
+    '/auth/password/change', // 이전 비밀번호만으로 변경 가능하도록 설정
+    '/auth/email/send-code',
+    '/auth/email/verify',
     '/users/nickname',
     '/users/me/profile-image',
     '/stt/transcribe-and-save',
@@ -201,6 +208,12 @@ class ApiClient {
         console.log('📤 요청 헤더:', {
           'Content-Type': headers['Content-Type'] || '자동 설정',
           'Authorization': headers['Authorization'] ? 'Bearer ***' : '없음',
+          ...Object.keys(headers)
+            .filter(key => !['Content-Type', 'Authorization'].includes(key))
+            .reduce((acc, key) => {
+              acc[key] = headers[key];
+              return acc;
+            }, {} as Record<string, string>),
         });
         if (options.body) {
           try {
@@ -307,8 +320,18 @@ class ApiClient {
   // ✔ JSON 전송 요청
   // ----------------------
 
-  async get<T>(url: string, config?: { timeoutMs?: number }): Promise<Result<T>> {
-    return this.request<T>(url, { method: 'GET' }, config?.timeoutMs);
+  async get<T>(
+    url: string,
+    config?: { timeoutMs?: number; headers?: Record<string, string> }
+  ): Promise<Result<T>> {
+    return this.request<T>(
+      url,
+      {
+        method: 'GET',
+        headers: config?.headers,
+      },
+      config?.timeoutMs
+    );
   }
 
   async post<T>(
@@ -443,7 +466,20 @@ class ApiClient {
     // 에러 상세 로깅
     if (__DEV__) {
       console.error(`❌ HTTP ${status} 에러 발생`);
+      console.error('📍 에러 발생 URL:', url || '알 수 없음');
       console.error('에러 응답 데이터:', JSON.stringify(data, null, 2));
+      
+      // 500 에러의 경우 백엔드 스택 트레이스 출력
+      if (status === 500) {
+        console.error('⚠️ 서버 내부 오류 발생 - 백엔드 로그 확인 필요');
+        if (data?.trace) {
+          console.error('백엔드 스택 트레이스:', data.trace.substring(0, 500) + (data.trace.length > 500 ? '...' : ''));
+        }
+        if (data?.error) {
+          console.error('에러 타입:', data.error);
+        }
+      }
+      
       if (isLoginEndpoint) {
         console.error('📍 로그인 API 엔드포인트 - 401은 아이디/비밀번호 오류일 수 있습니다');
         console.error('📋 백엔드 응답 상세:', {
