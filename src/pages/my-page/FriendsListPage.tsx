@@ -22,6 +22,7 @@ import {
 import { Friend, FriendRequest } from '../../types/friend';
 import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
+import { resolveImageUrl } from '../../utils/resolveImageUrl';
 
 interface FriendsListPageProps {
   navigation: any;
@@ -189,40 +190,49 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {friendRequests.map(request => (
-            <View key={request.id} style={styles.friendItem}>
-              {/* 프로필 클릭 가능 */}
-              <TouchableOpacity
-                style={styles.friendInfo}
-                onPress={() => handleNavigateToFriendProfile(request)}
-              >
-                <Image
-                  source={{ uri: request.profileImage }}
-                  style={styles.friendAvatar}
-                />
-                <View style={styles.friendDetails}>
-                  <Text style={styles.friendName}>{request.nickname}</Text>
-                  <Text style={styles.friendUsername}>{request.user_id}</Text>
-                </View>
-              </TouchableOpacity>
+          {friendRequests.map(request => {
+            const requestProfileImageUrl = resolveImageUrl(request.profileImage);
+            return (
+              <View key={request.id} style={styles.friendItem}>
+                {/* 프로필 클릭 가능 */}
+                <TouchableOpacity
+                  style={styles.friendInfo}
+                  onPress={() => handleNavigateToFriendProfile(request)}
+                >
+                  {requestProfileImageUrl ? (
+                    <Image
+                      source={{ uri: requestProfileImageUrl }}
+                      style={styles.friendAvatar}
+                    />
+                  ) : (
+                    <View style={[styles.friendAvatar, styles.defaultAvatar]}>
+                      <Text style={styles.defaultAvatarText}>👤</Text>
+                    </View>
+                  )}
+                  <View style={styles.friendDetails}>
+                    <Text style={styles.friendName}>{request.nickname}</Text>
+                    <Text style={styles.friendUsername}>{request.user_id}</Text>
+                  </View>
+                </TouchableOpacity>
 
-              {/* 수락 / 거절 버튼 */}
-              <View style={styles.requestButtons}>
-                <TouchableOpacity
-                  style={[styles.requestButton, styles.acceptButton]}
-                  onPress={() => handleAcceptRequest(request)}
-                >
-                  <Text style={styles.requestButtonText}>수락</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.requestButton, styles.rejectButton]}
-                  onPress={() => handleRejectRequest(request)}
-                >
-                  <Text style={styles.requestButtonText}>거절</Text>
-                </TouchableOpacity>
+                {/* 수락 / 거절 버튼 */}
+                <View style={styles.requestButtons}>
+                  <TouchableOpacity
+                    style={[styles.requestButton, styles.acceptButton]}
+                    onPress={() => handleAcceptRequest(request)}
+                  >
+                    <Text style={styles.requestButtonText}>수락</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.requestButton, styles.rejectButton]}
+                    onPress={() => handleRejectRequest(request)}
+                  >
+                    <Text style={styles.requestButtonText}>거절</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* 친구 목록 섹션 */}
@@ -233,29 +243,38 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
             </Text>
             <View style={styles.placeholder} />
           </View>
-          {friends.map(friend => (
-            <View key={friend.id} style={styles.friendItem}>
-              <TouchableOpacity
-                style={styles.friendInfo}
-                onPress={() => handleNavigateToFriendProfile(friend)}
-              >
-                <Image
-                  source={{ uri: friend.profileImage }}
-                  style={styles.friendAvatar}
-                />
-                <View style={styles.friendDetails}>
-                  <Text style={styles.friendName}>{friend.nickname}</Text>
-                  <Text style={styles.friendUsername}>{friend.user_id}</Text>
-                </View>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuButtonLeft}
-                onPress={() => handleDeleteFriend(friend)}
-              >
-                <Text style={styles.menuIcon}>⋯</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+          {friends.map(friend => {
+            const profileImageUrl = resolveImageUrl(friend.profileImage);
+            return (
+              <View key={friend.id} style={styles.friendItem}>
+                <TouchableOpacity
+                  style={styles.friendInfo}
+                  onPress={() => handleNavigateToFriendProfile(friend)}
+                >
+                  {profileImageUrl ? (
+                    <Image
+                      source={{ uri: profileImageUrl }}
+                      style={styles.friendAvatar}
+                    />
+                  ) : (
+                    <View style={[styles.friendAvatar, styles.defaultAvatar]}>
+                      <Text style={styles.defaultAvatarText}>👤</Text>
+                    </View>
+                  )}
+                  <View style={styles.friendDetails}>
+                    <Text style={styles.friendName}>{friend.nickname}</Text>
+                    <Text style={styles.friendUsername}>{friend.user_id}</Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.menuButtonLeft}
+                  onPress={() => handleDeleteFriend(friend)}
+                >
+                  <Text style={styles.menuIcon}>⋯</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -334,6 +353,14 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 15,
     backgroundColor: '#E9ECEF',
+  },
+  defaultAvatar: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#E9ECEF',
+  },
+  defaultAvatarText: {
+    fontSize: 24,
   },
   friendDetails: { flex: 1 },
   friendName: {

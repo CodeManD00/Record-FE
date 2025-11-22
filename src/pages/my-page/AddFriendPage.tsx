@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -30,6 +31,7 @@ import {
 import { Friend } from '../../types/friend';
 import ModalHeader from '../../components/ModalHeader';
 import { useUserProfileData } from '../../hooks/useApiData';
+import { resolveImageUrl } from '../../utils/resolveImageUrl';
 
 const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -153,15 +155,23 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
         {searchResults.map(user => {
           const alreadySent = sentRequests.some(req => req.toUserId === user.id);
           const isFriend = friends.some(f => f.id === user.id);
+          const userProfileImageUrl = resolveImageUrl(user.profileImage);
           
           return (
             <View key={user.id} style={styles.userItem}>
               <View style={styles.userInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {user.profileImage || user.nickname.charAt(0)}
-                  </Text>
-                </View>
+                {userProfileImageUrl ? (
+                  <Image
+                    source={{ uri: userProfileImageUrl }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {user.nickname.charAt(0)}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{user.nickname}</Text>
                   <Text style={styles.userHandle}>{user.user_id}</Text>
@@ -199,26 +209,36 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
             </Text>
           </View>
         )}
-        {!searchQuery && friends.map(friend => (
-          <TouchableOpacity
-            key={friend.id}
-            style={styles.userItem}
-            onPress={() => navigateToFriendProfile(friend)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.userInfo}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {friend.profileImage || friend.nickname.charAt(0)}
-                </Text>
+        {!searchQuery && friends.map(friend => {
+          const friendProfileImageUrl = resolveImageUrl(friend.profileImage);
+          return (
+            <TouchableOpacity
+              key={friend.id}
+              style={styles.userItem}
+              onPress={() => navigateToFriendProfile(friend)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.userInfo}>
+                {friendProfileImageUrl ? (
+                  <Image
+                    source={{ uri: friendProfileImageUrl }}
+                    style={styles.avatar}
+                  />
+                ) : (
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarText}>
+                      {friend.nickname.charAt(0)}
+                    </Text>
+                  </View>
+                )}
+                <View style={styles.userDetails}>
+                  <Text style={styles.userName}>{friend.nickname}</Text>
+                  <Text style={styles.userHandle}>{friend.user_id}</Text>
+                </View>
               </View>
-              <View style={styles.userDetails}>
-                <Text style={styles.userName}>{friend.nickname}</Text>
-                <Text style={styles.userHandle}>{friend.user_id}</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
 
         {searchQuery && searchResults.length === 0 && (
           <View style={styles.emptyState}>
