@@ -73,9 +73,10 @@ class FriendService {
       }
 
       // 백엔드 응답을 Friend 형식으로 변환
-      // 백엔드 응답 구조: { id, userId (친구의 ID), userNickname, userProfileImage, friendId (현재 사용자), ... }
+      // 백엔드 응답 구조: { id (friendshipId), userId (친구의 ID), userNickname, userProfileImage, friendId (현재 사용자), ... }
       // 친구 정보는 userId, userNickname, userProfileImage에 있음
       const formattedFriends: Friend[] = friends.map((item: any) => {
+        // id는 friendshipId (삭제 시 필요)
         // userId가 친구의 ID, userNickname이 친구의 닉네임, userProfileImage가 친구의 프로필 이미지
         const profileImage = item.userProfileImage || item.profileImage || item.avatar;
         return {
@@ -83,6 +84,7 @@ class FriendService {
           user_id: String(item.userId || ''),
           nickname: item.userNickname || item.nickname || 'Unknown',
           profileImage: profileImage ? resolveImageUrl(profileImage) || undefined : undefined,
+          friendshipId: typeof item.id === 'number' ? item.id : (typeof item.id === 'string' ? parseInt(item.id, 10) : undefined),
           createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
           updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
         };
@@ -516,8 +518,9 @@ class FriendService {
    * 친구 관계 삭제
    * DELETE /friendships/{friendshipId}
    * OpenAPI: X-User-Id 헤더 필요
+   * friendshipId는 숫자여야 함
    */
-  async removeFriend(friendId: string): Promise<Result<any>> {
+  async removeFriend(friendshipId: string | number): Promise<Result<any>> {
     const currentUserId = this.getCurrentUserId();
     if (!currentUserId) {
       return {
@@ -526,17 +529,39 @@ class FriendService {
       };
     }
 
-    // friendId를 friendshipId로 사용 (백엔드에 따라 조정 필요)
-    const friendshipId = parseInt(friendId, 10);
-    if (isNaN(friendshipId)) {
+    // friendshipId를 숫자로 변환
+    const numericFriendshipId = typeof friendshipId === 'string' ? parseInt(friendshipId, 10) : friendshipId;
+    if (isNaN(numericFriendshipId)) {
+      if (__DEV__) {
+        console.error('❌ 유효하지 않은 friendshipId:', friendshipId);
+      }
       return {
         success: false,
-        error: { code: 'INVALID_FRIEND_ID', message: '유효하지 않은 친구 ID입니다.' },
+        error: { code: 'INVALID_FRIENDSHIP_ID', message: '유효하지 않은 친구 관계 ID입니다.' },
       };
     }
-    return apiClient.delete(`/friendships/${friendshipId}`, null, {
+
+    if (__DEV__) {
+      console.log('🗑️ 친구 삭제:', {
+        friendshipId: numericFriendshipId,
+        currentUserId,
+        url: `/friendships/${numericFriendshipId}`,
+      });
+    }
+
+    const result = await apiClient.delete(`/friendships/${numericFriendshipId}`, null, {
       headers: { 'X-User-Id': currentUserId },
     });
+
+    if (__DEV__) {
+      if (result.success) {
+        console.log('✅ 친구 삭제 성공');
+      } else {
+        console.error('❌ 친구 삭제 실패:', result.error);
+      }
+    }
+
+    return result;
   }
 
   /**

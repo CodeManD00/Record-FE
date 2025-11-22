@@ -354,28 +354,60 @@ export const respondToFriendRequestAtom = atom(
  */
 export const removeFriendAtom = atom(
   null,
-  async (get, set, friendId: string) => {
+  async (get, set, friend: Friend | string) => {
     try {
+      // friend가 객체인 경우 friendshipId 추출, 문자열인 경우 friendshipId로 사용
+      let friendshipId: string | number;
+      let friendId: string;
+      
+      if (typeof friend === 'string') {
+        // 문자열인 경우 (기존 호환성)
+        friendshipId = friend;
+        friendId = friend;
+      } else {
+        // Friend 객체인 경우
+        if (!friend.friendshipId) {
+          const errorMessage = '친구 관계 ID가 없습니다. 친구 목록을 새로고침해주세요.';
+          console.error('❌ friendshipId 없음:', friend);
+          return ResultFactory.failure({ message: errorMessage, code: 'FRIENDSHIP_ID_MISSING' });
+        }
+        friendshipId = friend.friendshipId;
+        friendId = friend.id;
+      }
+
+      console.log('🗑️ removeFriendAtom 호출:', { friendshipId, friendId, friend });
+
       // 낙관적 업데이트: 친구 목록에서 제거
       const currentFriendsState = get(friendsStateAtom);
       if (currentFriendsState.data) {
-        const updatedFriends = currentFriendsState.data.filter(friend => friend.id !== friendId);
+        const updatedFriends = currentFriendsState.data.filter(f => f.id !== friendId);
         set(friendsStateAtom, apiStateHelpers.setSuccess(currentFriendsState, updatedFriends));
+        console.log('🗑️ 낙관적 업데이트 완료, 남은 친구 수:', updatedFriends.length);
       }
 
       // 실제 API 호출
-      const result = await friendService.removeFriend(friendId);
+      const result = await friendService.removeFriend(friendshipId);
       
       if (result.success) {
+        console.log('✅ 친구 삭제 성공');
+        // 성공 시 친구 목록과 친구 수 새로고침
+        await set(fetchFriendsAtom, true);
+        // 친구 수도 새로고침 (userId 필요)
+        const userProfile = get(userProfileAtom);
+        const userId = userProfile?.id;
+        if (userId) {
+          await set(fetchFriendCountAtom, userId, true);
+        }
         return result;
       } else {
+        console.error('❌ 친구 삭제 실패:', result.error);
         // 실패 시 롤백
-        set(fetchFriendsAtom, true);
+        await set(fetchFriendsAtom, true);
         return result;
       }
     } catch (error) {
       // 에러 시 롤백
-      set(fetchFriendsAtom, true);
+      await set(fetchFriendsAtom, true);
       const errorMessage = error instanceof Error ? error.message : '친구 삭제에 실패했습니다';
       return ResultFactory.failure({ message: errorMessage, code: 'REMOVE_FRIEND_ERROR' });
     }

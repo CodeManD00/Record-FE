@@ -53,18 +53,18 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
   const friendsCount = friends.length;
 
   // 친구 삭제
-  const handleDeleteFriend = async (friendId: string) => {
-    Alert.alert('친구 삭제', '정말로 친구를 삭제하시겠어요?', [
+  const handleDeleteFriend = async (friend: Friend) => {
+    Alert.alert('친구 삭제', `${friend.nickname}님을 친구 목록에서 삭제하시겠어요?`, [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제',
         style: 'destructive',
         onPress: async () => {
           try {
-            const result = await removeFriend(friendId);
+            const result = await removeFriend(friend);
             if (result.success) {
               Alert.alert('완료', '친구를 삭제했습니다.');
-              fetchFriends(true);
+              await fetchFriends(true);
             } else {
               Alert.alert('오류', result.error?.message || '친구 삭제 중 오류가 발생했습니다.');
             }
@@ -250,7 +250,7 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.menuButtonLeft}
-                onPress={() => handleDeleteFriend(friend.id)}
+                onPress={() => handleDeleteFriend(friend)}
               >
                 <Text style={styles.menuIcon}>⋯</Text>
               </TouchableOpacity>

@@ -14,6 +14,7 @@ export interface Friend {
   user_id: string;
   nickname: string;
   profileImage?: string;
+  friendshipId?: number; // 백엔드에서 받은 friendshipId (삭제 시 필요)
   readonly createdAt: Date;
   updatedAt: Date;
 }
