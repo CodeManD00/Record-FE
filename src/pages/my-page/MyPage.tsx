@@ -16,7 +16,7 @@ import {
 import { useAtom } from 'jotai';
 import { ticketsAtom } from '../../atoms/ticketAtoms';
 import { fetchMyTicketsAtom, myTicketsAtom } from '../../atoms/ticketsAtomsApi';
-import { friendsAtom, fetchFriendsAtom } from '../../atoms';
+import { friendsAtom, fetchFriendsAtom, friendCountAtom, fetchFriendCountAtom } from '../../atoms';
 import { Ticket } from '../../types/ticket';
 import TicketDetailModal from '../../components/TicketDetailModal';
 import GNB from '../../components/GNB';
@@ -55,6 +55,8 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   const [, fetchMyTickets] = useAtom(fetchMyTicketsAtom);
   const [friendsList] = useAtom(friendsAtom);
   const [, fetchFriends] = useAtom(fetchFriendsAtom);
+  const [friendCount] = useAtom(friendCountAtom);
+  const [, fetchFriendCount] = useAtom(fetchFriendCountAtom);
 
   const {
     data: profileData,
@@ -63,13 +65,17 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
 
   const [, fetchMyProfile] = useAtom(fetchMyProfileAtom);
 
-  // 화면 포커스 시 프로필, 티켓, 친구 목록 새로고침
+  // 화면 포커스 시 프로필, 티켓, 친구 목록, 친구 수 새로고침
   useFocusEffect(
     useCallback(() => {
       fetchMyProfile(true);
       fetchMyTickets(true); // 티켓 데이터도 백엔드에서 가져오기
       fetchFriends(true); // 친구 목록도 백엔드에서 가져오기
-    }, [fetchMyProfile, fetchMyTickets, fetchFriends])
+      // 친구 수는 userId가 있을 때만 조회
+      if (actualProfile?.id) {
+        fetchFriendCount(actualProfile.id, true);
+      }
+    }, [fetchMyProfile, fetchMyTickets, fetchFriends, fetchFriendCount, actualProfile?.id])
   );
 
   const profile = profileData as UserProfile | undefined;
@@ -77,6 +83,8 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
   // API 티켓이 있으면 우선 사용, 없으면 로컬 티켓 사용
   const actualTickets: Ticket[] = (apiTickets.length > 0 ? apiTickets : myTickets || []) as Ticket[];
   const actualFriends = (friendsList || []) as any[];
+  // 친구 수는 API에서 가져온 값 사용, 없으면 친구 목록 길이 사용
+  const displayFriendCount = friendCount ?? actualFriends.length;
 
   const actualProfile: UserProfile = profile || {
     id: '',
@@ -203,7 +211,7 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
               onPress={() => navigation.navigate('FriendsList')}
             >
               <Text style={styles.statLabel}>친구들</Text>
-              <Text style={styles.statValue}>{actualFriends.length}명</Text>
+              <Text style={styles.statValue}>{displayFriendCount}명</Text>
             </TouchableOpacity>
           </View>
         </View>

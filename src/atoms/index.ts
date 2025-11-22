@@ -64,6 +64,7 @@ export {
 export {
   // API 연동 atoms
   friendsAtom,
+  friendCountAtom,
   receivedFriendRequestsAtom,
   sentFriendRequestsAtom,
   friendSearchResultsAtom,
@@ -72,6 +73,7 @@ export {
   respondToFriendRequestAtom,
   removeFriendAtom,
   fetchFriendsAtom,
+  fetchFriendCountAtom,
   fetchReceivedRequestsAtom,
   fetchSentRequestsAtom,
   cancelFriendRequestAtom,

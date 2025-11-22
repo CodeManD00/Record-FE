@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -39,6 +40,14 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
     fetchReceivedRequests(true);
     fetchFriends(true);
   }, []);
+
+  // 화면 포커스 시 데이터 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      fetchReceivedRequests(true);
+      fetchFriends(true);
+    }, [fetchReceivedRequests, fetchFriends])
+  );
 
   const friendRequestsCount = friendRequests.length;
   const friendsCount = friends.length;
@@ -129,9 +138,10 @@ const FriendsListPage: React.FC<FriendsListPageProps> = ({ navigation }) => {
             try {
               const result = await respondToRequest({ requestId: request.id, accept: true });
               if (result.success) {
+                // 친구 목록과 요청 목록 강제 새로고침
+                await fetchReceivedRequests(true);
+                await fetchFriends(true);
                 Alert.alert('성공', `${request.nickname}님과 친구가 되었습니다! 🎉`);
-                fetchReceivedRequests(true);
-                fetchFriends(true);
               } else {
                 Alert.alert('오류', result.error?.message || '친구 요청 수락 중 오류가 발생했습니다.');
               }

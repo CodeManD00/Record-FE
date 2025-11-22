@@ -39,7 +39,66 @@ class FriendService {
         error: { code: 'USER_NOT_FOUND', message: '사용자 ID를 가져올 수 없습니다.' },
       };
     }
-    return apiClient.get(`/friendships/${targetUserId}/friends`);
+
+    if (__DEV__) {
+      console.log('📥 친구 목록 조회:', {
+        userId: targetUserId,
+        url: `/friendships/${targetUserId}/friends`,
+      });
+    }
+
+    const result = await apiClient.get(`/friendships/${targetUserId}/friends`);
+
+    if (__DEV__) {
+      console.log('📥 친구 목록 응답:', {
+        success: result.success,
+        data: result.data,
+        dataType: Array.isArray(result.data) ? 'array' : typeof result.data,
+      });
+    }
+
+    // 응답 형식 처리 (배열이거나 { friends: [] } 형태)
+    if (result.success && result.data) {
+      let friends: any[] = [];
+
+      if (Array.isArray(result.data)) {
+        // 배열 형태로 직접 반환 (백엔드 실제 응답 형식)
+        friends = result.data;
+      } else if (result.data.friends && Array.isArray(result.data.friends)) {
+        // { friends: [] } 형태
+        friends = result.data.friends;
+      } else if (result.data.data && Array.isArray(result.data.data)) {
+        // ApiResponseObject로 감싸진 형태
+        friends = result.data.data;
+      }
+
+      // 백엔드 응답을 Friend 형식으로 변환
+      // 백엔드 응답 구조: { id, userId (친구의 ID), userNickname, userProfileImage, friendId (현재 사용자), ... }
+      // 친구 정보는 userId, userNickname, userProfileImage에 있음
+      const formattedFriends: Friend[] = friends.map((item: any) => {
+        // userId가 친구의 ID, userNickname이 친구의 닉네임, userProfileImage가 친구의 프로필 이미지
+        const profileImage = item.userProfileImage || item.profileImage || item.avatar;
+        return {
+          id: String(item.userId || item.id || ''),
+          user_id: String(item.userId || ''),
+          nickname: item.userNickname || item.nickname || 'Unknown',
+          profileImage: profileImage ? resolveImageUrl(profileImage) || undefined : undefined,
+          createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+          updatedAt: item.updatedAt ? new Date(item.updatedAt) : new Date(),
+        };
+      });
+
+      if (__DEV__) {
+        console.log('✅ 변환된 친구 목록:', formattedFriends);
+      }
+
+      return {
+        success: true,
+        data: { friends: formattedFriends },
+      };
+    }
+
+    return result as Result<{ friends: Friend[] }>;
   }
 
   /**
@@ -150,9 +209,40 @@ class FriendService {
   /**
    * 친구 수 조회
    * GET /friendships/{userId}/friend-count
+   * 응답 형식: { "friendCount": 1 }
    */
   async getFriendCount(userId: string): Promise<Result<{ count: number }>> {
-    return apiClient.get(`/friendships/${userId}/friend-count`);
+    if (__DEV__) {
+      console.log('📊 친구 수 조회:', {
+        userId,
+        url: `/friendships/${userId}/friend-count`,
+      });
+    }
+
+    const result = await apiClient.get(`/friendships/${userId}/friend-count`);
+
+    if (__DEV__) {
+      console.log('📊 친구 수 응답:', {
+        success: result.success,
+        data: result.data,
+      });
+    }
+
+    // 응답 형식 처리: { "friendCount": 1 } 또는 { "count": 1 }
+    if (result.success && result.data) {
+      const count = result.data.friendCount ?? result.data.count ?? 0;
+      
+      if (__DEV__) {
+        console.log('✅ 친구 수:', count);
+      }
+
+      return {
+        success: true,
+        data: { count },
+      };
+    }
+
+    return result as Result<{ count: number }>;
   }
 
   /**
@@ -281,20 +371,29 @@ class FriendService {
       // 받은 친구 요청의 경우 백엔드 응답 형식이 다를 수 있음
       // 보낸 요청과 동일한 형식이라면: userId (보낸 사람), friendId (받은 사람 = 나)
       // FriendRequest 형식으로 변환
-      const formattedRequests: FriendRequest[] = requests.map((req: any) => ({
-        id: String(req.id || req.friendshipId || ''),
-        fromUserId: String(req.userId || req.fromUserId || ''), // 보낸 사람 = userId
-        toUserId: String(req.friendId || req.toUserId || targetUserId), // 받은 사람 = friendId (나)
-        nickname: req.userNickname || req.friendNickname || req.nickname || 'Unknown',
-        user_id: req.userId || req.user_id || '',
-        profileImage: (req.userProfileImage || req.friendProfileImage || req.profileImage)
-          ? resolveImageUrl(req.userProfileImage || req.friendProfileImage || req.profileImage) || undefined
-          : undefined,
-        status: (req.status || 'PENDING') as any,
-        message: req.message,
-        createdAt: req.createdAt ? new Date(req.createdAt) : new Date(),
-        updatedAt: req.updatedAt ? new Date(req.updatedAt) : new Date(),
-      }));
+      const formattedRequests: FriendRequest[] = requests.map((req: any) => {
+        // 백엔드 응답에서 id는 friendshipId (숫자)이므로 그대로 사용
+        const friendshipId = req.id || req.friendshipId;
+        
+        if (__DEV__ && !friendshipId) {
+          console.warn('⚠️ 받은 친구 요청에 id/friendshipId가 없습니다:', req);
+        }
+
+        return {
+          id: String(friendshipId || ''),
+          fromUserId: String(req.userId || req.fromUserId || ''), // 보낸 사람 = userId
+          toUserId: String(req.friendId || req.toUserId || targetUserId), // 받은 사람 = friendId (나)
+          nickname: req.userNickname || req.friendNickname || req.nickname || 'Unknown',
+          user_id: req.userId || req.user_id || '',
+          profileImage: (req.userProfileImage || req.friendProfileImage || req.profileImage)
+            ? resolveImageUrl(req.userProfileImage || req.friendProfileImage || req.profileImage) || undefined
+            : undefined,
+          status: (req.status || 'PENDING') as any,
+          message: req.message,
+          createdAt: req.createdAt ? new Date(req.createdAt) : new Date(),
+          updatedAt: req.updatedAt ? new Date(req.updatedAt) : new Date(),
+        };
+      });
 
       if (__DEV__) {
         console.log('✅ 변환된 받은 친구 요청:', formattedRequests);
@@ -371,22 +470,46 @@ class FriendService {
       };
     }
 
-    // requestId를 friendshipId로 사용 (백엔드에 따라 조정 필요)
+    // requestId를 friendshipId로 변환
+    // 백엔드 응답에서 id는 이미 friendshipId (숫자)이므로 parseInt로 변환
     const friendshipId = parseInt(data.requestId, 10);
     if (isNaN(friendshipId)) {
+      if (__DEV__) {
+        console.error('❌ 유효하지 않은 requestId:', data.requestId);
+      }
       return {
         success: false,
         error: { code: 'INVALID_REQUEST_ID', message: '유효하지 않은 요청 ID입니다.' },
       };
     }
 
+    if (__DEV__) {
+      console.log('📤 친구 요청 응답:', {
+        requestId: data.requestId,
+        friendshipId,
+        accept: data.accept,
+        currentUserId,
+      });
+    }
+
     const endpoint = data.accept 
       ? `/friendships/${friendshipId}/accept`
       : `/friendships/${friendshipId}/reject`;
     
-    return apiClient.post(endpoint, null, {
+    const result = await apiClient.post(endpoint, null, {
       headers: { 'X-User-Id': currentUserId },
     });
+
+    if (__DEV__) {
+      if (!result.success) {
+        console.error('❌ 친구 요청 응답 실패:', {
+          endpoint,
+          error: result.error,
+        });
+      }
+    }
+
+    return result;
   }
 
   /**

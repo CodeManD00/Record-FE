@@ -7,6 +7,7 @@ import { atom } from 'jotai';
 import { atomWithStorage } from 'jotai/utils';
 import { friendService } from '../services/api/index';
 import { Friend, FriendRequest, CreateFriendRequestData, RespondToFriendRequestData } from '../types/friend';
+import { userProfileAtom } from './userAtoms';
 // Result 타입을 직접 정의 (임시 해결책)
 type Result<T> = {
   success: true;
@@ -50,6 +51,11 @@ export const sentRequestsStateAtom = atom<ApiState<FriendRequest[]>>(createIniti
 export const friendSearchStateAtom = atom<ApiState<Friend[]>>(createInitialApiState<Friend[]>());
 
 /**
+ * 친구 수 상태
+ */
+export const friendCountStateAtom = atom<ApiState<number>>(createInitialApiState<number>());
+
+/**
  * 현재 검색 쿼리
  */
 export const searchQueryAtom = atom<string>('');
@@ -85,6 +91,42 @@ export const fetchFriendsAtom = atom(
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다';
       set(friendsStateAtom, apiStateHelpers.setError(currentState, errorMessage));
+      return ResultFactory.failure({ message: errorMessage, code: 'UNKNOWN_ERROR' });
+    }
+  }
+);
+
+/**
+ * 친구 수 조회 (캐시 지원)
+ */
+export const fetchFriendCountAtom = atom(
+  null,
+  async (get, set, userId: string, force: boolean = false) => {
+    const currentState = get(friendCountStateAtom);
+    
+    // 캐시가 유효하고 강제 새로고침이 아닌 경우 스킵
+    if (!force && currentState.data !== null && isCacheValid(currentState.lastFetch)) {
+      return ResultFactory.success(currentState.data);
+    }
+
+    // 로딩 상태 설정
+    set(friendCountStateAtom, apiStateHelpers.setLoading(currentState));
+
+    try {
+      const result = await friendService.getFriendCount(userId);
+      
+      if (result.success && result.data) {
+        const count = result.data.count;
+        set(friendCountStateAtom, apiStateHelpers.setSuccess(currentState, count));
+        return ResultFactory.success(count);
+      } else {
+        const errorMessage = result.error?.message || '친구 수를 불러오는데 실패했습니다';
+        set(friendCountStateAtom, apiStateHelpers.setError(currentState, errorMessage));
+        return ResultFactory.failure(result.error!);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다';
+      set(friendCountStateAtom, apiStateHelpers.setError(currentState, errorMessage));
       return ResultFactory.failure({ message: errorMessage, code: 'UNKNOWN_ERROR' });
     }
   }
@@ -279,15 +321,22 @@ export const respondToFriendRequestAtom = atom(
       
       if (result.success) {
         // 성공 시 관련 데이터 새로고침
-        set(fetchReceivedRequestsAtom, true);
+        await set(fetchReceivedRequestsAtom, true);
         if (data.accept) {
-          set(fetchFriendsAtom, true);
+          // 친구 수락 시 친구 목록과 친구 수 강제 새로고침
+          await set(fetchFriendsAtom, true);
+          // 친구 수도 새로고침 (userId 필요)
+          const userProfile = get(userProfileAtom);
+          const userId = userProfile?.id;
+          if (userId) {
+            await set(fetchFriendCountAtom, userId, true);
+          }
         }
         return result;
       } else {
         // 실패 시 낙관적 업데이트 롤백
-        set(fetchReceivedRequestsAtom, true);
-        set(fetchFriendsAtom, true);
+        await set(fetchReceivedRequestsAtom, true);
+        await set(fetchFriendsAtom, true);
         return result;
       }
     } catch (error) {
@@ -387,6 +436,11 @@ export const sentFriendRequestsAtom = atom<FriendRequest[]>((get) => {
 export const friendSearchResultsAtom = atom<Friend[]>((get) => {
   const state = get(friendSearchStateAtom);
   return state.data || [];
+});
+
+export const friendCountAtom = atom<number>((get) => {
+  const state = get(friendCountStateAtom);
+  return state.data ?? 0;
 });
 
 /**
