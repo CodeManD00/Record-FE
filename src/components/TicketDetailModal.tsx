@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -405,7 +405,23 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
   // n회차 관람 뱃지를 위한 로직
   const sourceTickets = apiTickets.length > 0 ? apiTickets : localTickets;
-  const viewCount = ticket ? sourceTickets.filter(t => t.title === ticket.title).length : 0;
+  const matchingTickets = useMemo(() => {
+    if (!ticket) return [];
+    const filtered = sourceTickets.filter(
+      (t: Ticket) => t.title === ticket.title && t.user_id === ticket.user_id,
+    );
+    return filtered.sort((a, b) => {
+      const dateA = a.performedAt ? new Date(a.performedAt).getTime() : 0;
+      const dateB = b.performedAt ? new Date(b.performedAt).getTime() : 0;
+      return dateA - dateB;
+    });
+  }, [sourceTickets, ticket]);
+
+  const visitIndex = useMemo(() => {
+    if (!ticket) return null;
+    const index = matchingTickets.findIndex((t: Ticket) => t.id === ticket.id);
+    return index >= 0 ? index + 1 : null;
+  }, [matchingTickets, ticket]);
 
   return (
     <Modal
@@ -580,10 +596,10 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       </Animated.View>
 
                       {/* n회차 관람 뱃지 */}
-                      {viewCount >= 1 && !isEditing && (
+                      {visitIndex && !isEditing && (
                         <View style={styles.viewCountBadge}>
                           <Text style={styles.viewCountText}>
-                            {viewCount}회차 관람
+                            {visitIndex}회차 관람
                           </Text>
                         </View>
                       )}
