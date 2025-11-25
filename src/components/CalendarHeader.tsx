@@ -4,10 +4,10 @@ import { Colors, Typography, Spacing, BorderRadius } from '../styles/designSyste
 import GNB from './GNB';
 
 interface CalendarHeaderProps {
-  totalTickets: number;
+  monthlyTicketCount: number;
 }
 
-const CalendarHeader: React.FC<CalendarHeaderProps> = ({ totalTickets }) => {
+const CalendarHeader: React.FC<CalendarHeaderProps> = ({ monthlyTicketCount }) => {
   return (
     <>
       {/* Header */}
@@ -17,7 +17,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({ totalTickets }) => {
       <View style={styles.titleSection}>
         <Text style={styles.calendarTitle}>캘린더</Text>
         <View style={styles.ticketCountBadge}>
-          <Text style={styles.ticketCountText}>🎟️  {totalTickets}개</Text>
+          <Text style={styles.ticketCountText}>🎟️  {monthlyTicketCount}개</Text>
         </View>
       </View>
     </>

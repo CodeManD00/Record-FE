@@ -15,14 +15,13 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { useAtom } from 'jotai';
-import { ticketsAtom, TicketStatus } from '../../atoms';
+import { ticketsAtom } from '../../atoms';
 import { fetchMyTicketsAtom, myTicketsAtom } from '../../atoms/ticketsAtomsApi';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useEffect } from 'react';
 import { Ticket } from '../../types/ticket';
 import TicketDetailModal from '../../components/TicketDetailModal';
 import GNB from '../../components/GNB';
-import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import {
   Colors,
   Typography,
@@ -130,10 +129,9 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
   const getCurrentMonthNumber = () => new Date().getMonth();
   const getCurrentYear = () => new Date().getFullYear();
 
-  const realTickets = displayTicketsFromApi.filter(ticket => !isPlaceholderTicket(ticket));
-
-  const currentMonthTickets = realTickets
+  const currentMonthTickets = displayTicketsFromApi
     .filter(ticket => {
+      if (!ticket?.performedAt) return false;
       const ticketDate = new Date(ticket.performedAt);
       const isCurrentMonth =
         ticketDate.getMonth() === getCurrentMonthNumber() &&
@@ -149,38 +147,23 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
         new Date(a.performedAt).getTime() - new Date(b.performedAt).getTime(),
     );
 
-  const displayTickets: Ticket[] =
-    currentMonthTickets.length > 0
-      ? currentMonthTickets
-      : [
-          {
-            id: '',
-            title: '',
-            artist: '',
-            venue: '',
-            performedAt: undefined as any,
-            bookingSite: '',
-            genre: '',
-            status: TicketStatus.PUBLIC,
-            userId: 'placeholder',
-            images: [],
-            review: undefined,
-            createdAt: new Date(),
-            isPlaceholder: true,
-          },
-        ];
+  const displayTickets: Ticket[] = currentMonthTickets;
+  const hasTickets = displayTickets.length > 0;
 
   useEffect(() => {
+    if (!hasTickets) {
+      setCurrentTicketIndex(0);
+      return;
+    }
     if (currentTicketIndex >= displayTickets.length) setCurrentTicketIndex(0);
-  }, [displayTickets.length, currentTicketIndex]);
+  }, [displayTickets.length, currentTicketIndex, hasTickets]);
 
   useEffect(() => {
     setCurrentTicketIndex(0);
     resetCardPosition();
   }, [selectedFilter]);
 
-  const currentTicket = displayTickets[currentTicketIndex] || displayTickets[0];
-  const isPlaceholder = isPlaceholderTicket(currentTicket);
+  const currentTicket = hasTickets ? displayTickets[currentTicketIndex] : null;
 
   const panResponder = useRef(
     PanResponder.create({
@@ -190,6 +173,10 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
       onPanResponderMove: (_, gestureState) =>
         pan.setValue({ x: gestureState.dx, y: 0 }),
       onPanResponderRelease: (_, gestureState) => {
+        if (!displayTickets.length) {
+          resetCardPosition();
+          return;
+        }
         const swipeThreshold = 80;
         const velocityThreshold = 0.3;
         const totalCards = displayTickets.length;
@@ -325,50 +312,61 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
               </View>
 
               {/* Animated 티켓 */}
-              <Animated.View
-                style={[
-                  styles.animatedCard,
-                  { transform: pan.getTranslateTransform(), opacity },
-                ]}
-                {...panResponder.panHandlers}
-              >
-                <TouchableOpacity
-                  disabled={isPlaceholder}
-                  style={[
-                    styles.mainTicketCard,
-                    isPlaceholder && styles.disabledCard,
-                    !isPlaceholder &&
-                      (!currentTicket.images ||
-                        currentTicket.images.length === 0) &&
-                      styles.mainTicketCardNoImage,
-                  ]}
-                  onPress={() => handleTicketPress(currentTicket)}
-                  activeOpacity={isPlaceholder ? 1 : 0.7}
-                >
-                  {currentTicket.images && currentTicket.images.length > 0 ? (
-                    <Image
-                      source={{ uri: currentTicket.images[0] }}
-                      style={styles.mainTicketImage}
-                    />
-                  ) : (
-                    <View style={styles.mainTicketPlaceholder}>
-                      <Text style={styles.placeholderText}>
-                        {isPlaceholder
-                          ? '새 티켓을 추가해보세요!'
-                          : '이미지 없음'}
+              {hasTickets && currentTicket ? (
+                <>
+                  <Animated.View
+                    style={[
+                      styles.animatedCard,
+                      { transform: pan.getTranslateTransform(), opacity },
+                    ]}
+                    {...panResponder.panHandlers}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.mainTicketCard,
+                        (!currentTicket.images ||
+                          currentTicket.images.length === 0) &&
+                          styles.mainTicketCardNoImage,
+                      ]}
+                      onPress={() => handleTicketPress(currentTicket)}
+                      activeOpacity={0.7}
+                    >
+                      {currentTicket.images && currentTicket.images.length > 0 ? (
+                        <Image
+                          source={{ uri: currentTicket.images[0] }}
+                          style={styles.mainTicketImage}
+                        />
+                      ) : (
+                        <View style={styles.mainTicketPlaceholder}>
+                          <Text style={styles.placeholderText}>이미지 없음</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+
+                  <View style={styles.dateButtonContainer}>
+                    <TouchableOpacity style={styles.dateButton}>
+                      <Text style={styles.dateButtonText}>
+                        {formatDate(currentTicket.performedAt)}
                       </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              </Animated.View>
-              
-              {/* 하단 date 버튼 */}
-              {!isPlaceholder && (
-                <View style={styles.dateButtonContainer}>
-                  <TouchableOpacity style={styles.dateButton}>
-                    <Text style={styles.dateButtonText}>
-                      {formatDate(currentTicket.performedAt)}
-                    </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyCardTitle}>이번 달 티켓이 없어요</Text>
+                  <Text style={styles.emptyCardSubtitle}>
+                    새 티켓을 추가하면 이곳에서 확인할 수 있어요.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.emptyCardButton}
+                    onPress={() =>
+                      navigation.navigate('AddTicket', {
+                        fromAddButton: true,
+                      })
+                    }
+                  >
+                    <Text style={styles.emptyCardButtonText}>티켓 추가하기</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -500,6 +498,40 @@ const styles = StyleSheet.create({
     ...Typography.callout,
     color: Colors.tertiaryLabel,
     fontWeight: '400',
+  },
+  emptyCard: {
+    width: (width - 80) * 1.05,
+    height: (width - 80) * 1.3 * 1.05,
+    borderRadius: BorderRadius.xxl,
+    backgroundColor: Colors.systemGray6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
+    gap: Spacing.md,
+  },
+  emptyCardTitle: {
+    ...Typography.title3,
+    color: Colors.label,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emptyCardSubtitle: {
+    ...Typography.subheadline,
+    color: Colors.secondaryLabel,
+    textAlign: 'center',
+  },
+  emptyCardButton: {
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.primary,
+  },
+  emptyCardButtonText: {
+    ...Typography.subheadline,
+    fontWeight: '600',
+    color: Colors.white,
   },
 
   // 하단 date 버튼

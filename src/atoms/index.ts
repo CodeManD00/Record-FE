@@ -27,7 +27,6 @@ export {
   ticketFilterOptionsAtom,
   updateFilterOptionsAtom,
   resetFiltersAtom,
-  searchTicketsAtom,
   recentTicketsAtom,
   ticketsWithReviewsAtom,
   ticketsWithImagesAtom,
@@ -39,24 +38,9 @@ export {
 
 // 사용자 관련 atoms
 export {
-  // 기본 상태
   userProfileAtom,
-  userSettingsAtom,
   userAuthAtom,
-  
-  // 파생 atoms (읽기 전용)
-  currentUserIdAtom as userCurrentIdAtom, // 이름 충돌 방지
-  userDisplayNameAtom,
-  isAccountPublicAtom,
-  profileCompletenessAtom,
-  
-  // 쓰기 atoms (액션)
   updateUserProfileAtom,
-  updateUserSettingsAtom,
-  updateEmailVerificationAtom,
-  updateLastLoginAtom,
-  
-  // 유틸리티 atoms
   resetUserDataAtom,
 } from './userAtoms';
 
@@ -78,27 +62,6 @@ export {
   fetchSentRequestsAtom,
   cancelFriendRequestAtom,
 } from './friendsAtomsApi';
-
-// 친구 관련 atoms (로컬 상태 관리용 - 필요시 사용)
-export {
-  // 기본 상태
-  friendsMapAtom,
-  friendRequestsMapAtom,
-  friendshipsMapAtom,
-  friendTicketsMapAtom,
-  
-  // 파생 atoms (읽기 전용)
-  friendsCountAtom,
-  getFriendByIdAtom,
-  getFriendTicketsAtom,
-  friendTicketsAtom,
-  
-  // 쓰기 atoms (액션)
-  updateFriendTicketsAtom,
-  
-  // 유틸리티 atoms
-  friendStatsAtom,
-} from './friendsAtoms';
 
 // 타입 내보내기 (편의성을 위해)
 export type {

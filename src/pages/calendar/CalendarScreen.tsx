@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAtom } from 'jotai';
 import { ticketsAtom } from '../../atoms';
+import { fetchMyTicketsAtom, myTicketsAtom } from '../../atoms/ticketsAtomsApi';
 import { Ticket } from '../../types/ticket';
 import TicketDetailModal from '../../components/TicketDetailModal';
 import CalendarHeader from '../../components/CalendarHeader';
@@ -27,7 +28,9 @@ const CalendarScreen = () => {
   const [currentMonth, setCurrentMonth] = useState(
     new Date().toISOString().slice(0, 7), // YYYY-MM 형식
   );
-  const [tickets] = useAtom(ticketsAtom); // 전체 티켓 목록
+  const [localTickets] = useAtom(ticketsAtom); // 로컬 캐시
+  const [apiTickets] = useAtom(myTicketsAtom); // 백엔드 티켓
+  const [, fetchMyTickets] = useAtom(fetchMyTicketsAtom);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null); // 선택된 티켓
   const [modalVisible, setModalVisible] = useState(false); // 모달 표시 여부
   
@@ -46,14 +49,17 @@ const CalendarScreen = () => {
       if (scrollViewRef.current) {
         scrollViewRef.current.scrollTo({ y: 0, animated: false });
       }
-    }, [])
+      fetchMyTickets(true);
+    }, [fetchMyTickets])
   );
 
   // 날짜를 YYYY-MM-DD 형식으로 포맷팅
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
+  const displayTickets = apiTickets.length > 0 ? apiTickets : localTickets;
+
   // 선택된 날짜의 공연 목록 필터링
-  const selectedEvents = tickets.filter(
+  const selectedEvents = displayTickets.filter(
     ticket => formatDate(new Date(ticket.performedAt)) === selectedDate,
   );
 
@@ -111,7 +117,12 @@ const CalendarScreen = () => {
   };
 
   // 전체 티켓 개수 계산
-  const totalTickets = tickets.length;
+  const monthlyTicketCount = displayTickets.filter(ticket => {
+    if (!ticket?.performedAt) return false;
+    const date = new Date(ticket.performedAt);
+    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    return monthKey === currentMonth;
+  }).length;
 
   // 월간 캘린더 애니메이션 스타일
   const monthlyCalendarStyle = {
@@ -153,13 +164,13 @@ const CalendarScreen = () => {
     <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" />
       
-      <CalendarHeader totalTickets={totalTickets} />
+      <CalendarHeader monthlyTicketCount={monthlyTicketCount} />
       
       {isWeeklyView && (
         <Animated.View style={[styles.weeklyCalendarContainer, weeklyCalendarStyle]}>
           <WeeklyCalendar
             selectedDate={selectedDate}
-            tickets={tickets}
+            tickets={displayTickets}
             onDayPress={handleWeeklyDayPress}
           />
         </Animated.View>
@@ -176,7 +187,7 @@ const CalendarScreen = () => {
         <Animated.View style={monthlyCalendarStyle}>
           <CustomCalendar
             selectedDate={selectedDate}
-            tickets={tickets}
+            tickets={displayTickets}
             onDayPress={handleDayPress}
             onMonthChange={handleMonthChange}
           />

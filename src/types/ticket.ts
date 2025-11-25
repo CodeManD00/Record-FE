@@ -65,6 +65,5 @@ export interface TicketFormData extends Pick<BaseTicket, 'title' | 'performedAt'
 export interface TicketFilterOptions {
   status?: TicketStatus;
   dateRange?: { start: Date; end: Date };
-  searchText?: string;
   genre?: string;
 }

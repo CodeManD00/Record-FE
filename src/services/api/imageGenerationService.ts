@@ -29,8 +29,6 @@ export interface ImageGenerationResponse {
   error?: string;
 }
 
-const USE_MOCK_DATA = false;
-
 export const imageGenerationService = {
   /**
    * 실제 이미지 생성 API
@@ -38,18 +36,6 @@ export const imageGenerationService = {
   async generateImage(
     request: ImageGenerationRequest
   ): Promise<Result<ImageGenerationResponse>> {
-
-    if (USE_MOCK_DATA) {
-      console.log('🧪 MOCK 이미지 생성 실행');
-
-      return {
-        ok: true,
-        value: {
-          prompt: `Mock Prompt for ${request.title}`,
-          imageUrl: 'https://via.placeholder.com/1024x1024?text=Mock+Image',
-        },
-      };
-    }
 
     // DALL-E 3 모델 지정 (기본값)
     const requestWithModel = {

@@ -25,7 +25,7 @@ import {
   getTicketByIdAtom,
   ticketsAtom,
 } from '../atoms';
-import { deleteTicketAtom, updateTicketAtom } from '../atoms/ticketsAtomsApi';
+import { deleteTicketAtom, updateTicketAtom, myTicketsAtom } from '../atoms/ticketsAtomsApi';
 import { TicketDetailModalProps } from '../types/componentProps';
 import PrivacySelectionModal from './PrivacySelectionModal';
 import {
@@ -47,7 +47,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   const [, deleteTicket] = useAtom(deleteTicketAtom);
   const [, updateTicket] = useAtom(updateTicketAtom);
   const [getTicketById] = useAtom(getTicketByIdAtom);
-  const [allTickets] = useAtom(ticketsAtom);
+  const [localTickets] = useAtom(ticketsAtom);
+  const [apiTickets] = useAtom(myTicketsAtom);
 
   const ticket = propTicket ? getTicketById(propTicket.id) || propTicket : null;
   const [isFlipped, setIsFlipped] = useState(false);
@@ -232,9 +233,9 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
     try {
       // 이미지 URL 처리 (editedTicket.images 또는 ticket.images 사용)
-      const images = editedTicket.images !== undefined 
-        ? editedTicket.images 
-        : ticket.images;
+      const imagesSource =
+        editedTicket.images !== undefined ? editedTicket.images : ticket.images;
+      const images = imagesSource ? [...imagesSource] : undefined;
 
       // reviewText 처리
       const reviewText = editedTicket.review?.reviewText !== undefined
@@ -249,7 +250,6 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
         images,
         review: reviewText !== undefined ? {
           reviewText,
-          rating: editedTicket.review?.rating || ticket.review?.rating || 0,
           createdAt: editedTicket.review?.createdAt || ticket.review?.createdAt || new Date(),
           updatedAt: new Date(),
         } : undefined,
@@ -404,7 +404,8 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   const backAnimatedStyle = { transform: [{ rotateY: backInterpolate }] };
 
   // n회차 관람 뱃지를 위한 로직
-  const viewCount = ticket ? allTickets.filter(t => t.title === ticket.title).length : 0;
+  const sourceTickets = apiTickets.length > 0 ? apiTickets : localTickets;
+  const viewCount = ticket ? sourceTickets.filter(t => t.title === ticket.title).length : 0;
 
   return (
     <Modal
@@ -840,7 +841,7 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
       {/* Privacy Selection Modal */}
       <PrivacySelectionModal
         visible={showPrivacyModal}
-        currentStatus={ticket.status}
+        currentStatus={ticket.status ?? TicketStatus.PUBLIC}
         onClose={() => setShowPrivacyModal(false)}
         onSelect={handlePrivacySelect}
       />

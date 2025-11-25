@@ -187,17 +187,6 @@ export const applyTicketFilters = (
     });
   }
 
-  // 텍스트 검색 필터
-  if (filterOptions.searchText) {
-    const searchLower = filterOptions.searchText.toLowerCase();
-    filters.push(ticket => {
-      const titleMatch = ticket.title.toLowerCase().includes(searchLower);
-      const artistMatch = ticket.artist?.toLowerCase().includes(searchLower) ?? false;
-      const venueMatch = ticket.venue?.toLowerCase().includes(searchLower) ?? false;
-      return titleMatch || artistMatch || venueMatch;
-    });
-  }
-
   // 모든 필터 적용
   return tickets.filter(ticket => filters.every(filter => filter(ticket)));
 };

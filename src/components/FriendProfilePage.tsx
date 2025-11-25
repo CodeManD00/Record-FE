@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -19,108 +19,17 @@ import { Friend } from '../types/friend';
 import { Ticket } from '../types/ticket';
 import { FriendProfileScreenProps } from '../types/navigation';
 import { useAtom } from 'jotai';
-import { friendTicketsAtom, TicketStatus } from '../atoms';
+import { fetchFriendTicketsAtom, friendTicketsMapAtom } from '../atoms/ticketsAtomsApi';
 import { isPlaceholderTicket } from '../utils/isPlaceholder';
-import { Colors, Typography, Spacing, BorderRadius, Shadows, ComponentStyles, Layout } from '../styles/designSystem';
-
-// ================== 더미 티켓 ==================
-const dummyTickets: Ticket[] = [
-  {
-    id: 'dummy-1',
-    title: '콘서트 - 인디 밴드 라이브',
-    performedAt: new Date('2025-09-10T19:00:00'),
-    status: TicketStatus.PUBLIC,
-    venue: '홍대 롤링홀',
-    artist: '라쿠나',
-    genre: '밴드',
-    userId: 'friend_1',
-    createdAt: new Date('2025-08-01T10:00:00'),
-    updatedAt: new Date('2025-08-01T10:00:00'),
-  },
-  {
-    id: 'dummy-2',
-    title: '뮤지컬 - 캣츠',
-    performedAt: new Date('2025-09-12T14:00:00'),
-    status: TicketStatus.PUBLIC,
-    venue: '블루스퀘어 인터파크홀',
-    artist: '뮤지컬 배우들',
-    genre: '뮤지컬',
-    userId: 'friend_1',
-    createdAt: new Date('2025-08-05T10:00:00'),
-    updatedAt: new Date('2025-08-05T10:00:00'),
-  },
-  {
-    id: 'dummy-3',
-    title: '오페라 - 라 보엠',
-    performedAt: new Date('2025-09-18T19:30:00'),
-    status: TicketStatus.PUBLIC,
-    venue: '예술의전당 오페라극장',
-    artist: '친구와 함께',
-    genre: '오페라',
-    userId: 'friend_2',
-    createdAt: new Date('2025-08-10T10:00:00'),
-    updatedAt: new Date('2025-08-10T10:00:00'),
-  },
-];
-
-// ================== 퍼포먼스 데이터 ==================
-interface PerformanceInfo {
-  title: string;
-  time: string;
-  location: string;
-}
-
-type PerformanceData = {
-  [date: string]: PerformanceInfo;
-};
-
-const performanceData: PerformanceData = {
-  '2025-09-15': {
-    title: '오페라 - 라 트라비아타',
-    time: '19:30',
-    location: '서울 예술의전당 오페라극장',
-  },
-  '2025-09-22': {
-    title: '뮤지컬 - 레미제라블',
-    time: '14:00',
-    location: '블루스퀘어 인터파크홀',
-  },
-  '2025-10-05': {
-    title: '콘서트 - 클래식 갈라쇼',
-    time: '20:00',
-    location: '롯데콘서트홀',
-  },
-};
-
-// ================== 퍼포먼스 → 티켓 변환 함수 ==================
-const convertToTicket = (
-  date: string,
-  performance: PerformanceInfo,
-): Ticket => {
-  const [year, month, day] = date.split('-').map(Number);
-  const [hours, minutes] = performance.time.split(':').map(Number);
-  const performedAt = new Date(year, month - 1, day, hours, minutes);
-
-  return {
-    id: `friend-${date}`,
-    title: performance.title,
-    performedAt,
-    status: TicketStatus.PUBLIC,
-    venue: performance.location,
-    artist: '친구와 함께',
-    genre: null,
-    userId: 'friend_current',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-};
+import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../styles/designSystem';
 
 const { width } = Dimensions.get('window');
 
 const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, route }) => {
   const { friend } = route.params;
   const insets = useSafeAreaInsets();
-  const [allFriendTicketsData] = useAtom(friendTicketsAtom);
+  const [friendTicketsMap] = useAtom(friendTicketsMapAtom);
+  const [, fetchFriendTickets] = useAtom(fetchFriendTicketsAtom);
   const [selectedDate, setSelectedDate] = React.useState(
     new Date().toISOString().split('T')[0],
   );
@@ -132,32 +41,32 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
 
   const pagerRef = useRef<PagerView>(null);
 
-  // 현재 친구의 티켓 데이터 가져오기
-  const currentFriendTickets =
-    allFriendTicketsData.find(data => data.friendId === friend.id)?.tickets ||
-    [];
-  const friendTickets =
-    currentFriendTickets.length > 0 ? currentFriendTickets : dummyTickets;
+  useEffect(() => {
+    fetchFriendTickets(friend.id);
+  }, [fetchFriendTickets, friend.id]);
 
-  // 퍼포먼스 → 티켓 변환
-  const performanceTickets: Ticket[] = Object.entries(performanceData).map(
-    ([date, performance]) => convertToTicket(date, performance),
+  const friendTickets = friendTicketsMap.get(friend.id) ?? [];
+
+  const realFriendTickets = useMemo(
+    () =>
+      friendTickets
+        .filter(ticket => !isPlaceholderTicket(ticket))
+        .sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        }),
+    [friendTickets],
   );
-
-  const allFriendTickets = [...friendTickets, ...performanceTickets];
-
-  const realFriendTickets = allFriendTickets
-    .filter(ticket => !isPlaceholderTicket(ticket))
-    .sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return dateB - dateA;
-    });
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-  const selectedEvents = allFriendTickets.filter(
-    ticket => formatDate(new Date(ticket.performedAt)) === selectedDate,
+  const selectedEvents = useMemo(
+    () =>
+      realFriendTickets.filter(
+        ticket => formatDate(new Date(ticket.performedAt)) === selectedDate,
+      ),
+    [realFriendTickets, selectedDate],
   );
 
   const handleTicketPress = (ticket: Ticket) => {
@@ -252,13 +161,22 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
               contentContainerStyle={styles.feedContent}
               showsVerticalScrollIndicator={false}
             >
-              <TicketGrid
-                tickets={realFriendTickets}
-                onTicketPress={handleTicketPress}
-                containerStyle={styles.friendGridContainer}
-                cardWidth={(width - 15) / 3}
-                cardAspectRatio={1.4}
-              />
+              {realFriendTickets.length > 0 ? (
+                <TicketGrid
+                  tickets={realFriendTickets}
+                  onTicketPress={handleTicketPress}
+                  containerStyle={styles.friendGridContainer}
+                  cardWidth={(width - 15) / 3}
+                  cardAspectRatio={1.4}
+                />
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateTitle}>티켓 기록이 없어요</Text>
+                  <Text style={styles.emptyStateSubtitle}>
+                    친구가 공유한 티켓이 여기에서 보여집니다.
+                  </Text>
+                </View>
+              )}
             </ScrollView>
           </View>
 
@@ -269,15 +187,26 @@ const FriendProfilePage: React.FC<FriendProfileScreenProps> = ({ navigation, rou
               contentContainerStyle={styles.calendarContent}
               showsVerticalScrollIndicator={false}
             >
-              <CustomCalendar
-                selectedDate={selectedDate}
-                tickets={allFriendTickets}
-                onDayPress={handleDayPress}
-              />
-              <EventsList
-                selectedEvents={selectedEvents}
-                onTicketPress={handleTicketPress}
-              />
+              {realFriendTickets.length > 0 ? (
+                <>
+                  <CustomCalendar
+                    selectedDate={selectedDate}
+                    tickets={realFriendTickets}
+                    onDayPress={handleDayPress}
+                  />
+                  <EventsList
+                    selectedEvents={selectedEvents}
+                    onTicketPress={handleTicketPress}
+                  />
+                </>
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateTitle}>표시할 일정이 없어요</Text>
+                  <Text style={styles.emptyStateSubtitle}>
+                    공유된 티켓이 등록되면 캘린더에서 확인할 수 있어요.
+                  </Text>
+                </View>
+              )}
             </ScrollView>
           </View>
         </PagerView>
@@ -427,6 +356,22 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 20,
     alignItems: 'center',
+  },
+  emptyState: {
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  emptyStateTitle: {
+    ...Typography.body,
+    fontWeight: '600',
+    color: Colors.label,
+  },
+  emptyStateSubtitle: {
+    ...Typography.subheadline,
+    color: Colors.secondaryLabel,
+    textAlign: 'center',
   },
 
   friendGridContainer: {

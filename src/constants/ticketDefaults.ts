@@ -28,7 +28,6 @@ export const TICKET_LIMITS = {
 export const DEFAULT_FILTER_OPTIONS: TicketFilterOptions = {
   status: undefined,
   dateRange: undefined,
-  searchText: undefined,
   genre: undefined,
 };
 
@@ -113,6 +112,5 @@ export const createUpdatedTicket = (
 export const TICKET_FILTER_FIELDS = [
   'status', 
   'dateRange',
-  'searchText',
   'genre',
 ] as const;

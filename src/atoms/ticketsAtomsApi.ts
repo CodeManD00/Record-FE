@@ -43,18 +43,12 @@ export const friendTicketsMapStateAtom = atom<ApiState<Map<string, Ticket[]>>>(
 );
 
 /**
- * 티켓 검색 결과 상태
- */
-export const ticketSearchStateAtom = atom<ApiState<Ticket[]>>(createInitialApiState<Ticket[]>());
-
-/**
  * 현재 선택된 티켓 필터
  */
 export const ticketFilterAtom = atom<{
   status?: TicketStatus;
   startDate?: string;
   endDate?: string;
-  search?: string;
 }>({});
 
 /**
@@ -220,7 +214,6 @@ export const createTicketAtom = atom(
     status: TicketStatus;
     review?: {
       reviewText: string;
-      rating: number;
       createdAt: Date;
       updatedAt?: Date;
     };
@@ -289,7 +282,6 @@ export const updateTicketAtom = atom(
     genre?: string | null;
     review?: {
       reviewText: string;
-      rating: number;
       createdAt: Date;
       updatedAt?: Date;
     };
@@ -507,40 +499,6 @@ export const deleteTicketAtom = atom(
 );
 
 /**
- * 티켓 검색
- */
-export const searchTicketsAtom = atom(
-  null,
-  async (get, set, query: string) => {
-    if (!query.trim()) {
-      set(ticketSearchStateAtom, apiStateHelpers.reset<Ticket[]>());
-      return ResultFactory.success([]);
-    }
-
-    const currentState = get(ticketSearchStateAtom);
-    set(ticketSearchStateAtom, apiStateHelpers.setLoading(currentState));
-
-    try {
-      const result = await ticketService.searchTickets(query, { limit: 50 });
-      
-      if (result.success && result.data) {
-        const tickets = result.data.tickets || [];
-        set(ticketSearchStateAtom, apiStateHelpers.setSuccess(currentState, tickets));
-        return ResultFactory.success(tickets);
-      } else {
-        const errorMessage = result.error?.message || '티켓 검색에 실패했습니다';
-        set(ticketSearchStateAtom, apiStateHelpers.setError(currentState, errorMessage));
-        return ResultFactory.failure(result.error!);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '검색 중 오류가 발생했습니다';
-      set(ticketSearchStateAtom, apiStateHelpers.setError(currentState, errorMessage));
-      return ResultFactory.failure({ message: errorMessage, code: 'SEARCH_ERROR' });
-    }
-  }
-);
-
-/**
  * 날짜별 티켓 조회
  */
 export const fetchTicketsByDateAtom = atom(
@@ -574,60 +532,11 @@ export const friendTicketsMapAtom = atom<Map<string, Ticket[]>>((get) => {
   return state.data || new Map();
 });
 
-export const ticketSearchResultsAtom = atom<Ticket[]>((get) => {
-  const state = get(ticketSearchStateAtom);
-  return state.data || [];
-});
-
-/**
- * 필터링된 티켓 목록
- */
-export const filteredTicketsAtom = atom<Ticket[]>((get) => {
-  const tickets = get(myTicketsAtom);
-  const filter = get(ticketFilterAtom);
-  
-  return tickets.filter(ticket => {
-    // 날짜 필터
-    if (filter.startDate) {
-      const ticketDate = new Date(ticket.performedAt);
-      const startDate = new Date(filter.startDate);
-      if (ticketDate < startDate) {
-        return false;
-      }
-    }
-    
-    if (filter.endDate) {
-      const ticketDate = new Date(ticket.performedAt);
-      const endDate = new Date(filter.endDate);
-      if (ticketDate > endDate) {
-        return false;
-      }
-    }
-    
-    // 검색 필터
-    if (filter.search) {
-      const searchLower = filter.search.toLowerCase();
-      return (
-        ticket.title.toLowerCase().includes(searchLower) ||
-        (ticket.artist?.toLowerCase().includes(searchLower) ?? false) ||
-        (ticket.venue?.toLowerCase().includes(searchLower) ?? false)
-      );
-    }
-    
-    return true;
-  });
-});
-
 /**
  * 로딩 상태 atoms
  */
 export const myTicketsLoadingAtom = atom<boolean>((get) => {
   const state = get(myTicketsStateAtom);
-  return state.loading === 'loading';
-});
-
-export const ticketSearchLoadingAtom = atom<boolean>((get) => {
-  const state = get(ticketSearchStateAtom);
   return state.loading === 'loading';
 });
 
@@ -637,34 +546,5 @@ export const ticketSearchLoadingAtom = atom<boolean>((get) => {
 export const myTicketsErrorAtom = atom<string | null>((get) => {
   const state = get(myTicketsStateAtom);
   return state.error;
-});
-
-export const ticketSearchErrorAtom = atom<string | null>((get) => {
-  const state = get(ticketSearchStateAtom);
-  return state.error;
-});
-
-/**
- * 티켓 통계 atoms
- */
-export const ticketStatsAtom = atom<{
-  total: number;
-  public: number;
-  private: number;
-  thisMonth: number;
-  thisYear: number;
-}>((get) => {
-  const tickets = get(myTicketsAtom);
-  const now = new Date();
-  const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const thisYear = new Date(now.getFullYear(), 0, 1);
-
-  return {
-    total: tickets.length,
-    public: tickets.filter(t => t.status === TicketStatus.PUBLIC).length,
-    private: tickets.filter(t => t.status === TicketStatus.PRIVATE).length,
-    thisMonth: tickets.filter(t => new Date(t.performedAt) >= thisMonth).length,
-    thisYear: tickets.filter(t => new Date(t.performedAt) >= thisYear).length,
-  };
 });
 

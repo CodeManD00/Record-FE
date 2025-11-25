@@ -82,7 +82,6 @@ export const privateTicketsAtom = createTicketsByStatusAtom(TicketStatus.PRIVATE
 export const ticketFilterOptionsAtom = atom<TicketFilterOptions>({
   status: undefined,
   dateRange: undefined,
-  searchText: undefined,
   genre: undefined,
 });
 
@@ -310,19 +309,8 @@ export const resetFiltersAtom = atom(
     set(ticketFilterOptionsAtom, {
       status: undefined,
       dateRange: undefined,
-      searchText: undefined,
       genre: undefined,
     });
   }
 );
 
-/**
- * 티켓 검색 atom
- */
-export const searchTicketsAtom = atom(
-  null,
-  (get, set, searchText: string): void => {
-    const currentOptions = get(ticketFilterOptionsAtom);
-    set(ticketFilterOptionsAtom, { ...currentOptions, searchText });
-  }
-);

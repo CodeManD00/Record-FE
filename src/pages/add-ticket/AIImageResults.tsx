@@ -17,7 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   imageGenerationService,
   ImageGenerationRequest,
-  ApiResponse,
 } from '../../services/api';
 import { apiClient } from '../../services/api/client';
 import { useAtom } from 'jotai';
@@ -38,7 +37,6 @@ interface AIImageResultsProps {
     params?: {
       ticketData?: any;
       reviewData?: {
-        rating: number;
         reviewText: string;
       };
       images?: string[];
@@ -116,7 +114,7 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
       // 요청 데이터 정리 (빈 값 제거)
       const requestData: ImageGenerationRequest = {
         title: ticketData.title,
-        review: reviewData.reviewText,
+        review: reviewData?.reviewText || '',
         ...(mapGenreForBackend(ticketData.genre || '') && {
           genre: mapGenreForBackend(ticketData.genre || ''),
         }),
@@ -209,7 +207,7 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
       // 요청 데이터 정리 (빈 값 제거)
       const requestData: ImageGenerationRequest = {
         title: ticketData.title,
-        review: reviewData.reviewText,
+        review: reviewData?.reviewText || '',
         ...(mapGenreForBackend(ticketData.genre || '') && {
           genre: mapGenreForBackend(ticketData.genre || ''),
         }),
