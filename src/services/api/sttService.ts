@@ -26,6 +26,13 @@ class SttService {
   /**
    * 1) Whisper STT 변환 + DB 저장
    * POST /stt/transcribe-and-save
+   * 
+   * 타임아웃 설정 이유:
+   * - 서버 측(WhisperService)에서 타임아웃이 120초로 설정되어 있음
+   * - STT 변환은 오디오 파일 크기에 따라 처리 시간이 오래 걸릴 수 있음
+   * - 기본 타임아웃(20초)으로는 긴 오디오 파일 처리 시 클라이언트가 요청을 중단함
+   * - 서버는 정상적으로 처리 완료했지만 클라이언트는 타임아웃 에러를 받게 됨
+   * - 따라서 서버 타임아웃(120초)보다 여유있게 130초로 설정하여 안정성 확보
    */
   async transcribeAndSave(
     audioUri: string,
@@ -44,7 +51,9 @@ class SttService {
 
     console.log('🎤 STT transcribe-and-save 요청 → FormData 생성 완료');
 
-    return apiClient.postForm('/stt/transcribe-and-save', formData);
+    // STT 변환은 시간이 오래 걸릴 수 있으므로 타임아웃을 130초로 설정
+    // 서버 측 타임아웃(120초)보다 여유있게 설정하여 안정성 확보
+    return apiClient.postForm('/stt/transcribe-and-save', formData, { timeoutMs: 130000 }); // 130초
   }
 
   /**

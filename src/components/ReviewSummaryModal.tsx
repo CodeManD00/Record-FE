@@ -10,7 +10,10 @@ import {
   TouchableWithoutFeedback,
   TextInput,
   ScrollView,
+  Alert,
+  Platform,
 } from 'react-native';
+import Clipboard from '@react-native-clipboard/clipboard';
 import {
   Colors,
   Typography,
@@ -25,12 +28,14 @@ interface ReviewSummaryModalProps {
   visible: boolean;
   onClose: () => void;
   summaryText: string;
+  title?: string; // 모달 제목을 동적으로 변경할 수 있도록 (기본값: "요약완료!")
 }
 
 const ReviewSummaryModal: React.FC<ReviewSummaryModalProps> = ({
   visible,
   onClose,
   summaryText,
+  title = '요약완료!', // 기본값: "요약완료!"
 }) => {
   const slideAnim = useRef(new Animated.Value(height)).current;
   const [editedText, setEditedText] = useState(summaryText);
@@ -56,9 +61,32 @@ const ReviewSummaryModal: React.FC<ReviewSummaryModalProps> = ({
     }
   }, [visible]);
 
-  const handleCopy = () => {
-    // TODO: Implement copy to clipboard
-    console.log('Copy to clipboard:', editedText);
+  /**
+   * 클립보드에 텍스트를 복사하는 함수
+   * 
+   * 동작 방식:
+   * 1. 사용자가 복사 버튼을 누르면 현재 편집 중인 텍스트(editedText)를 클립보드에 복사
+   * 2. 복사 성공 시 사용자에게 알림을 표시하여 피드백 제공
+   * 3. @react-native-clipboard/clipboard 패키지의 setString 메서드를 사용
+   * 
+   * 사용자 경험:
+   * - 복사가 완료되면 "복사되었습니다" 알림이 표시되어 사용자가 확인할 수 있음
+   * - 복사된 텍스트는 다른 앱이나 메모장 등에 붙여넣기 가능
+   */
+  const handleCopy = async () => {
+    try {
+      // 클립보드에 현재 편집 중인 텍스트 복사
+      // editedText는 사용자가 모달에서 수정한 최종 텍스트를 포함
+      await Clipboard.setString(editedText);
+      
+      // 복사 성공 시 사용자에게 알림 표시
+      // Alert를 사용하여 간단한 피드백 제공
+      Alert.alert('복사 완료', '텍스트가 클립보드에 복사되었습니다.');
+    } catch (error) {
+      // 복사 실패 시 에러 처리
+      console.error('클립보드 복사 실패:', error);
+      Alert.alert('오류', '텍스트 복사에 실패했습니다.');
+    }
   };
 
   return (
@@ -85,7 +113,7 @@ const ReviewSummaryModal: React.FC<ReviewSummaryModalProps> = ({
               </TouchableOpacity>
 
               {/* Title */}
-              <Text style={styles.title}>요약완료!</Text>
+              <Text style={styles.title}>{title}</Text>
 
               {/* Summary Content */}
               <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>

@@ -53,6 +53,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
   const [isPublic, setIsPublic] = useState(true);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [summaryText, setSummaryText] = useState('');
+  const [modalTitle, setModalTitle] = useState('요약완료!'); // 모달 제목 상태 추가
   const [isProcessingSTT, setIsProcessingSTT] = useState(false);
   const [transcriptionId, setTranscriptionId] = useState<number | undefined>(undefined);
   const [questions, setQuestions] = useState<string[]>([]);
@@ -478,15 +479,18 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
           organizeResult.data.transcript ??
           textToUse;
 
-        setReviewText(organizedText);
+        // 기존 reviewText는 유지하고, 정리된 텍스트는 모달에 표시
+        // 이렇게 하면 사용자가 원본 텍스트를 보존하면서 정리된 버전을 확인할 수 있음
+        setSummaryText(organizedText);
+        setModalTitle('정리완료!'); // 모달 제목을 "정리완료!"로 설정
+        setShowSummaryModal(true); // 모달 표시
 
         if (organizeResult.data.id) {
           setTranscriptionId(organizeResult.data.id);
         }
 
-        if (options?.showAlert ?? true) {
-          Alert.alert('완료', '내용을 정리했어요.');
-        }
+        // Alert는 제거 (모달로 대체)
+        // 사용자가 모달에서 결과를 확인하고 복사할 수 있으므로 별도 알림 불필요
 
         return organizedText;
       } else {
@@ -710,11 +714,12 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         </TouchableOpacity>
       </View>
         
-      {/* 후기 요약 모달 */}
+      {/* 후기 요약/정리 모달 */}
       <ReviewSummaryModal
         visible={showSummaryModal}
         onClose={() => setShowSummaryModal(false)}
-        summaryText={summaryText || "이곳에 요약된 결과가 나옵니다."}
+        summaryText={summaryText || "이곳에 요약/정리된 결과가 나옵니다."}
+        title={modalTitle}
       />
 
     </SafeAreaView>

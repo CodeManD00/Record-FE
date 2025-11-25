@@ -261,7 +261,7 @@ const ImageOptions = () => {
             <View style={styles.buttonContent}>
               <View style={styles.textContainer}>
                 <Text style={styles.optionButtonText}>
-                  {isGeneratingSummary ? '요약 생성 중...' : 'AI 이미지'}
+                  {isGeneratingSummary ? '이미지 생성 중...' : 'AI 이미지'}
                 </Text>
                 <Text style={styles.optionButtonSubText}>
                   {isGeneratingSummary
