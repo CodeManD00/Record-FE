@@ -121,13 +121,14 @@ export const fetchMyTicketsAtom = atom(
           
           return {
             id: String(ticket.id || ''),
-            userId: ticket.userId || userId,
+            user_id: ticket.userId || userId, // Ticket 타입에 필수
+            userId: ticket.userId || userId, // 하위 호환성
             title: ticket.performanceTitle || ticket.title || '',
             artist: ticket.artist || '', // 백엔드에서 artist 필드 받기
             venue: ticket.theater || ticket.venue || '',
             seat: ticket.seat || '', // 백엔드에서 seat 필드 받기
             performedAt: performedAt,
-            genre: genre,
+            genre: genre || '', // Ticket 타입에 string 필수
             status: ticket.isPublic ? TicketStatus.PUBLIC : TicketStatus.PRIVATE,
             images: images,
             review: ticket.reviewText ? {
@@ -179,21 +180,81 @@ export const fetchFriendTicketsAtom = atom(
 
     // 로딩 상태는 전체 맵에 대해 설정하지 않고 개별적으로 처리
     try {
-      const result = await ticketService.getFriendTickets({ friendId, limit: 100 });
+      // 백엔드가 공개 티켓만 반환하므로 필터링 불필요
+      const result = await ticketService.getFriendTickets(friendId, 0, 100);
       
       if (result.success && result.data) {
-        const tickets = result.data.tickets || [];
+        // 백엔드 응답 형식: 배열로 직접 반환 (공개 티켓만)
+        const ticketsList = Array.isArray(result.data) ? result.data : [];
+        
+        // 백엔드 응답을 Ticket 형식으로 변환 (내 티켓 조회와 동일한 로직)
+        const convertedTickets: Ticket[] = ticketsList.map((ticket: any) => {
+          // viewDate를 Date로 변환
+          const performedAt = ticket.viewDate ? new Date(ticket.viewDate) : new Date();
+          
+          // genre를 백엔드 형식에서 프론트엔드 형식으로 변환
+          let genre: string | null = null;
+          if (ticket.genre) {
+            const genreMap: Record<string, string> = {
+              'BAND': '밴드',
+              'MUSICAL': '연극/뮤지컬',
+              'PLAY': '연극/뮤지컬',
+            };
+            genre = genreMap[ticket.genre] || ticket.genre;
+          }
+          
+          // 이미지 URL 처리 (resolveImageUrl 사용)
+          const images: string[] = [];
+          if (ticket.imageUrl) {
+            const resolvedUrl = resolveImageUrl(ticket.imageUrl);
+            if (resolvedUrl) {
+              images.push(resolvedUrl);
+            }
+          }
+          if (ticket.posterUrl) {
+            const resolvedUrl = resolveImageUrl(ticket.posterUrl);
+            if (resolvedUrl) {
+              images.push(resolvedUrl);
+            }
+          }
+          
+          const userId = ticket.userId || friendId;
+          
+          return {
+            id: String(ticket.id || ''),
+            user_id: userId, // Ticket 타입에 필수
+            userId: userId, // 하위 호환성
+            title: ticket.performanceTitle || ticket.title || '',
+            artist: ticket.artist || '',
+            venue: ticket.theater || ticket.venue || '',
+            seat: ticket.seat || '',
+            performedAt: performedAt,
+            genre: genre || '', // Ticket 타입에 string 필수
+            status: ticket.isPublic ? TicketStatus.PUBLIC : TicketStatus.PRIVATE,
+            images: images,
+            review: ticket.reviewText ? {
+              reviewText: ticket.reviewText,
+              createdAt: ticket.createdAt ? new Date(ticket.createdAt) : new Date(),
+            } : undefined,
+            createdAt: ticket.createdAt ? new Date(ticket.createdAt) : new Date(),
+            updatedAt: ticket.updatedAt ? new Date(ticket.updatedAt) : new Date(),
+            bookingSite: '',
+          };
+        });
+        
         const newMap = new Map(currentMap);
-        newMap.set(friendId, tickets);
+        newMap.set(friendId, convertedTickets);
         
         set(friendTicketsMapStateAtom, apiStateHelpers.setSuccess(currentMapState, newMap));
-        return ResultFactory.success(tickets);
+        return ResultFactory.success(convertedTickets);
       } else {
         const errorMessage = result.error?.message || '친구 티켓을 불러오는데 실패했습니다';
+        console.error('❌ 친구 티켓 조회 실패:', errorMessage);
         return ResultFactory.failure(result.error!);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다';
+      console.error('❌ 친구 티켓 조회 예외:', error);
       return ResultFactory.failure({ message: errorMessage, code: 'UNKNOWN_ERROR' });
     }
   }
