@@ -356,7 +356,7 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
                 <View style={styles.emptyCard}>
                   <Text style={styles.emptyCardTitle}>이번 달 티켓이 없어요</Text>
                   <Text style={styles.emptyCardSubtitle}>
-                    새 티켓을 추가하면 이곳에서 확인할 수 있어요.
+                    새 티켓을 추가하면 이곳에서 확인할 수 있어요!
                   </Text>
                   <TouchableOpacity
                     style={styles.emptyCardButton}
