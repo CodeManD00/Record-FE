@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
@@ -13,7 +12,9 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../styles/designSystem';
-import { apiClient } from '../../../services/api/client'; // ⭐ 직접 API 사용
+import { apiClient } from '../../../services/api/client';
+import { Button } from '../../../components/ui';
+import { Input } from '../../../components/ui';
 
 const FindPasswordPage = () => {
   const navigation = useNavigation();
@@ -90,42 +91,39 @@ const FindPasswordPage = () => {
           <View style={styles.formSection}>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>이메일</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="이메일을 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
+              <Input
+                placeholder="record@gmail.com"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isLoading}
+                size="large"
               />
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>아이디</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="아이디를 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
+              <Input
+                placeholder="아이디 입력"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isLoading}
+                size="large"
               />
             </View>
 
-            <TouchableOpacity
-              style={[styles.submitButton, isLoading && styles.buttonDisabled]}
+            <Button
+              title={isLoading ? '처리 중...' : '임시 비밀번호 받기'}
               onPress={handleFindPassword}
+              loading={isLoading}
               disabled={isLoading}
-            >
-              <Text style={styles.submitButtonText}>
-                {isLoading ? '처리 중...' : '임시 비밀번호 받기'}
-              </Text>
-            </TouchableOpacity>
+              size="large"
+              style={styles.submitButton}
+            />
 
             <View style={styles.linksContainer}>
               <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -156,8 +154,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
     alignItems: 'center',
   },
+
   title: {
     ...Typography.title1,
+    fontWeight: '600',
     color: Colors.label,
     marginBottom: Spacing.sm,
   },
@@ -166,44 +166,23 @@ const styles = StyleSheet.create({
     color: Colors.secondaryLabel,
     textAlign: 'center',
   },
-  formSection: {
-    width: '100%',
-  },
-  inputContainer: {
-    marginBottom: Spacing.lg,
-  },
+
+  formSection: { width: '100%' },
+  inputContainer: { marginTop: Spacing.lg},
   inputLabel: {
-    ...Typography.footnote,
-    color: Colors.label,
+    ...Typography.subheadline,
+    color: Colors.secondaryLabel,
     marginBottom: Spacing.xs,
-  },
-  input: {
-    backgroundColor: Colors.systemBackground,
-    borderRadius: BorderRadius.sm,
-    padding: Spacing.md,
-    color: Colors.label,
-    borderWidth: 1,
-    borderColor: Colors.systemGray4,
-    fontSize: 16,
+    fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    alignItems: 'center',
-    marginTop: Spacing.sm,
+    marginTop: Spacing.xl,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: Colors.white,
-    ...Typography.headline,
-  },
+
   linksContainer: {
     marginTop: Spacing.xl,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
   },
   linkText: {
     color: Colors.primary,

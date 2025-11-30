@@ -9,7 +9,6 @@ import {
   SafeAreaView,
   ActivityIndicator,
   Alert,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,6 +18,8 @@ import { authService } from '../../services/auth/authService';
 import { useNavigation } from '@react-navigation/native';
 import { useAtom } from 'jotai';
 import { fetchMyProfileAtom } from '../../atoms/userAtomsApi';
+import { Button } from '../../components/ui';
+import { Input } from '../../components/ui';
 
 const LoginPage = () => {
   const navigation = useNavigation();
@@ -89,49 +90,38 @@ const LoginPage = () => {
         >
           {/* Logo Section */}
           <View style={styles.logoSection}>
-            <View style={styles.logoContainer}>
-              <Image
-                source={require('../../assets/cat.png')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </View>
             <Text style={styles.appTitle}>Record</Text>
-            <Text style={styles.appSubtitle}>로그인하여 시작하세요</Text>
+            <Text style={styles.appSubtitle}>지금 로그인하고 공연 후기를 작성해보세요.</Text>
           </View>
 
           {/* Login Form Section */}
           <View style={styles.formSection}>
             {/* ID Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>아이디</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="아이디를 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
-                value={id}
-                onChangeText={setId}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-              />
-            </View>
+            <Input
+              label="아이디"
+              placeholder="아이디를 입력하세요"
+              value={id}
+              onChangeText={setId}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!isLoading}
+              containerStyle={styles.inputContainer}
+              size="large"
+            />
 
             {/* Password Input */}
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>비밀번호</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="비밀번호를 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isLoading}
-              />
-            </View>
+            <Input
+              label="비밀번호"
+              placeholder="비밀번호를 입력하세요"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!isLoading}
+              containerStyle={styles.inputContainer}
+              size="large"
+            />
 
             {/* Account Recovery Links */}
             <View style={styles.recoveryLinksContainer}>
@@ -151,18 +141,16 @@ const LoginPage = () => {
             </View>
 
             {/* Login Button */}
-            <TouchableOpacity
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-              onPress={handleLogin}
-              disabled={isLoading}
-              activeOpacity={0.8}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <Text style={styles.loginButtonText}>로그인</Text>
-              )}
-            </TouchableOpacity>
+            <View style={styles.loginButtonContainer}>
+              <Button
+                title="로그인"
+                onPress={handleLogin}
+                loading={isLoading}
+                disabled={isLoading
+                }
+                size="large"
+              />
+            </View>
 
             {/* Sign Up Link */}
             <View style={styles.signupContainer}>
@@ -176,7 +164,7 @@ const LoginPage = () => {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              © 2024 Record. All rights reserved.
+              © 2025 Record. All rights reserved.
             </Text>
           </View>
         </ScrollView>
@@ -200,20 +188,8 @@ const styles = StyleSheet.create({
   },
   logoSection: {
     alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: Spacing.xxxl,
-  },
-  logoContainer: {
-    width: 120,
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    ...Shadows.large,
+    paddingTop: 120,
+    paddingBottom: 70,
   },
   appTitle: {
     ...Typography.largeTitle,
@@ -224,35 +200,19 @@ const styles = StyleSheet.create({
   appSubtitle: {
     ...Typography.body,
     color: Colors.secondaryLabel,
-    textAlign: 'center',
   },
+
   formSection: {
     flex: 1,
   },
   inputContainer: {
     marginBottom: Spacing.lg,
   },
-  inputLabel: {
-    ...Typography.subheadline,
-    fontWeight: '600',
-    color: Colors.label,
-    marginBottom: Spacing.sm,
-  },
-  input: {
-    backgroundColor: Colors.systemBackground,
-    borderWidth: 1,
-    borderColor: Colors.systemGray5,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    ...Typography.body,
-    color: Colors.label,
-    ...Shadows.small,
-  },
+
   recoveryLinksContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: Spacing.lg,
+    justifyContent: 'flex-end',
+    marginBottom: Spacing.sm,
     alignItems: 'center',
   },
   recoveryLink: {
@@ -260,33 +220,23 @@ const styles = StyleSheet.create({
   },
   recoveryLinkText: {
     color: Colors.primary,
-    ...Typography.caption1,
+    ...Typography.subheadline,
   },
   recoveryLinkDivider: {
     color: Colors.secondaryLabel,
-    ...Typography.caption1,
+    ...Typography.subheadline,
   },
-  loginButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.lg,
-    ...Shadows.button,
+
+
+  loginButtonContainer: {
+    marginTop: Spacing.lg,
   },
-  loginButtonDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    ...Typography.headline,
-    color: Colors.white,
-    fontWeight: '600',
-  },
+
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: Spacing.lg,
   },
   signupText: {
     ...Typography.subheadline,
@@ -295,8 +245,11 @@ const styles = StyleSheet.create({
   signupLink: {
     ...Typography.subheadline,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '500',
+    paddingHorizontal: Spacing.xs,
   },
+
+  
   footer: {
     paddingVertical: Spacing.xl,
     alignItems: 'center',

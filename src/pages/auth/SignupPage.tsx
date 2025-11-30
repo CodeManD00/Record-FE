@@ -5,11 +5,8 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   SafeAreaView,
-  ActivityIndicator,
   Alert,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,6 +14,8 @@ import {
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../styles/designSystem';
 import { authService } from '../../services/auth/authService';
 import { useNavigation } from '@react-navigation/native';
+import { Button } from '../../components/ui';
+import { Input } from '../../components/ui';
 
 const SignupPage = () => {
   const navigation = useNavigation();
@@ -254,23 +253,38 @@ const SignupPage = () => {
             <Text style={styles.appSubtitle}>새로운 계정을 만들어보세요</Text>
           </View>
 
+
           {/* Signup Form Section */}
           <View style={styles.formSection}>
+
+            {/* Nickname Input */}
+            <View style={styles.inputContainer}>
+              <View style={styles.labelRow}>
+                <Text style={styles.inputLabel}>닉네임</Text>
+              </View>
+              <Input
+                placeholder="닉네임 입력"
+                value={nickname}
+                onChangeText={setNickname}
+                autoCorrect={false}
+                editable={!isLoading}
+                size="large"
+              />
+            </View>
+            
             {/* Username Input */}
             <View style={styles.inputContainer}>
               <View style={styles.labelRow}>
                 <Text style={styles.inputLabel}>아이디</Text>
-                <Text style={styles.conditionLabel}>*3자 이상, 15자 이하</Text>
               </View>
-              <TextInput
-                style={styles.input}
-                placeholder="아이디를 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
+              <Input
+                placeholder="아이디 입력"
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isLoading}
+                size="large"
               />
             </View>
 
@@ -278,34 +292,31 @@ const SignupPage = () => {
             <View style={styles.inputContainer}>
               <View style={styles.labelRow}>
                 <Text style={styles.inputLabel}>비밀번호</Text>
-                <Text style={styles.conditionLabel}>*8자 이상</Text>
               </View>
-              <TextInput
-                style={styles.input}
-                placeholder="비밀번호를 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
+              <Input
+                placeholder="비밀번호 입력 (8자 이상)"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isLoading}
+                size="large"
               />
             </View>
 
             {/* Confirm Password Input */}
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>비밀번호 확인</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="비밀번호를 다시 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
+              <Input
+                placeholder="비밀번호 재입력"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!isLoading}
+                size="large"
               />
             </View>
 
@@ -313,34 +324,26 @@ const SignupPage = () => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>이메일</Text>
               <View style={styles.emailInputRow}>
-                <TextInput
-                  style={styles.emailInput}
-                  placeholder="이메일을 입력하세요"
-                  placeholderTextColor={Colors.placeholderText}
+                <Input
+                  placeholder="record@gmail.com"
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                   editable={!isLoading && !isVerified}
+                  size="large"
+                  containerStyle={styles.emailInputContainer}
                 />
-                <TouchableOpacity
-                  style={[
-                    styles.verifyButton,
-                    (isLoading || isSendingCode || isVerified) && styles.verifyButtonDisabled,
-                  ]}
+                <Button
+                  title={isVerified ? '인증완료' : '인증하기'}
                   onPress={handleSendVerificationCode}
+                  loading={isSendingCode}
                   disabled={isLoading || isSendingCode || isVerified}
-                  activeOpacity={0.8}
-                >
-                  {isSendingCode ? (
-                    <ActivityIndicator color={Colors.white} size="small" />
-                  ) : (
-                    <Text style={styles.verifyButtonText}>
-                      {isVerified ? '인증완료' : '인증하기'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                  size="large"
+                  variant="secondary"
+                  style={styles.verifyButton}
+                />
               </View>
             </View>
 
@@ -354,10 +357,8 @@ const SignupPage = () => {
                   )}
                 </View>
                 <View style={styles.emailInputRow}>
-                  <TextInput
-                    style={styles.emailInput}
+                  <Input
                     placeholder="6자리 코드 입력"
-                    placeholderTextColor={Colors.placeholderText}
                     value={verificationCode}
                     onChangeText={(text) => {
                       // 숫자만 입력 허용, 최대 6자리
@@ -369,59 +370,31 @@ const SignupPage = () => {
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!isLoading && timeLeft > 0}
+                    size="large"
+                    containerStyle={styles.emailInputContainer}
                   />
-                  <TouchableOpacity
-                    style={[
-                      styles.verifyButton,
-                      isLoading && styles.verifyButtonDisabled,
-                    ]}
+                  <Button
+                    title="확인"
                     onPress={handleVerifyCode}
+                    loading={isLoading}
                     disabled={isLoading || timeLeft === 0}
-                    activeOpacity={0.8}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color={Colors.white} size="small" />
-                    ) : (
-                      <Text style={styles.verifyButtonText}>확인</Text>
-                    )}
-                  </TouchableOpacity>
+                    size="medium"
+                    variant="secondary"
+                    style={styles.verifyButton}
+                  />
                 </View>
               </View>
             )}
 
-            {/* Nickname Input */}
-            <View style={styles.inputContainer}>
-              <View style={styles.labelRow}>
-                <Text style={styles.inputLabel}>닉네임</Text>
-                <Text style={styles.conditionLabel}>*30자 이하</Text>
-              </View>
-              <TextInput
-                style={styles.input}
-                placeholder="닉네임을 입력하세요"
-                placeholderTextColor={Colors.placeholderText}
-                value={nickname}
-                onChangeText={setNickname}
-                autoCorrect={false}
-                editable={!isLoading}
-              />
-            </View>
-
             {/* Signup Button */}
-            <TouchableOpacity
-              style={[
-                styles.signupButton,
-                isLoading && styles.signupButtonDisabled,
-              ]}
+            <Button
+              title="회원가입"
               onPress={handleSignup}
+              loading={isLoading}
               disabled={isLoading}
-              activeOpacity={0.8}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <Text style={styles.signupButtonText}>회원가입</Text>
-              )}
-            </TouchableOpacity>
+              size="large"
+              style={styles.signupButton}
+            />
 
             {/* Login Link */}
             <View style={styles.loginContainer}>
@@ -464,69 +437,43 @@ const styles = StyleSheet.create({
   },
 
   appTitle: {
-    ...Typography.title1,
-    fontWeight: '600',
+    ...Typography.largeTitle,
+    fontWeight: '500',
     color: Colors.label,
     marginBottom: Spacing.xs,
   },
   appSubtitle: {
-    ...Typography.body,
+    ...Typography.callout,
     color: Colors.secondaryLabel,
-    textAlign: 'center',
   },
+
   formSection: {
     flex: 1,
   },
-
   inputContainer: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
+
+  emailInputContainer: {
+    flex: 1,
+    marginRight: Spacing.xs,
+  },
+  
   labelRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     marginBottom: Spacing.xs,
   },
-  conditionLabel: {
-    ...Typography.footnote,
-    color: Colors.secondaryLabel,
-    textAlign: 'right',
-    marginBottom: Spacing.xs,
-  },
+
   inputLabel: {
     ...Typography.subheadline,
     fontWeight: '600',
-    color: Colors.label,
+    color: Colors.secondaryLabel,
     marginBottom: Spacing.xs,
   },
-  input: {
-    backgroundColor: Colors.systemBackground,
-    borderWidth: 1,
-    borderColor: Colors.systemGray5,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    ...Typography.body,
-    color: Colors.label,
-    ...Shadows.small,
-  },
   signupButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.lg,
-    paddingVertical: Spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.lg,
-    ...Shadows.button,
-  },
-  signupButtonDisabled: {
-    opacity: 0.6,
-  },
-  signupButtonText: {
-    ...Typography.headline,
-    color: Colors.white,
-    fontWeight: '600',
+    marginVertical: Spacing.lg,
   },
   loginContainer: {
     flexDirection: 'row',
@@ -536,6 +483,7 @@ const styles = StyleSheet.create({
   loginText: {
     ...Typography.subheadline,
     color: Colors.secondaryLabel,
+    marginHorizontal: Spacing.xs,
   },
   loginLink: {
     ...Typography.subheadline,
@@ -543,7 +491,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footer: {
-    paddingVertical: Spacing.lg,
+    paddingVertical: Spacing.xl,
     alignItems: 'center',
   },
   footerText: {
@@ -555,37 +503,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
-  emailInput: {
-    flex: 1,
-    backgroundColor: Colors.systemBackground,
-    borderWidth: 1,
-    borderColor: Colors.systemGray5,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    ...Typography.body,
-    color: Colors.label,
-    ...Shadows.small,
-    marginBottom: 0,
-  },
   verifyButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
     minWidth: 80,
-    height: 48,
-    ...Shadows.small,
-  },
-  verifyButtonDisabled: {
-    opacity: 0.6,
-  },
-  verifyButtonText: {
-    ...Typography.subheadline,
-    color: Colors.white,
-    fontWeight: '600',
   },
   codeLabelRow: {
     flexDirection: 'row',
