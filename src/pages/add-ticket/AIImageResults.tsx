@@ -296,7 +296,7 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
       {/* 로딩 화면 */}
       {isGenerating ? (
         <View style={styles.loadingFullScreen}>
-          <ActivityIndicator size="large" color="#b11515" />
+          <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.generatingTitle}>AI 이미지 생성 중...</Text>
         </View>
       ) : (
@@ -311,12 +311,9 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
         >
           {generatedImage && (
             <>
-              {/* 메시지 */}
-              <View style={styles.successMessageContainer}>
-                <Text style={styles.successMessage}>이미지가 생성되었어요!</Text>
-              </View>
-
               {/* 생성 이미지 */}
+              <Text style={styles.successMessage}>티켓이 완성되었어요!</Text>
+
               <View style={styles.generatedImageContainer}>
                 <Image
                   source={{ uri: generatedImage }}
@@ -428,7 +425,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   nextButton: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  nextButtonText: { ...Typography.callout, color: '#b11515', fontWeight: '600' },
+  nextButtonText: { ...Typography.callout, color: Colors.primary, fontWeight: '600' },
 
   content: {
     flex: 1,
@@ -442,25 +439,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: Colors.secondarySystemBackground,
   },
   generatingTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2C3E50',
-    marginTop: 8,
+    ...Typography.body,
+    color: Colors.secondaryLabel,
+    marginTop: Spacing.md,
   },
-
-  successMessageContainer: {
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.md,
-    alignItems: 'center',
-  },
-  successMessage: { ...Typography.title2, fontWeight: '600', color: Colors.label },
 
   generatedImageContainer: {
-    marginHorizontal: Spacing.xl,
+    marginHorizontal: Spacing.screenPadding,
     marginTop: Spacing.lg,
     alignItems: 'center',
   },
@@ -472,27 +460,36 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.systemGray5,
   },
 
+  successMessage: {
+    ...Typography.title2,
+    fontWeight: '400',
+    color: Colors.label,
+    marginTop: Spacing.xxl,
+    textAlign: 'center',
+  },
+
   regenerationSection: {
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.xxxl,
-    marginBottom: Spacing.xxxl,
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.xl,
+    padding: Spacing.screenPadding,
+    borderRadius: BorderRadius.lg,
+    ...Shadows.medium,
   },
   regenerationTitle: {
     ...Typography.title3,
-    fontWeight: '600',
     color: Colors.label,
     marginBottom: Spacing.md,
   },
 
   hintBubble: {
-    backgroundColor: '#FFF5F5',
+    backgroundColor: Colors.systemGray6,
     borderRadius: BorderRadius.md,
     padding: Spacing.md,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: '#FFE5E5',
+    borderColor: Colors.systemGray5,
   },
-  hintText: { ...Typography.caption1, color: '#8B4513', lineHeight: 18 },
+  hintText: { ...Typography.footnote, color: Colors.secondaryLabel, lineHeight: 18 },
 
   regenerationInput: {
     backgroundColor: Colors.systemBackground,
@@ -508,7 +505,7 @@ const styles = StyleSheet.create({
   },
 
   regenerateButton: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: Colors.primary,
     borderRadius: BorderRadius.lg,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.xl,
@@ -521,44 +518,41 @@ const styles = StyleSheet.create({
   regenerateButtonText: {
     ...Typography.headline,
     color: Colors.white,
-    fontWeight: '600',
   },
 
   sectionContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginTop: 20,
-    marginBottom: 20,
-    padding: 20,
-    borderRadius: 12,
+    backgroundColor: Colors.systemBackground,
+    marginHorizontal: Spacing.screenPadding,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2C3E50',
-    marginBottom: 12,
+    ...Typography.title3,
+    color: Colors.label,
+    marginBottom: Spacing.md,
   },
-  historyContainer: { marginTop: 12 },
-  historyImageWrapper: { position: 'relative', marginRight: 12 },
+  historyContainer: { 
+  },
+  historyImageWrapper: { position: 'relative', marginRight: Spacing.sm },
   historyImage: {
-    width: 80,
-    height: 100,
-    borderRadius: 12,
-    borderWidth: 2,
+    width: 120,
+    height: 150,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
     borderColor: 'transparent',
   },
-  selectedHistoryImage: { borderColor: '#b11515' },
+  selectedHistoryImage: { borderColor: Colors.primary },
   selectedOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 12,
+    borderRadius: BorderRadius.lg,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  selectedText: { fontSize: 24, color: '#b11515', fontWeight: 'bold' },
+  selectedText: { fontSize: 24, color: Colors.primary, fontWeight: '400' },
 });
 
 export default AIImageResults;
