@@ -259,29 +259,26 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
-  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#2C3E50', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#7F8C8D', textAlign: 'center', marginBottom: 40 },
+  container: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl },
+  title: { ...Typography.title3, fontWeight: '400', color: Colors.label, textAlign: 'center', marginBottom: Spacing.sm },
+  subtitle: { ...Typography.body, color: Colors.secondaryLabel, textAlign: 'center', marginBottom: Spacing.xxxl },
 
   ticketCard: {
     width: width - 60,
     height: height * 0.6,
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
+    backgroundColor: Colors.systemBackground,
+    borderRadius: BorderRadius.xl,
     position: 'relative',
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
+    ...Shadows.large,
   },
 
-  ticketHeader: { padding: 20 },
-  ticketHeaderText: { fontSize: 18, fontWeight: 'bold', color: '#2C3E50', letterSpacing: 2 },
+  ticketHeader: { padding: Spacing.lg },
+  ticketHeaderText: { ...Typography.headline, fontWeight: '400', color: Colors.label, letterSpacing: 2 },
 
-  ticketMain: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
-  ticketImage: { width: '100%', height: '100%', borderRadius: 12 },
+  ticketMain: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: Spacing.lg },
+  ticketImage: { width: '100%', height: '100%', borderRadius: BorderRadius.lg },
 
   ticketPlaceholder: {
     width: '100%',
@@ -289,12 +286,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
+    borderRadius: BorderRadius.lg,
   },
-  noImageText: { fontSize: 14, color: '#7F8C8D' },
+  noImageText: { ...Typography.caption1, color: Colors.secondaryLabel },
 
-  ticketFooter: { padding: 20, alignItems: 'flex-end' },
-  footerSubtext: { fontSize: 12, color: '#2C3E50' },
+  ticketFooter: { padding: Spacing.lg, alignItems: 'flex-end' },
+  footerSubtext: { ...Typography.caption1, color: Colors.label },
 });
 
 export default TicketCompletePage;
