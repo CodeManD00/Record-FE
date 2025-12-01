@@ -10,10 +10,12 @@ import {
   Dimensions,
   Pressable,
 } from 'react-native';
+import { Button } from './ui';
 import {
   Colors,
   Typography,
   Shadows,
+  BorderRadius,
 } from '../styles/designSystem';
 
 interface InputMethodModalProps {
@@ -85,7 +87,7 @@ const InputMethodModal: React.FC<InputMethodModalProps> = ({
             { transform: [{ translateY: slideAnim }] },
           ]}
         >
-          <Text style={styles.modalTitle}>입력 방법을 선택하세요</Text>
+          <Text style={styles.modalTitle}>공연 정보 입력 방법을 선택하세요</Text>
 
           <View style={styles.buttonContainer}>
             <TouchableOpacity
@@ -112,9 +114,13 @@ const InputMethodModal: React.FC<InputMethodModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelButtonText}>취소</Text>
-          </TouchableOpacity>
+          <Button
+            title="취소"
+            variant="secondary"
+            onPress={onClose}
+            style={styles.cancelButton}
+            textStyle={styles.cancelButtonText}
+          />
         </Animated.View>
       </View>
     </Modal>
@@ -143,12 +149,13 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   modalTitle: {
-    ...Typography.title3,
-    fontWeight: '600',
+    ...Typography.headline,
+    fontWeight: '400',
     color: Colors.label,
     textAlign: 'center',
     marginBottom: 24,
   },
+
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -160,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.systemBackground,
     borderWidth: 1,
     borderColor: Colors.systemGray4,
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg,
     padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
@@ -169,21 +176,17 @@ const styles = StyleSheet.create({
   },
   methodButtonText: {
     ...Typography.body,
-    fontWeight: '600',
     color: Colors.label,
     textAlign: 'center',
-    lineHeight: 22,
   },
+
   cancelButton: {
     backgroundColor: Colors.secondarySystemBackground,
     borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
   },
   cancelButtonText: {
     ...Typography.body,
     color: Colors.secondaryLabel,
-    fontWeight: '600',
   },
 });
 
