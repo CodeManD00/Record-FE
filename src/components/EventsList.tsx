@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   eventDateTitle: {
     ...Typography.title3,
-    fontWeight: '700',
+    fontWeight: '500',
     color: Colors.label,
     marginTop: Spacing.md,
     marginBottom: Spacing.xs, // 날짜와 카드 사이 간격 감소
