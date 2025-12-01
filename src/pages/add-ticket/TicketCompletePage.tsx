@@ -261,7 +261,7 @@ const TicketCompletePage: React.FC<TicketCompletePageProps> = ({ navigation, rou
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.secondarySystemBackground },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xl },
-  title: { ...Typography.title3, fontWeight: '400', color: Colors.label, textAlign: 'center', marginBottom: Spacing.sm },
+  title: { ...Typography.title1, fontWeight: '400', color: Colors.label, textAlign: 'center', marginBottom: Spacing.sm },
   subtitle: { ...Typography.body, color: Colors.secondaryLabel, textAlign: 'center', marginBottom: Spacing.xxxl },
 
   ticketCard: {

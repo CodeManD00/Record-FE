@@ -14,6 +14,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ModalHeader from '../../components/ModalHeader';
 import {
   imageGenerationService,
   ImageGenerationRequest,
@@ -279,19 +280,11 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>티켓 이미지 생성</Text>
-
-        {generatedImage && (
-          <TouchableOpacity style={styles.nextButton} onPress={handleSelectImage}>
-            <Text style={styles.nextButtonText}>다음</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <ModalHeader
+        title="티켓 이미지 생성"
+        onBack={() => navigation.goBack()}
+        rightAction={generatedImage ? { text: '다음', onPress: handleSelectImage } : undefined}
+      />
 
       {/* 로딩 화면 */}
       {isGenerating ? (
@@ -392,41 +385,6 @@ const AIImageResults: React.FC<AIImageResultsProps> = ({ navigation, route }) =>
 // === 아래는 UI 스타일 — 절대 수정 없음 ===
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FA' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    backgroundColor: Colors.systemBackground,
-    ...Shadows.small,
-    zIndex: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.secondarySystemBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.small,
-    zIndex: 2,
-  },
-  backButtonText: {
-    ...Typography.title3,
-    color: Colors.label,
-    fontWeight: 'bold',
-  },
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-  },
-  nextButton: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  nextButtonText: { ...Typography.callout, color: Colors.primary, fontWeight: '600' },
-
   content: {
     flex: 1,
   },

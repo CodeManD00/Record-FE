@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { launchCamera, launchImageLibrary, Asset } from 'react-native-image-picker';
 import { Button } from '../../components/ui';
+import ModalHeader from '../../components/ModalHeader';
 import {
   Colors,
   Typography,
@@ -179,18 +180,10 @@ const OCRPage: React.FC<OCRPageProps> = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-          <Button
-            title="←"
-            variant="tertiary"
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-            textStyle={styles.backButtonText}
-          />
-          <Text style={styles.headerTitle}>티켓 스캔하기</Text>
-          <View style={{ width: 40 }} />
-        </View>
+      <ModalHeader
+        title="티켓 스캔하기"
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 안내 메시지 */}
@@ -258,19 +251,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    backgroundColor: Colors.systemBackground,
-    ...Shadows.small,
-    zIndex: 1,
-  },
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
   },
   content: {
     flex: 1,

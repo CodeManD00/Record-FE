@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: Colors.label,
     marginTop: Spacing.md,
-    marginBottom: Spacing.xs, // 날짜와 카드 사이 간격 감소
+    marginBottom: Spacing.xs, 
   },
   noEvents: {
     flex: 1,

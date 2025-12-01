@@ -56,7 +56,7 @@ const Card: React.FC<CardProps> = ({
           ...baseStyle,
           backgroundColor: Colors.systemBackground,
           borderWidth: 1,
-          borderColor: Colors.systemGray4,
+          borderColor: Colors.systemGray6,
         };
       default:
         return baseStyle;
