@@ -281,7 +281,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   defaultAvatarText: {
-    fontSize: 48,
+    ...Typography.largeTitle,
+    fontWeight: '500',
   },
 
   badgeWrapper: {
@@ -303,7 +304,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: Colors.primary,
     ...Typography.caption1,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 
   statsRow: {
@@ -321,12 +322,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...Typography.callout,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 
   username: {
     ...Typography.title1,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 
   ticketGridSection: {

@@ -121,17 +121,10 @@ const AddFriendPage: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>친구 추가</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ModalHeader
+        title="친구 추가"
+        onBack={() => navigation.goBack()}
+      />
 
       {/* 검색창 */}
       <View style={styles.searchContainer}>
@@ -254,50 +247,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
-  },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
-    position: 'relative',
-  },
-
-  // 뒤로가기 버튼
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.secondarySystemBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.small,
-    zIndex: 2,
-  },
-  backButtonText: {
-    ...Typography.title3,
-    color: Colors.label,
-    fontWeight: 'bold',
-  },
-
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-  },
-
-  placeholder: {
-    position: 'absolute',
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
   },
 
   // 본문

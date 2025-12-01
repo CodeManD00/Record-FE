@@ -295,7 +295,7 @@ export const ComponentStyles = {
     padding: Spacing.cardPadding,
     ...Shadows.card,
     borderWidth: 1,
-    borderColor: Colors.separator,
+    borderColor: Colors.systemGray5,
   },
   
   groupedCard: {
