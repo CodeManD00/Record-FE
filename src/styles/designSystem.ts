@@ -235,7 +235,7 @@ export const Layout = {
   
   // Component dimensions (Apple HIG standards)
   buttonHeight: 44, // Apple standard touch target
-  buttonHeightSmall: 32,
+  buttonHeightSmall: 28,
   inputHeight: 44,
   cardMinHeight: 44,
   

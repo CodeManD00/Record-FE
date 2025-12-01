@@ -22,6 +22,7 @@ import { useCallback, useEffect } from 'react';
 import { Ticket } from '../../types/ticket';
 import TicketDetailModal from '../../components/TicketDetailModal';
 import GNB from '../../components/GNB';
+import { Button } from '../../components/ui';
 import {
   Colors,
   Typography,
@@ -63,7 +64,7 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
   const pan = useRef(new Animated.ValueXY()).current;
   const opacity = useRef(new Animated.Value(1)).current;
 
-  // 🔹 인디케이터용 애니메이션 값
+  // 인디케이터용 애니메이션 값
   const scrollX = useRef(new Animated.Value(0)).current;
 
   const currentTicketIndexRef = useRef(0);
@@ -225,41 +226,34 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
         <GNB
           rightContent={
             <View style={styles.headerRight}>
-              <TouchableOpacity
-                style={styles.filterButton}
-                onPress={e => {
-                  e.stopPropagation();
+              <Button
+                title={selectedFilter}
+                variant="secondary"
+                size="small"
+                rightIcon={<Text style={styles.filterArrow}>▼</Text>}
+                onPress={() => {
                   setShowFilterDropdown(!showFilterDropdown);
                 }}
-              >
-                <Text style={styles.filterButtonText}>{selectedFilter}</Text>
-                <Text style={styles.filterArrow}>▼</Text>
-              </TouchableOpacity>
+                style={styles.filterButton}
+              />
               {showFilterDropdown && (
                 <View style={styles.filterDropdown}>
                   {['전체', '밴드', '연극/뮤지컬'].map(option => (
-                    <TouchableOpacity
+                    <Button
                       key={option}
-                      style={[
-                        styles.filterOption,
-                        selectedFilter === option && {
-                          backgroundColor: Colors.secondarySystemBackground,
-                        },
-                      ]}
+                      title={option}
+                      variant="tertiary"
+                      size="small"
                       onPress={() => handleFilterSelect(option as any)}
-                    >
-                      <Text
-                        style={[
-                          styles.filterOptionText,
-                          selectedFilter === option && {
-                            color: Colors.primary,
-                            fontWeight: '600',
-                          },
-                        ]}
-                      >
-                        {option}
-                      </Text>
-                    </TouchableOpacity>
+                      style={{
+                        ...styles.filterOption,
+                        ...(selectedFilter === option ? styles.filterOptionSelected : {}),
+                      }}
+                      textStyle={{
+                        ...styles.filterOptionText,
+                        ...(selectedFilter === option ? styles.filterOptionTextSelected : {}),
+                      }}
+                    />
                   ))}
                 </View>
               )}
@@ -345,30 +339,26 @@ const MainPage: React.FC<MainPageProps> = ({ navigation }) => {
                   </Animated.View>
 
                   <View style={styles.dateButtonContainer}>
-                    <TouchableOpacity style={styles.dateButton}>
-                      <Text style={styles.dateButtonText}>
-                        {formatDate(currentTicket.performedAt)}
-                      </Text>
-                    </TouchableOpacity>
+                    <Button
+                      title={formatDate(currentTicket.performedAt)}
+                      variant="secondary"
+                      size="small"
+                      style={styles.dateButton}
+                      onPress={() => {}}
+                    />
                   </View>
                 </>
               ) : (
-                <View style={styles.emptyCard}>
-                  <Text style={styles.emptyCardTitle}>이번 달 티켓이 없어요</Text>
-                  <Text style={styles.emptyCardSubtitle}>
-                    새 티켓을 추가하면 이곳에서 확인할 수 있어요!
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.emptyCardButton}
-                    onPress={() =>
-                      navigation.navigate('AddTicket', {
-                        fromAddButton: true,
-                      })
-                    }
-                  >
-                    <Text style={styles.emptyCardButtonText}>티켓 추가하기</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={styles.emptyCard}
+                  onPress={() =>
+                    navigation.navigate('AddTicket', {
+                      fromAddButton: true,
+                    })
+                  }
+                >
+                  <Text style={styles.emptyCardTitle}>이번 달 티켓이 없어요{"\n"}눌러서 새 티켓을 추가해보세요</Text>
+                </TouchableOpacity>
               )}
             </View>
 
@@ -396,38 +386,33 @@ const styles = StyleSheet.create({
 
   // 헤더 티켓 필터링
   filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.lg,
-    borderWidth: 0.5,
-    borderColor: Colors.systemGray5,
     transform: [{ translateY: 10 }],
-  },
-  filterButtonText: {
-    ...Typography.subheadline,
-    color: Colors.secondaryLabel,
-    marginRight: Spacing.xs,
   },
   filterArrow: { fontSize: 10, color: Colors.secondaryLabel },
   filterDropdown: {
     position: 'absolute',
-    top: 38,
+    top: 52,
     right: 0,
     backgroundColor: Colors.systemBackground,
-    borderRadius: BorderRadius.xl,
-    minWidth: 110,
+    borderRadius: BorderRadius.lg,
+    minWidth: 120,
     borderWidth: 0.5,
     borderColor: Colors.systemGray5,
     ...Shadows.large,
     zIndex: 1000,
   },
-  filterOption: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
+  filterOption: {
+    paddingVertical: Spacing.md,
+  },
+  filterOptionSelected: {
+    backgroundColor: Colors.secondarySystemBackground,
+  },
   filterOptionText: {
-    ...Typography.subheadline,
+    ...Typography.callout,
     color: Colors.label,
-    textAlign: 'center',
+  },
+  filterOptionTextSelected: {
+    color: Colors.primary,
   },
 
   // 서브 헤더
@@ -439,13 +424,13 @@ const styles = StyleSheet.create({
   },
   monthTitle: {
     ...Typography.title1,
-    fontWeight: '600',
+    fontWeight: '500',
     color: Colors.label,
     marginBottom: Spacing.sm,
   },
   monthSubtitle: {
-    ...Typography.subheadline,
-    color: Colors.secondaryLabel,
+    ...Typography.callout,
+    color: Colors.label,
     lineHeight: 20,
   },
 
@@ -511,45 +496,14 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   emptyCardTitle: {
-    ...Typography.title3,
-    color: Colors.label,
-    fontWeight: '600',
+    ...Typography.callout,
+    color: Colors.tertiaryLabel,
     textAlign: 'center',
-  },
-  emptyCardSubtitle: {
-    ...Typography.subheadline,
-    color: Colors.secondaryLabel,
-    textAlign: 'center',
-  },
-  emptyCardButton: {
-    marginTop: Spacing.sm,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    backgroundColor: Colors.primary,
-  },
-  emptyCardButtonText: {
-    ...Typography.subheadline,
-    fontWeight: '600',
-    color: Colors.white,
   },
 
   // 하단 date 버튼
   dateButtonContainer: { marginTop: 12, alignItems: 'center' },
-  dateButton: {
-    backgroundColor: Colors.secondarySystemBackground,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: BorderRadius.xl,
-    borderWidth: 1,
-    borderColor: Colors.systemGray5,
-    ...Shadows.small,
-  },
-  dateButtonText: {
-    ...Typography.footnote,
-    color: Colors.label,
-    fontWeight: '500',
-  },
+  dateButton: {},
 });
 
 export default MainPage;
