@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -17,6 +16,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import InputMethodModal from '../../components/InputMethodModal';
 import ModalHeader from '../../components/ModalHeader';
+import { Input } from '../../components/ui';
 import {
   Colors,
   Typography,
@@ -182,48 +182,40 @@ const AddTicketPage: React.FC<AddTicketPageProps> = ({ navigation, route }) => {
           {/* 제목 */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>공연 제목 *</Text>
-            <TextInput
-              style={styles.input}
+            <Input
               value={formData.title}
               onChangeText={value => handleInputChange('title', value)}
-              placeholder="예: Live Club Day"
-              placeholderTextColor="#BDC3C7"
+              placeholder="제목을 입력하세요"
             />
           </View>
 
           {/* 아티스트 */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>아티스트</Text>
-            <TextInput
-              style={styles.input}
+            <Input
               value={formData.artist}
               onChangeText={value => handleInputChange('artist', value)}
-              placeholder="예: 실리카겔"
-              placeholderTextColor="#BDC3C7"
+              placeholder="아티스트를 입력하세요"
             />
           </View>
 
           {/* 좌석 */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>좌석</Text>
-            <TextInput
-              style={styles.input}
+            <Input
               value={formData.seat}
               onChangeText={value => handleInputChange('seat', value)}
-              placeholder="예: D열 8번"
-              placeholderTextColor="#BDC3C7"
+              placeholder="좌석을 입력하세요"
             />
           </View>
 
           {/* 장소 */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>공연장</Text>
-            <TextInput
-              style={styles.input}
+            <Input
               value={formData.venue}
               onChangeText={value => handleInputChange('venue', value)}
-              placeholder="예: KT&G 상상마당, 무신사개러지"
-              placeholderTextColor="#BDC3C7"
+              placeholder="공연장을 입력하세요"
             />
           </View>
 
@@ -322,38 +314,34 @@ const styles = StyleSheet.create({
 
   contextMessage: {
     backgroundColor: Colors.secondarySystemBackground,
-    paddingHorizontal: Spacing.sectionSpacing,
+    paddingHorizontal: Spacing.screenPadding,
     paddingVertical: Spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.systemGray5,
   },
   contextSubtitle: {
-    ...Typography.footnote,
+    ...Typography.subheadline,
     color: Colors.secondaryLabel,
-    lineHeight: 20,
   },
 
   content: { flex: 1 },
-  formContainer: { padding: Spacing.sectionSpacing },
+  formContainer: { padding: Spacing.screenPadding },
 
-  inputGroup: { marginBottom: Spacing.sectionSpacing },
+  inputGroup: { marginBottom: Spacing.xl },
 
   label: {
     ...Typography.callout,
-    fontWeight: '500',
     color: Colors.label,
-    marginBottom: Spacing.sm,
-  },
-
-  input: {
-    ...ComponentStyles.input,
+    marginBottom: Spacing.xs,
   },
 
   dropdownButton: {
+    justifyContent: 'center',
+    height: 52,
     backgroundColor: Colors.systemBackground,
     borderWidth: 1,
     borderColor: Colors.systemGray5,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.inputPadding,
   },
   dropdownButtonText: {
@@ -363,7 +351,7 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -371,16 +359,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.systemBackground,
     borderRadius: BorderRadius.lg,
     padding: 20,
-    width: '70%',
+    width: '60%',
   },
   modalTitle: {
-    ...Typography.body,
-    fontWeight: '500',
+    ...Typography.headline,
+    fontWeight: '400',
     marginBottom: 10,
     textAlign: 'center',
   },
   modalOption: {
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
   modalOptionText: {
     ...Typography.body,
@@ -389,12 +377,13 @@ const styles = StyleSheet.create({
   },
 
   dateButton: {
+    justifyContent: 'center',
     backgroundColor: Colors.systemBackground,
     borderWidth: 1,
     borderColor: Colors.systemGray5,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.inputPadding,
-    ...Shadows.small,
+    height: 52,
   },
   dateButtonText: {
     ...Typography.body,
@@ -402,14 +391,8 @@ const styles = StyleSheet.create({
   },
 
   datePickerContainer: {
-    borderRadius: BorderRadius.sm,
+    borderRadius: BorderRadius.lg,
     marginTop: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    backgroundColor: Colors.systemBackground,
-    borderWidth: 1,
-    borderColor: Colors.systemGray5,
-    ...Shadows.small,
   },
 });
 
