@@ -7,6 +7,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, PanResponder } from 'react-native';
 import { Ticket } from '../types/ticket';
+import {
+  Colors,
+  Typography,
+  Spacing,
+  BorderRadius,
+} from '../styles/designSystem';
 
 interface WeeklyCalendarProps {
   selectedDate: string;
@@ -255,50 +261,50 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   selectedDay: {
-    backgroundColor: '#B11515',
+    backgroundColor: Colors.primary,
   },
   todayDay: {
-    backgroundColor: '#F8F9FA',
+    backgroundColor: Colors.secondarySystemBackground,
     borderWidth: 1,
-    borderColor: '#B11515',
+    borderColor: Colors.primary,
   },
   dayName: {
-    fontSize: 12,
+    ...Typography.caption1,
     fontWeight: '500',
-    color: '#6C757D',
-    marginBottom: 4,
+    color: Colors.secondaryLabel,
+    marginBottom: Spacing.xs,
   },
   dayNumber: {
-    fontSize: 16,
+    ...Typography.body,
     fontWeight: '600',
-    color: '#2C3E50',
+    color: Colors.label,
   },
   selectedText: {
-    color: '#FFFFFF',
+    color: Colors.systemBackground,
   },
   todayText: {
-    color: '#B11515',
+    color: Colors.primary,
   },
   eventIndicator: {
     position: 'absolute',
-    bottom: 4,
+    bottom: Spacing.xs,
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#B11515',
+    backgroundColor: Colors.primary,
   },
   selectedEventIndicator: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.systemBackground,
   },
   eventCount: {
-    fontSize: 8,
+    ...Typography.caption2,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: Colors.systemBackground,
     textAlign: 'center',
     lineHeight: 6,
   },
   selectedEventCount: {
-    color: '#B11515',
+    color: Colors.primary,
   },
 });
 

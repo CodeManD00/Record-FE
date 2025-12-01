@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   },
   eventDetails: {
     ...Typography.subheadline,
-    color: Colors.systemGray,
+    color: Colors.secondaryLabel,
   },
   chevron: {
     fontSize: 32,

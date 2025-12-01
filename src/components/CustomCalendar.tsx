@@ -2,6 +2,13 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Ticket } from '../types/ticket';
+import {
+  Colors,
+  Spacing,
+  BorderRadius,
+  Shadows,
+  Typography,
+} from '../styles/designSystem';
 
 interface CustomCalendarProps {
   selectedDate: string;
@@ -70,9 +77,9 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       ...acc,
       [date]: {
         marked: true,
-        dotColor: '#B11515',
+        dotColor: Colors.primary,
         selected: date === selectedDate,
-        selectedColor: '#B11515',
+        selectedColor: Colors.primary,
       },
     };
   }, {} as { [key: string]: any });
@@ -88,28 +95,28 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
           [selectedDate]: {
             ...(markedDates[selectedDate] || {}),
             selected: true,
-            selectedColor: '#B11515',
+            selectedColor: Colors.primary,
           },
         }}
         theme={{
-          backgroundColor: '#ffffff',
-          calendarBackground: '#ffffff',
-          textSectionTitleColor: '#000000',
-          selectedDayBackgroundColor: '#B11515',
-          selectedDayTextColor: '#ffffff',
-          todayTextColor: '#B11515',
-          dayTextColor: '#000000',
-          textDisabledColor: '#8E8E93',
-          dotColor: '#B11515',
-          selectedDotColor: '#ffffff',
-          arrowColor: '#000000',
-          monthTextColor: '#000000',
+          backgroundColor: Colors.systemBackground,
+          calendarBackground: Colors.systemBackground,
+          textSectionTitleColor: Colors.label,
+          selectedDayBackgroundColor: Colors.primary,
+          selectedDayTextColor: Colors.systemBackground,
+          todayTextColor: Colors.primary,
+          dayTextColor: Colors.label,
+          textDisabledColor: Colors.secondaryLabel,
+          dotColor: Colors.primary,
+          selectedDotColor: Colors.systemBackground,
+          arrowColor: Colors.label,
+          monthTextColor: Colors.label,
           textDayFontWeight: '400',
-          textMonthFontWeight: '600',
-          textDayHeaderFontWeight: '500',
-          textDayFontSize: 17,
-          textMonthFontSize: 20,
-          textDayHeaderFontSize: 15,
+          textMonthFontWeight: '400',
+          textDayHeaderFontWeight: '400',
+          textDayFontSize: Typography.body.fontSize,
+          textMonthFontSize: Typography.headline.fontSize,
+          textDayHeaderFontSize: Typography.footnote.fontSize,
         }}
         style={styles.calendar}
       />
@@ -119,18 +126,15 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
 
 const styles = StyleSheet.create({
   calendarContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 30,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: Colors.systemBackground,
+    borderRadius: BorderRadius.lg,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xxxl,
+    padding: Spacing.lg,
+    ...Shadows.medium,
   },
   calendar: {
-    borderRadius: 16,
+    borderRadius: BorderRadius.lg,
   },
 });
 

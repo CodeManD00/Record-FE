@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   },
   calendarTitle: {
     ...Typography.title1,
-    fontWeight: '700',
+    fontWeight: '500',
     color: Colors.label,
   },
 
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   ticketCountText: {
     color: Colors.primary,
     ...Typography.subheadline,
-    fontWeight: 'bold',
+    fontWeight: '500',
   },
 });
 
