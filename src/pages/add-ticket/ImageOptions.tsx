@@ -11,7 +11,6 @@ import {
   ActionSheetIOS,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -56,7 +55,6 @@ const ImageOptions = () => {
    * 3. AIImageResults로 이동
    */
   const [, setBasePrompt] = useAtom(basePromptAtom);
-  const [isGeneratingSummary, setIsGeneratingSummary] = React.useState(false);
 
   const handleAIImageSelect = async () => {
     const reviewText = reviewData.reviewText || reviewData.text || '';
@@ -65,8 +63,6 @@ const ImageOptions = () => {
       Alert.alert('오류', '후기 내용이 없습니다.');
       return;
     }
-
-    setIsGeneratingSummary(true);
 
     try {
       // /reviews/summarize 호출하여 5줄 영어 요약 생성
@@ -105,8 +101,6 @@ const ImageOptions = () => {
     } catch (error) {
       console.error('요약 생성 오류:', error);
       Alert.alert('오류', '요약 생성 중 문제가 발생했습니다.');
-    } finally {
-      setIsGeneratingSummary(false);
     }
   };
 
@@ -259,18 +253,8 @@ const ImageOptions = () => {
           <TouchableOpacity
             style={[styles.imageButton, styles.aiButton]}
             onPress={handleAIImageSelect}
-            disabled={isGeneratingSummary}
           >
-            {isGeneratingSummary ? (
-              <View style={styles.processingOverlay}>
-                <ActivityIndicator size="large" color={Colors.systemBackground} />
-                <Text style={styles.processingText}>이미지 생성 중...</Text>
-              </View>
-            ) : (
-              <>
-                <Text style={styles.aiButtonText}>AI 이미지</Text>
-              </>
-            )}
+            <Text style={styles.aiButtonText}>AI 이미지</Text>
           </TouchableOpacity>
 
           {/* 직접 선택하기 */}
@@ -377,23 +361,6 @@ const styles = StyleSheet.create({
     color: Colors.systemBackground,
     textAlign: 'center',
     fontWeight: '500',
-  },
-
-  processingOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: BorderRadius.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  processingText: {
-    ...Typography.body,
-    color: Colors.systemBackground,
-    marginTop: Spacing.md,
   },
 
   bottomButtonContainer: {
