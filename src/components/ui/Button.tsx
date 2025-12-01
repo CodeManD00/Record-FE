@@ -71,7 +71,7 @@ const Button: React.FC<ButtonProps> = ({
   const getTextStyle = (): TextStyle => {
     const baseTextStyle = {
       ...Typography.body,
-      fontWeight: '500' as const,
+      fontWeight: '400' as const,
     };
 
     switch (variant) {
