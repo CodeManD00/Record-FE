@@ -1,4 +1,4 @@
-// === ImageOptions.tsx (UI 절대 수정 없음, 로직만 호환 수정) ===
+// === ImageOptions.tsx (OCRPage UI 패턴으로 개선) ===
 
 import React, { useState } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
   ActionSheetIOS,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import {
   SafeAreaView,
@@ -26,6 +27,7 @@ import {
 import { useAtom } from 'jotai';
 import { addTicketAtom, TicketStatus, basePromptAtom } from '../../atoms';
 import { sttService } from '../../services/api/sttService';
+import { Button } from '../../components/ui';
 import {
   ImageOptionsScreenNavigationProp,
   ImageOptionsRouteProp,
@@ -36,8 +38,6 @@ import {
   Spacing,
   BorderRadius,
   Shadows,
-  ComponentStyles,
-  Layout,
 } from '../../styles/designSystem';
 import { Ticket, CreateTicketData } from '../../types/ticket';
 
@@ -232,88 +232,76 @@ const ImageOptions = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      {/* Header */}
+      {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
+        <Button
+          title="←"
+          variant="tertiary"
           onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
+          style={styles.backButton}
+          textStyle={styles.backButtonText}
+        />
         <Text style={styles.headerTitle}>티켓 이미지 선택하기</Text>
-        <View style={styles.placeholder} />
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* 안내 메시지 */}
         <View style={styles.contextMessage}>
           <Text style={styles.contextSubtitle}>
             기억에 남는 장면을 이미지로 표현해보세요
           </Text>
         </View>
 
-        <View style={styles.optionsContainer}>
-          {/* AI 이미지 */}
+        {/* 이미지 선택 버튼 */}
+        <View style={styles.buttonContainer}>
+          {/* AI 이미지 생성 */}
           <TouchableOpacity
-            style={[styles.generateButton, isGeneratingSummary && styles.generateButtonDisabled]}
+            style={[styles.imageButton, styles.aiButton]}
             onPress={handleAIImageSelect}
             disabled={isGeneratingSummary}
           >
-            <View style={styles.buttonContent}>
-              <View style={styles.textContainer}>
-                <Text style={styles.optionButtonText}>
-                  {isGeneratingSummary ? '이미지 생성 중...' : 'AI 이미지'}
-                </Text>
-                <Text style={styles.optionButtonSubText}>
-                  {isGeneratingSummary
-                    ? '잠시만 기다려주세요...'
-                    : 'AI가 만들어주는 나만의 티켓 이미지 ~'}
-                </Text>
+            {isGeneratingSummary ? (
+              <View style={styles.processingOverlay}>
+                <ActivityIndicator size="large" color={Colors.systemBackground} />
+                <Text style={styles.processingText}>이미지 생성 중...</Text>
               </View>
-              <Image
-                source={require('../../assets/mic.png')}
-                style={styles.buttonIcon}
-              />
-            </View>
+            ) : (
+              <>
+                <Text style={styles.aiButtonText}>AI 이미지</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* 직접 선택하기 */}
           <TouchableOpacity
-            style={[styles.optionButton]}
+            style={styles.imageButton}
             onPress={handleGalleryOrCameraSelect}
           >
-            <View style={styles.buttonContent}>
-              <View style={styles.textContainer}>
-                <Text style={[styles.optionButtonText, { color: '#000000' }]}>
-                  직접 선택하기
-                </Text>
-                <Text
-                  style={[styles.optionButtonSubText, { color: '#8E8E93' }]}
-                >
-                  사진 찍기 또는 사진 보관함에서 선택하세요.
-                </Text>
-              </View>
-              <Image
-                source={require('../../assets/mic.png')}
-                style={styles.buttonIcon}
-              />
-            </View>
+            <Text style={styles.imageButtonText}>직접 선택하기</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* 이미지 스킵 */}
       <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkipImages}>
-          <Text style={styles.skipButtonText}>이미지 없이 완료</Text>
-        </TouchableOpacity>
+        <Button
+          title="이미지 없이 완료"
+          variant="secondary"
+          onPress={handleSkipImages}
+          style={styles.skipButton}
+        />
       </View>
     </SafeAreaView>
   );
 };
 
-// === 이하 UI — 절대 수정 없음 ===
+// === OCRPage 기반 스타일 ===
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F2F2F7' },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.secondarySystemBackground,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -323,96 +311,103 @@ const styles = StyleSheet.create({
     ...Shadows.small,
     zIndex: 1,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.secondarySystemBackground,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.small,
-    zIndex: 2,
-  },
-  backButtonText: {
-    ...Typography.title3,
-    color: Colors.label,
-    fontWeight: 'bold',
-  },
   headerTitle: {
     ...Typography.headline,
     color: Colors.label,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    textAlign: 'center',
   },
-  placeholder: { position: 'absolute', right: Spacing.lg, width: 44, height: 44 },
-  scrollView: { flex: 1, paddingHorizontal: Spacing.screenPadding },
+  content: {
+    flex: 1,
+  },
   contextMessage: {
     backgroundColor: Colors.secondarySystemBackground,
+    paddingHorizontal: Spacing.screenPadding,
     paddingVertical: Spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.systemGray5,
   },
   contextSubtitle: {
-    ...Typography.footnote,
+    ...Typography.subheadline,
     color: Colors.secondaryLabel,
     textAlign: 'left',
-    lineHeight: 20,
   },
-  optionsContainer: {
+
+
+  buttonContainer: {
     flexDirection: 'row',
+    paddingHorizontal: Spacing.screenPadding,
+    gap: Spacing.md,
+    marginVertical: Spacing.lg,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.round,
+    backgroundColor: Colors.secondarySystemBackground,
+    ...Shadows.small,
+  },
+  backButtonText: {
+    ...Typography.title3,
+    color: Colors.label,
+    fontWeight: '500',
+  },
+  
+  imageButton: {
+    flex: 1,
+    backgroundColor: Colors.systemBackground,
+    borderWidth: 1,
+    borderColor: Colors.systemGray4,
+    borderRadius: BorderRadius.lg,
+    minHeight: 140,
+    padding: Spacing.lg,
     justifyContent: 'center',
-    marginVertical: 16,
-  },
-  optionButton: {
-    flex: 1,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginHorizontal: 4,
-  },
-  generateButton: {
-    flex: 1,
     alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: '#B11515',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    marginHorizontal: 4,
+    ...Shadows.medium,
   },
-  generateButtonDisabled: {
-    opacity: 0.6,
+  aiButton: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
-  optionButtonText: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    marginTop: 16,
-    marginBottom: 8,
+  imageButtonText: {
+    ...Typography.body,
+    color: Colors.label,
+    textAlign: 'center',
   },
-  optionButtonSubText: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#FFFFFF',
+  aiButtonText: {
+    ...Typography.body,
+    color: Colors.systemBackground,
+    textAlign: 'center',
+    fontWeight: '500',
   },
-  buttonContent: { alignItems: 'flex-end', paddingHorizontal: 16 },
-  buttonIcon: { width: 50, height: 90, marginTop: 32, marginBottom: 16 },
-  textContainer: { flexDirection: 'column' },
-  bottomButtonContainer: { paddingHorizontal: 24, paddingVertical: 36 },
+
+  processingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: BorderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  processingText: {
+    ...Typography.body,
+    color: Colors.systemBackground,
+    marginTop: Spacing.md,
+  },
+
+  bottomButtonContainer: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: 40,
+    backgroundColor: Colors.systemBackground,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.systemGray5,
+    alignItems: 'center',
+  },
   skipButton: {
-    backgroundColor: '#8E8E93',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
+    width: '100%',
   },
-  skipButtonText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
 });
 
 export default ImageOptions;
