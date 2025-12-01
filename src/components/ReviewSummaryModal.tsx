@@ -21,6 +21,7 @@ import {
   BorderRadius,
   Shadows,
 } from '../styles/designSystem';
+import Button from './ui/Button';
 
 const { height } = Dimensions.get('window');
 
@@ -35,7 +36,7 @@ const ReviewSummaryModal: React.FC<ReviewSummaryModalProps> = ({
   visible,
   onClose,
   summaryText,
-  title = '요약완료!', // 기본값: "요약완료!"
+  title = '정리완료!', // 기본값: "요약완료!"
 }) => {
   const slideAnim = useRef(new Animated.Value(height)).current;
   const [editedText, setEditedText] = useState(summaryText);
@@ -61,18 +62,6 @@ const ReviewSummaryModal: React.FC<ReviewSummaryModalProps> = ({
     }
   }, [visible]);
 
-  /**
-   * 클립보드에 텍스트를 복사하는 함수
-   * 
-   * 동작 방식:
-   * 1. 사용자가 복사 버튼을 누르면 현재 편집 중인 텍스트(editedText)를 클립보드에 복사
-   * 2. 복사 성공 시 사용자에게 알림을 표시하여 피드백 제공
-   * 3. @react-native-clipboard/clipboard 패키지의 setString 메서드를 사용
-   * 
-   * 사용자 경험:
-   * - 복사가 완료되면 "복사되었습니다" 알림이 표시되어 사용자가 확인할 수 있음
-   * - 복사된 텍스트는 다른 앱이나 메모장 등에 붙여넣기 가능
-   */
   const handleCopy = async () => {
     try {
       // 클립보드에 현재 편집 중인 텍스트 복사
@@ -128,10 +117,14 @@ const ReviewSummaryModal: React.FC<ReviewSummaryModalProps> = ({
               </ScrollView>
 
               {/* Copy Button */}
-              <TouchableOpacity style={styles.copyButton} onPress={handleCopy}>
-                <Text style={styles.copyIcon}>📋</Text>
-                <Text style={styles.copyButtonText}>요약된 후기를 복사해서 사용하세요</Text>
-              </TouchableOpacity>
+              <Button
+                title="정리된 후기 복사하기"
+                onPress={handleCopy}
+                variant="secondary"
+                size="medium"
+                leftIcon={<Text style={styles.copyIcon}>📋</Text>}
+                style={styles.copyButton}
+              />
             </Animated.View>
           </TouchableWithoutFeedback>
         </View>
@@ -148,66 +141,57 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 20,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    borderRadius: BorderRadius.xxl,
+    paddingTop: Spacing.inputPadding,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingBottom: 50,
     minHeight: height * 0.4,
     maxHeight: height * 0.8,
     ...Shadows.large,
   },
   closeButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
+    top: Spacing.xxl,
+    right: Spacing.xxl,
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#999',
+    color: Colors.tertiaryLabel,
   },
+
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    ...Typography.title3,
+    fontWeight: '400',
     color: '#000',
-    marginTop: 8,
-    marginBottom: 20,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.lg,
   },
   contentContainer: {
     flex: 1,
-    marginBottom: 16,
+    marginBottom: Spacing.xs,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.systemGray5,
   },
   summaryInput: {
-    fontSize: 16,
+    ...Typography.body,
     lineHeight: 24,
     color: '#333',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: Colors.tertiarySystemBackground,
+    padding: Spacing.inputPadding,
     minHeight: 150,
     textAlignVertical: 'top',
   },
   copyButton: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
+    marginTop: Spacing.sm,
   },
   copyIcon: {
     fontSize: 24,
-    marginRight: 12,
-  },
-  copyButtonText: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
   },
 });
 

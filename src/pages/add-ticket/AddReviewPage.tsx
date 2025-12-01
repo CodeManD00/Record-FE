@@ -9,8 +9,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
-  Switch,
   Platform,
   Alert,
   Animated,
@@ -18,6 +16,7 @@ import {
   PanResponder,
   Image,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,6 +29,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../types/reviewTypes';
 import ReviewSummaryModal from '../../components/ReviewSummaryModal';
 import ModalHeader from '../../components/ModalHeader';
+import Button from '../../components/ui/Button';
 import { useAtom } from 'jotai';
 import { userProfileAtom } from '../../atoms/userAtoms';
 import { useUserProfileData } from '../../hooks/useApiData';
@@ -356,6 +356,8 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
       return;
     }
 
+    const userId = currentUser!.id;
+
     try {
       setIsProcessingSTT(true);
 
@@ -363,14 +365,14 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         fileName: selectedAudioFileName,
         fileType: selectedAudioFileType,
         uri: selectedAudioUri,
-        userId: currentUser.id,
+        userId: userId,
       });
 
       const sttResult = await sttService.transcribeAndSave(
         selectedAudioUri,
         selectedAudioFileName,
         selectedAudioFileType,
-        currentUser.id
+        userId
       );
 
       if (sttResult.success && sttResult.data) {
@@ -599,15 +601,32 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
       {/* 진행 표시기 */}
       {isCardVisible && !isLoadingQuestions && questions.length > 0 && (
         <View style={styles.progressDots}>
-          {questions.map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.progressDot,
-                i === currentIndex && styles.progressDotActive,
-              ]}
-            />
-          ))}
+          {questions.map((_, i) => {
+            const inputRange = [
+              (i - 1) * width,
+              i * width,
+              (i + 1) * width,
+            ];
+            const dotWidth = scrollX.interpolate({
+              inputRange,
+              outputRange: [6, 12, 6],
+              extrapolate: 'clamp',
+            });
+            const dotColor = scrollX.interpolate({
+              inputRange,
+              outputRange: ['#BDC3C7', '#2C3E50', '#BDC3C7'],
+              extrapolate: 'clamp',
+            });
+            return (
+              <Animated.View
+                key={i}
+                style={[
+                  styles.progressDot,
+                  { width: dotWidth, backgroundColor: dotColor },
+                ]}
+              />
+            );
+          })}
         </View>
       )}
 
@@ -619,7 +638,7 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
             {
               height: cardHeight.interpolate({
                 inputRange: [0, 1],
-                outputRange: [0, 150],
+                outputRange: [0, 80],
               }),
               opacity,
             },
@@ -641,7 +660,11 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
               </TouchableOpacity>
               <View style={styles.questionHeaderRow}>
                 <View style={styles.questionIconContainer}>
-                  <Text style={styles.questionIcon}>✈️</Text>
+                  <Image 
+                    source={require('../../assets/cat.png')} 
+                    style={styles.questionIconImage}
+                    resizeMode="contain"
+                  />
                 </View>
                 <View style={styles.textContainer}>
                   <Text style={styles.questionLabel}>질문 {currentIndex + 1}</Text>
@@ -675,45 +698,27 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         </View>
       </KeyboardAvoidingView>
 
-      {/* 하단 버튼들 */}
+      {/* 하단 버튼 */}
       <View style={styles.bottomButtons}>
-        <TouchableOpacity
-          style={[styles.bottomButton, styles.bottomButtonWhite]}
-          onPress={() => handleOrganizeReview()}
-          disabled={!reviewText?.trim() || isOrganizing}
-        >
-          <Text style={styles.bottomButtonIcon}>🎫</Text>
-          <Text style={[styles.bottomButtonText, styles.bottomButtonTextDark]}>
-            후기 정리하기
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.bottomButton, styles.bottomButtonWhite]}
-          onPress={handleAudioFilePick}
+        <Button
+          title={isProcessingSTT ? '변환 중...' : (selectedAudioUri ? 'STT 변환 실행' : '오디오 파일 선택')}
+          onPress={selectedAudioUri ? handleSTTConversion : handleAudioFilePick}
           disabled={isProcessingSTT}
-        >
-          <Text style={styles.bottomButtonIcon}>🎵</Text>
-          <Text style={[styles.bottomButtonText, styles.bottomButtonTextDark]}>
-            오디오 파일 선택
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.bottomButton,
-            styles.bottomButtonPrimary,
-            (isProcessingSTT || !selectedAudioUri) && styles.bottomButtonDisabled,
-          ]}
-          onPress={handleSTTConversion}
-          disabled={isProcessingSTT || !selectedAudioUri}
-        >
-          <Text style={[styles.bottomButtonText, styles.bottomButtonTextWhite]}>
-            STT 변환 실행
-          </Text>
-        </TouchableOpacity>
+          variant={selectedAudioUri ? 'primary' : 'secondary'}
+          size="medium"
+          leftIcon={<Text style={styles.bottomButtonIcon}>{selectedAudioUri ? '🎤' : '🎵'}</Text>}
+          style={styles.bottomButton}
+        />
       </View>
         
+      {/* STT 변환 로딩 스피너 */}
+      {isProcessingSTT && (
+        <View style={styles.customLoadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.customLoadingText}>STT 변환 중...</Text>
+        </View>
+      )}
+
       {/* 후기 요약/정리 모달 */}
       <ReviewSummaryModal
         visible={showSummaryModal}
@@ -721,6 +726,22 @@ const AddReviewPage = ({ navigation, route }: AddReviewPageProps) => {
         summaryText={summaryText || "이곳에 요약/정리된 결과가 나옵니다."}
         title={modalTitle}
       />
+
+      {/* 플로팅 후기 정리 버튼 */}
+      {reviewText?.trim() && (
+        <TouchableOpacity
+          style={[
+            styles.floatingButton,
+            isOrganizing && styles.floatingButtonDisabled
+          ]}
+          onPress={() => handleOrganizeReview()}
+          disabled={isOrganizing}
+        >
+          <Text style={styles.floatingButtonText}>
+            {isOrganizing ? '정리 중...' : '후기 정리하기'}
+          </Text>
+        </TouchableOpacity>
+      )}
 
     </SafeAreaView>
   );
@@ -738,35 +759,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: Spacing.md,
-    gap: Spacing.xs,
   },
   progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.systemGray4,
-  },
-  progressDotActive: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.label,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#BDC3C7',
+    marginHorizontal: 3,
   },
 
   // 질문 섹션
   questionSection: {
-    marginHorizontal: Spacing.xl,
-    marginTop: Spacing.sm,
-    marginBottom: Spacing.md,
+    marginHorizontal: Spacing.screenPadding,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xs,
   },
-  animatedCard: {
-    width: '100%',
-  },
+  animatedCard: {},
   questionCard: {
-    width: '100%',
-    backgroundColor: Colors.systemGray5,
+    backgroundColor: Colors.secondarySystemBackground,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
+    padding: Spacing.cardPadding,
     ...Shadows.small,
     position: 'relative',
   },
@@ -774,44 +786,42 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: Spacing.sm,
     right: Spacing.sm,
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
   closeButtonText: {
-    fontSize: 20,
+    ...Typography.callout,
     color: Colors.secondaryLabel,
-    fontWeight: '300',
   },
   questionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingRight: Spacing.xl,
+    paddingRight: Spacing.xxl,
   },
   questionIconContainer: {
     marginRight: Spacing.md,
-    width: 32,
-    height: 32,
+    width: 52,
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  questionIcon: {
-    fontSize: 20,
+  questionIconImage: {
+    width: 52,
+    height: 52,
   },
   textContainer: {
     flex: 1,
   },
   questionLabel: {
     ...Typography.subheadline,
-    fontWeight: '600',
     color: Colors.label,
     marginBottom: Spacing.xs,
   },
   questionText: {
     ...Typography.body,
-    fontWeight: '500',
     color: Colors.label,
   },
 
@@ -823,12 +833,12 @@ const styles = StyleSheet.create({
   // 후기 입력 영역
   reviewContainer: {
     flex: 1,
-    marginHorizontal: Spacing.xl,
+    marginHorizontal: Spacing.screenPadding,
     marginTop: Spacing.md,
   },
   reviewInput: {
     flex: 1,
-    backgroundColor: Colors.systemGray5,
+    backgroundColor: Colors.secondarySystemBackground,
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     ...Typography.body,
@@ -839,42 +849,50 @@ const styles = StyleSheet.create({
   // 하단 버튼들
   bottomButtons: {
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    gap: Spacing.md,
+    paddingTop: Spacing.lg,
+    paddingBottom: 40,
     backgroundColor: Colors.systemBackground,
     borderTopWidth: 0.5,
     borderTopColor: Colors.systemGray5,
   },
   bottomButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.xl,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-    ...Shadows.small,
-  },
-  bottomButtonWhite: {
-    backgroundColor: Colors.white,
-  },
-  bottomButtonPrimary: {
-    backgroundColor: Colors.primary,
-  },
-  bottomButtonDisabled: {
-    opacity: 0.5,
+    // Button 컴포넌트가 스타일링을 처리하지만 필요한 경우 오버라이드용
   },
   bottomButtonIcon: {
     fontSize: 20,
   },
-  bottomButtonText: {
-    ...Typography.subheadline,
-    fontWeight: '600',
+
+  // 커스텀 로딩 스피너
+  customLoadingContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -50 }, { translateY: -50 }],
+    alignItems: 'center',
   },
-  bottomButtonTextDark: {
+  customLoadingText: {
+    ...Typography.callout,
     color: Colors.label,
+    marginTop: Spacing.md,
+    textAlign: 'center',
   },
-  bottomButtonTextWhite: {
+
+  // 플로팅 버튼
+  floatingButton: {
+    position: 'absolute',
+    bottom: 115,
+    right: 25,
+    backgroundColor: 'rgba(203, 55, 55, 0.8)',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    ...Shadows.medium,
+  },
+  floatingButtonDisabled: {
+    opacity: 0.6,
+  },
+  floatingButtonText: {
+    ...Typography.subheadline,
     color: Colors.white,
   },
 });
