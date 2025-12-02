@@ -253,7 +253,32 @@ class TicketService {
   }
 
   /**
-   * 10) 티켓 통계 분석
+   * 10) 티켓 고급 검색
+   * POST /api/tickets/user/{userId}/search
+   * Request Body: TicketSearchRequest
+   * Response: TicketResponse[]
+   */
+  async searchTickets(
+    userId: string,
+    searchParams: {
+      startDate?: string; // "YYYY-MM-DD" 형식
+      endDate?: string; // "YYYY-MM-DD" 형식
+      genre?: string; // "BAND", "MUSICAL", "PLAY"
+      venue?: string;
+      artist?: string;
+      performanceTitle?: string;
+      sortBy?: string; // "viewDate", "createdAt"
+      sortDirection?: string; // "ASC", "DESC"
+    }
+  ): Promise<Result<any[]>> {
+    return apiClient.post<any[]>(
+      `/api/tickets/user/${userId}/search`,
+      searchParams
+    );
+  }
+
+  /**
+   * 11) 티켓 통계 분석
    * GET /api/tickets/user/{userId}/statistics?year={year}
    * Response: TicketStatisticsResponse
    */
@@ -266,7 +291,7 @@ class TicketService {
   }
 
   /**
-   * 11) 연말 결산 (Year-in-Review)
+   * 12) 연말 결산 (Year-in-Review)
    * GET /api/tickets/user/{userId}/year-in-review?year={year}
    * Response: YearInReviewResponse
    */
