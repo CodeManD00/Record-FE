@@ -153,9 +153,11 @@ const SearchTab: React.FC<SearchTabProps> = ({ tickets, navigation }) => {
         <Text style={styles.ticketTitle} numberOfLines={1}>
           {item.title || '제목 없음'}
         </Text>
-        <Text style={styles.ticketDate}>
-          {item.performedAt ? new Date(item.performedAt).toLocaleDateString('ko-KR') : '날짜 없음'}
-        </Text>
+        {item.genre && (
+          <Text style={styles.ticketGenre}>
+            {item.genre}
+          </Text>
+        )}
       </View>
       <Text style={styles.ticketLocation} numberOfLines={1}>
         {item.venue || '장소 없음'}
@@ -165,11 +167,9 @@ const SearchTab: React.FC<SearchTabProps> = ({ tickets, navigation }) => {
           {item.artist}
         </Text>
       )}
-      {item.genre && (
-        <Text style={styles.ticketGenre}>
-          {item.genre}
-        </Text>
-      )}
+      <Text style={styles.ticketDate}>
+        {item.performedAt ? new Date(item.performedAt).toLocaleDateString('ko-KR') : '날짜 없음'}
+      </Text>
     </TouchableOpacity>
   );
 
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filterContainer: {
-    padding: Spacing.md,
+    paddingVertical: Spacing.md,
     minHeight: 400,
   },
   searchSection: {
@@ -362,9 +362,8 @@ const styles = StyleSheet.create({
   },
   filterTitle: {
     ...Typography.subheadline,
-    fontWeight: '600',
     marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   dateRow: {
     flexDirection: 'row',
@@ -376,7 +375,7 @@ const styles = StyleSheet.create({
     ...Typography.body,
     backgroundColor: Colors.systemBackground,
     borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
+    padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.separator,
   },
@@ -388,17 +387,17 @@ const styles = StyleSheet.create({
     marginVertical: Spacing.xs,
   },
   genreChip: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.xxl,
     backgroundColor: Colors.tertiarySystemBackground,
-    marginRight: Spacing.xs,
+    marginRight: Spacing.sm,
   },
   genreChipActive: {
     backgroundColor: Colors.primary,
   },
   genreChipText: {
-    ...Typography.subheadline,
+    ...Typography.callout,
     color: Colors.secondaryLabel,
   },
   genreChipTextActive: {
@@ -408,7 +407,7 @@ const styles = StyleSheet.create({
     ...Typography.body,
     backgroundColor: Colors.systemBackground,
     borderRadius: BorderRadius.md,
-    padding: Spacing.sm,
+    padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.separator,
   },
@@ -417,27 +416,28 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',
-    marginTop: Spacing.md,
+    marginVertical: Spacing.md,
   },
   searchButtonText: {
-    ...Typography.headline,
+    ...Typography.body,
     color: Colors.systemBackground,
-    fontWeight: '600',
   },
+
   resultsContainer: {
-    minHeight: SCREEN_HEIGHT * 0.6,
+    minHeight: SCREEN_HEIGHT * 0.7,
     borderTopWidth: 1,
     borderTopColor: Colors.separator,
-    padding: Spacing.md,
     paddingTop: Spacing.lg,
   },
   resultsTitle: {
-    ...Typography.headline,
-    marginBottom: Spacing.sm,
+    ...Typography.title3,
+    fontWeight: '500',
+    marginBottom: Spacing.md,
   },
   resultsList: {
     gap: Spacing.sm,
   },
+
   ticketItem: {
     backgroundColor: Colors.systemBackground,
     borderRadius: BorderRadius.lg,
@@ -451,26 +451,26 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   ticketTitle: {
-    ...Typography.headline,
+    ...Typography.title3,
     flex: 1,
     marginRight: Spacing.sm,
   },
   ticketDate: {
-    ...Typography.caption1,
+    ...Typography.callout,
     color: Colors.secondaryLabel,
   },
   ticketLocation: {
-    ...Typography.body,
-    color: Colors.label,
+    ...Typography.callout,
+    color: Colors.secondaryLabel,
     marginBottom: Spacing.xs / 2,
   },
   ticketArtist: {
-    ...Typography.body,
-    color: Colors.label,
+    ...Typography.callout,
+    color: Colors.secondaryLabel,
     marginBottom: Spacing.xs / 2,
   },
   ticketGenre: {
-    ...Typography.caption1,
+    ...Typography.footnote,
     color: Colors.secondaryLabel,
   },
   emptyContainer: {

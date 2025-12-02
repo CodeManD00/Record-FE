@@ -8,7 +8,7 @@ import {
   FlatList,
 } from 'react-native';
 import { Ticket } from '../../../types/ticket';
-import { Colors, Typography, Spacing, BorderRadius } from '../../../styles/designSystem';
+import { Colors, Typography, Spacing, BorderRadius, Layout, Shadows } from '../../../styles/designSystem';
 import TicketDetailModal from '../../../components/TicketDetailModal';
 
 interface HistoryTabProps {
@@ -105,13 +105,12 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ tickets, navigation }) => {
         <Text style={styles.ticketTitle} numberOfLines={1}>
           {item.title || '제목 없음'}
         </Text>
-        <Text style={styles.ticketDate}>{formatDate(item.performedAt)}</Text>
       </View>
       <Text style={styles.ticketLocation} numberOfLines={1}>
-        📍 {item.venue || '장소 없음'}
+        @{item.venue || '장소 없음'}
       </Text>
       <Text style={styles.ticketTime}>
-        🕐 {item.performedAt ? new Date(item.performedAt).toLocaleDateString('ko-KR') : '날짜 없음'}
+        {item.performedAt ? new Date(item.performedAt).toLocaleDateString('ko-KR') : '날짜 없음'}
       </Text>
       {item.review && (
         <Text style={styles.ticketReview} numberOfLines={2}>
@@ -198,78 +197,68 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   filterContainer: {
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.separator,
-    paddingVertical: 4,
   },
   filterContent: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
   },
   filterTab: {
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
-    borderRadius: BorderRadius.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.xxl,
+    marginHorizontal: Spacing.xs,
     backgroundColor: Colors.tertiarySystemBackground,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    height: 24,
+    gap: Spacing.xs,
+    height: 36,
     flex: 1,
-    marginHorizontal: 2,
     justifyContent: 'center',
+    marginVertical: Spacing.xs,
   },
   filterTabActive: {
     backgroundColor: Colors.primary,
+    opacity: 0.7,
   },
   filterTabText: {
-    ...Typography.subheadline,
-    fontSize: 15,
-    fontWeight: '500',
+    ...Typography.footnote,
     color: Colors.secondaryLabel,
+
   },
   filterTabTextActive: {
-    ...Typography.subheadline,
-    fontSize: 15,
+    ...Typography.footnote,
     color: Colors.systemBackground,
+    fontWeight: Typography.headline.fontWeight,
   },
   filterTabCount: {
-    ...Typography.caption1,
-    fontSize: 12,
-    fontWeight: '600',
+    ...Typography.caption2,
     color: Colors.secondaryLabel,
     backgroundColor: Colors.systemBackground,
-    paddingHorizontal: 5,
+    paddingHorizontal: Spacing.xs,
     paddingVertical: 1,
     borderRadius: BorderRadius.sm,
-    minWidth: 18,
+    minWidth: Layout.minTouchTarget / 2,
     textAlign: 'center',
   },
   filterTabCountActive: {
-    ...Typography.caption1,
-    fontSize: 12,
+    ...Typography.caption2,
     color: Colors.primary,
     backgroundColor: Colors.systemBackground,
   },
   content: {
     flex: 1,
+    paddingVertical: Spacing.xs,
   },
   listContent: {
-    padding: Spacing.md,
+    paddingVertical: Spacing.screenPadding,
     gap: Spacing.sm,
   },
+
   ticketItem: {
     backgroundColor: Colors.systemBackground,
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...Shadows.card,
   },
   ticketHeader: {
     flexDirection: 'row',
@@ -278,32 +267,28 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   ticketTitle: {
-    ...Typography.headline,
+    ...Typography.title3,
     flex: 1,
-    marginRight: Spacing.sm,
-  },
-  ticketDate: {
-    ...Typography.caption1,
-    color: Colors.secondaryLabel,
-    fontWeight: '500',
+    marginHorizontal: Spacing.xs,
   },
   ticketLocation: {
-    ...Typography.body,
-    color: Colors.label,
+    ...Typography.callout,
+    color: Colors.secondaryLabel,
     marginBottom: Spacing.xs / 2,
+    marginHorizontal: Spacing.xs,
   },
   ticketTime: {
-    ...Typography.body,
-    color: Colors.label,
-    marginBottom: Spacing.xs,
+    ...Typography.callout,
+    color: Colors.secondaryLabel,
+    marginBottom: Spacing.sm,
+    marginHorizontal: Spacing.xs,
   },
   ticketReview: {
     ...Typography.body,
     color: Colors.secondaryLabel,
-    fontStyle: 'italic',
     backgroundColor: Colors.tertiarySystemBackground,
-    padding: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    padding: Spacing.xs,
+    borderRadius: BorderRadius.lg,
   },
   emptyContainer: {
     flex: 1,

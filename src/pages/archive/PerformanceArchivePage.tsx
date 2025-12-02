@@ -15,7 +15,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { Ticket } from '../../types/ticket';
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
-import { Colors, Typography, Spacing, BorderRadius } from '../../styles/designSystem';
+import { Colors, Typography, Spacing, BorderRadius, Layout } from '../../styles/designSystem';
 import ModalHeader from '../../components/ModalHeader';
 import HistoryTab from './tabs/HistoryTab';
 import SearchTab from './tabs/SearchTab';
@@ -117,24 +117,21 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.systemBackground,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.separator,
-    paddingVertical: 4,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.screenPadding,
   },
   tabContent: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: Spacing.sm,
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xs,
-    paddingVertical: 2,
     borderRadius: BorderRadius.sm,
     backgroundColor: Colors.tertiarySystemBackground,
-    height: 24,
+    height: 40,
     flex: 1,
-    marginHorizontal: 2,
     justifyContent: 'center',
   },
   tabActive: {
@@ -142,18 +139,18 @@ const styles = StyleSheet.create({
   },
   tabText: {
     ...Typography.subheadline,
-    fontSize: 15,
     color: Colors.secondaryLabel,
-    fontWeight: '500',
+    fontWeight: Typography.subheadline.fontWeight,
   },
   tabTextActive: {
     ...Typography.subheadline,
-    fontSize: 15,
     color: Colors.systemBackground,
-    fontWeight: '600',
+    fontWeight: Typography.headline.fontWeight,
   },
   content: {
     flex: 1,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.screenPadding,
   },
 });
 

@@ -10,7 +10,7 @@ import {
 import { useAtom } from 'jotai';
 import { userProfileAtom } from '../../../atoms/userAtomsApi';
 import { ticketService } from '../../../services/api/ticketService';
-import { Colors, Typography, Spacing } from '../../../styles/designSystem';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../styles/designSystem';
 
 interface YearInReviewTabProps {
   navigation: any;
@@ -65,7 +65,7 @@ const YearInReviewTab: React.FC<YearInReviewTabProps> = ({ navigation }) => {
         >
           <Text style={styles.yearButtonText}>◀</Text>
         </TouchableOpacity>
-        <Text style={styles.yearText}>{selectedYear}년 결산</Text>
+        <Text style={styles.yearText}>{selectedYear}년</Text>
         <TouchableOpacity
           onPress={() => setSelectedYear(selectedYear + 1)}
           style={styles.yearButton}
@@ -73,6 +73,7 @@ const YearInReviewTab: React.FC<YearInReviewTabProps> = ({ navigation }) => {
           <Text style={styles.yearButtonText}>▶</Text>
         </TouchableOpacity>
       </View>
+
 
       {/* 헤로 섹션 */}
       <View style={styles.heroSection}>
@@ -83,14 +84,6 @@ const YearInReviewTab: React.FC<YearInReviewTabProps> = ({ navigation }) => {
         <Text style={styles.heroSubtitle}>
           총 {review.totalCount || 0}회의 관람 기록
         </Text>
-        {review.yearComparison && (
-          <View style={styles.comparisonBadge}>
-            <Text style={styles.comparisonText}>
-              작년 대비 {review.yearComparison.change >= 0 ? '+' : ''}
-              {review.yearComparison.change}회 ({review.yearComparison.trend})
-            </Text>
-          </View>
-        )}
       </View>
 
       {/* 장르 TOP 3 */}
@@ -141,7 +134,7 @@ const YearInReviewTab: React.FC<YearInReviewTabProps> = ({ navigation }) => {
         )}
       </View>
 
-      {/* 관람 패턴 */}
+      {/* 관람 패턴
       {review.dayOfWeekStatistics && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>관람 패턴</Text>
@@ -160,8 +153,7 @@ const YearInReviewTab: React.FC<YearInReviewTabProps> = ({ navigation }) => {
           </View>
         </View>
       )}
-
-      {/* 상반기 vs 하반기 */}
+  
       {review.halfYearPattern && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>관람 패턴 변화</Text>
@@ -178,7 +170,7 @@ const YearInReviewTab: React.FC<YearInReviewTabProps> = ({ navigation }) => {
           </View>
         </View>
       )}
-
+      */}
       {/* 스페셜 포인트 */}
       {review.specialPoints && (
         <View style={styles.section}>
@@ -288,110 +280,103 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.secondaryLabel,
   },
+
   yearSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
+    paddingVertical: Spacing.sm,
   },
   yearButton: {
     padding: Spacing.sm,
   },
   yearButtonText: {
-    fontSize: 18,
-    color: Colors.primary,
+    fontSize: 16,
+    color: Colors.black,
   },
   yearText: {
-    ...Typography.headline,
+    ...Typography.title3,
     marginHorizontal: Spacing.lg,
   },
+
   heroSection: {
     backgroundColor: Colors.systemBackground,
     padding: Spacing.xl,
     alignItems: 'center',
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
+    justifyContent: 'center',
+    borderRadius: BorderRadius.lg,
   },
   heroTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    ...Typography.title1,
+    fontWeight: '500',
     color: Colors.label,
     textAlign: 'center',
-    marginBottom: Spacing.sm,
-  },
-  heroSubtitle: {
-    ...Typography.subheadline,
-    color: Colors.secondaryLabel,
     marginBottom: Spacing.md,
   },
-  comparisonBadge: {
-    backgroundColor: Colors.tertiarySystemBackground,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: 16,
+  heroSubtitle: {
+    ...Typography.headline,
+    color: Colors.secondaryLabel,
   },
-  comparisonText: {
-    ...Typography.caption1,
-    color: Colors.label,
-  },
+
   section: {
     backgroundColor: Colors.systemBackground,
     padding: Spacing.lg,
     marginTop: Spacing.md,
-    borderTopWidth: 0.5,
-    borderBottomWidth: 0.5,
-    borderColor: Colors.separator,
+    borderRadius: BorderRadius.lg,
   },
   sectionTitle: {
-    ...Typography.headline,
+    ...Typography.body,
+    fontWeight: '500',
     color: Colors.label,
     marginBottom: Spacing.md,
   },
+
   genreCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.tertiarySystemBackground,
     padding: Spacing.md,
-    borderRadius: 12,
-    marginBottom: Spacing.sm,
+    borderRadius: BorderRadius.lg,
   },
   genreRank: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 20,
+    height: 20,
+    borderRadius: BorderRadius.round,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Spacing.md,
   },
   rankNumber: {
-    ...Typography.headline,
+    ...Typography.caption1,
     color: Colors.systemBackground,
   },
   genreInfo: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   genreName: {
-    ...Typography.headline,
+    ...Typography.body,
     color: Colors.label,
     marginBottom: Spacing.xs,
+    marginRight: Spacing.sm,
   },
   genreCount: {
-    ...Typography.caption1,
+    ...Typography.footnote,
     color: Colors.secondaryLabel,
   },
+  
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
     backgroundColor: Colors.systemBackground,
   },
   statBox: {
     width: '33.33%',
-    padding: Spacing.md,
+    paddingVertical: Spacing.md,
     alignItems: 'center',
   },
   statBoxLabel: {
@@ -405,13 +390,14 @@ const styles = StyleSheet.create({
     color: Colors.label,
     textAlign: 'center',
   },
+  
   patternCard: {
     backgroundColor: Colors.tertiarySystemBackground,
     padding: Spacing.md,
-    borderRadius: 12,
+    borderRadius: BorderRadius.lg,
   },
   patternText: {
-    ...Typography.headline,
+    ...Typography.title3,
     color: Colors.label,
     marginBottom: Spacing.sm,
   },
@@ -423,6 +409,7 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.secondaryLabel,
   },
+  
   specialCard: {
     backgroundColor: Colors.tertiarySystemBackground,
     padding: Spacing.md,
@@ -446,13 +433,13 @@ const styles = StyleSheet.create({
   specialReview: {
     ...Typography.body,
     color: Colors.label,
-    fontStyle: 'italic',
     marginTop: Spacing.xs,
   },
+
   typeCard: {
     backgroundColor: Colors.tertiarySystemBackground,
     padding: Spacing.lg,
-    borderRadius: 12,
+    borderRadius: BorderRadius.lg,
     alignItems: 'center',
   },
   typeName: {

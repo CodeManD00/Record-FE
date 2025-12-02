@@ -10,7 +10,7 @@ import {
 import { useAtom } from 'jotai';
 import { userProfileAtom } from '../../../atoms/userAtomsApi';
 import { ticketService } from '../../../services/api/ticketService';
-import { Colors, Typography, Spacing } from '../../../styles/designSystem';
+import { Colors, Typography, Spacing, BorderRadius } from '../../../styles/designSystem';
 
 interface AnalyticsTabProps {
   navigation: any;
@@ -199,7 +199,6 @@ const AnalyticsTab: React.FC<AnalyticsTabProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    padding: Spacing.lg,
   },
   loadingContainer: {
     flex: 1,
@@ -215,43 +214,39 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.secondaryLabel,
   },
+
   yearSelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
   yearButton: {
     padding: Spacing.sm,
   },
   yearButtonText: {
-    fontSize: 18,
-    color: Colors.primary,
+    fontSize: 16,
+    color: Colors.black,
   },
   yearText: {
-    ...Typography.headline,
+    ...Typography.title3,
     marginHorizontal: Spacing.lg,
   },
+
   statCard: {
     backgroundColor: Colors.systemBackground,
-    borderRadius: 12,
+    borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   statLabel: {
-    ...Typography.subheadline,
+    ...Typography.headline,
     color: Colors.secondaryLabel,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   statValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    ...Typography.largeTitle,
+    fontWeight: '500',
     color: Colors.label,
     marginBottom: Spacing.xs,
   },
@@ -264,8 +259,9 @@ const styles = StyleSheet.create({
   negative: {
     color: '#FF3B30',
   },
+
   cardTitle: {
-    ...Typography.headline,
+    ...Typography.title3,
     color: Colors.label,
     marginBottom: Spacing.md,
   },
@@ -298,6 +294,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     color: Colors.secondaryLabel,
   },
+
   rankingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -307,8 +304,8 @@ const styles = StyleSheet.create({
   },
   rankNumber: {
     ...Typography.headline,
-    width: 30,
-    color: Colors.primary,
+    width: 20,
+    color: Colors.label,
   },
   rankingText: {
     ...Typography.body,
