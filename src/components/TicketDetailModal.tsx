@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import Share from 'react-native-share';
 import RNFS from 'react-native-fs';
+import { CameraRoll } from '@react-native-camera-roll/camera-roll';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ticket, UpdateTicketData } from '../types/ticket';
 import { useAtom } from 'jotai';
@@ -430,9 +431,53 @@ const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
     setShowDropdown(false);
   };
 
-  const handleAddToPhoto = () => {
-    Alert.alert('알림', '사진 앨범 저장 기능은 구현 예정입니다.');
+  const handleAddToPhoto = async () => {
     setShowDropdown(false);
+    
+    if (!currentTicket || !currentTicket.images || currentTicket.images.length === 0) {
+      Alert.alert('알림', '저장할 이미지가 없습니다.');
+      return;
+    }
+
+    const imageUrl = currentTicket.images[0];
+    if (!imageUrl) {
+      Alert.alert('알림', '저장할 이미지가 없습니다.');
+      return;
+    }
+
+    try {
+      let imageUri = imageUrl;
+
+      // 원격 이미지인 경우 다운로드 후 저장
+      if (!imageUrl.startsWith('file://') && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+        const downloadPath = `${RNFS.CachesDirectoryPath}/temp_image_${Date.now()}.jpg`;
+        
+        const downloadResult = await RNFS.downloadFile({
+          fromUrl: imageUrl,
+          toFile: downloadPath,
+        }).promise;
+
+        if (downloadResult.statusCode === 200) {
+          imageUri = downloadPath;
+        } else {
+          throw new Error('이미지 다운로드에 실패했습니다.');
+        }
+      }
+
+      // 갤러리에 저장
+      await CameraRoll.saveAsset(imageUri, { type: 'photo' });
+      
+      // 다운로드한 임시 파일이 있으면 삭제
+      if (imageUri !== imageUrl && imageUri.startsWith(RNFS.CachesDirectoryPath)) {
+        await RNFS.unlink(imageUri).catch(() => {});
+      }
+      
+      Alert.alert('완료', '이미지가 갤러리에 저장되었습니다.');
+    } catch (error: any) {
+      console.error('갤러리 저장 오류:', error);
+      const errorMessage = error?.message || '이미지를 갤러리에 저장하는 중 오류가 발생했습니다.';
+      Alert.alert('오류', errorMessage);
+    }
   };
 
   // 좋아요 리스트 조회
