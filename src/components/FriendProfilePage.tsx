@@ -353,10 +353,17 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: { 
-    borderBottomColor: '#B11515',
+    borderBottomColor: Colors.primary,
   },
-  tabText: { fontSize: 16, fontWeight: '500', color: '#6C757D' },
-  activeTabText: { color: '#B11515', fontWeight: '600' },
+  tabText: { 
+    ...Typography.subheadline,
+    fontWeight: '500', 
+    color: Colors.secondaryLabel,
+  },
+  activeTabText: { 
+    color: Colors.primary, 
+    fontWeight: '600' 
+  },
   
   pager: { 
     flex: 1,
@@ -364,7 +371,7 @@ const styles = StyleSheet.create({
   },
   pageContainer: { 
     flex: 1, 
-    backgroundColor: '#26282B', 
+    backgroundColor: Colors.systemBackground, 
   },
 
   feedScrollView: {
@@ -372,7 +379,7 @@ const styles = StyleSheet.create({
   },
   feedContent: {
     flexGrow: 1,
-    paddingBottom: 20,
+    paddingBottom: Spacing.xxl,
     alignItems: 'flex-start',
   },
   emptyState: {
