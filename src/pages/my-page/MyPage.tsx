@@ -158,9 +158,6 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
             >
               <Text style={styles.archiveButtonText}>아카이브</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('AddFriend')}>
-              <Image source={require('../../assets/person_add.png')} style={styles.iconImage} />
-            </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Settings')}>
               <Image source={require('../../assets/settings.png')} style={styles.iconImage} />
             </TouchableOpacity>
