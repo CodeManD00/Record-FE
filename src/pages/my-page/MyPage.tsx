@@ -9,6 +9,7 @@ import {
   Image,
   Animated,
 } from 'react-native';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -153,10 +154,34 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
         rightContent={
           <Animated.View style={[styles.headerIcons, { opacity: headerIconsOpacity }]}>
             <TouchableOpacity 
-              style={styles.archiveButton} 
+              style={styles.iconButton} 
               onPress={() => navigation.navigate('PerformanceArchive' as never)}
             >
-              <Text style={styles.archiveButtonText}>아카이브</Text>
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                {/* 시계 원형 */}
+                <Circle cx="12" cy="12" r="9" stroke="#1C1C1E" strokeWidth="2" fill="none" />
+                {/* 시침 (10시 방향) - 짧고 두꺼운 */}
+                <Line x1="12" y1="12" x2="10.5" y2="9" stroke="#1C1C1E" strokeWidth="2.5" strokeLinecap="round" />
+                {/* 분침 (4시 방향) - 길고 얇은 */}
+                <Line x1="12" y1="12" x2="15" y2="15" stroke="#1C1C1E" strokeWidth="1.5" strokeLinecap="round" />
+                {/* 반시계 방향 화살표 호 (1시에서 11시까지, 시계 외곽) */}
+                <Path
+                  d="M 18.5 6.5 A 10.5 10.5 0 0 0 5.5 6.5"
+                  stroke="#1C1C1E"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeLinecap="round"
+                />
+                {/* 화살표 머리 (1시 방향) */}
+                <Path
+                  d="M 18.5 6.5 L 17 5 L 18.5 3.5"
+                  stroke="#1C1C1E"
+                  strokeWidth="2"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Settings')}>
               <Image source={require('../../assets/settings.png')} style={styles.iconImage} />
@@ -250,20 +275,6 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
     alignItems: 'center',
     transform: [{ translateY: 10 }],
-  },
-  archiveButton: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    justifyContent: 'center',
-    borderRadius: BorderRadius.lg,
-    borderWidth: 0.5,
-    borderColor: Colors.systemGray5,
-    backgroundColor: Colors.systemBackground,
-  },
-  archiveButtonText: {
-    ...Typography.subheadline,
-    color: Colors.label,
-    fontWeight: '600',
   },
   iconButton: {
     width: 40,
