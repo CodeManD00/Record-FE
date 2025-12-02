@@ -86,18 +86,18 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.systemGray5,
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
   },
   backButtonText: {
-    fontSize: 28,
+    fontSize: 24,
     color: Colors.label,
     fontWeight: '300',
   },
   headerTitle: {
-    ...Typography.title3,
+    ...Typography.headline,
     fontWeight: '400',
     color: Colors.label,
     flex: 1,
