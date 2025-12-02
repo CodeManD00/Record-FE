@@ -152,6 +152,12 @@ const MyPage: React.FC<MyPageProps> = ({ navigation }) => {
         }}
         rightContent={
           <Animated.View style={[styles.headerIcons, { opacity: headerIconsOpacity }]}>
+            <TouchableOpacity 
+              style={styles.archiveButton} 
+              onPress={() => navigation.navigate('PerformanceArchive' as never)}
+            >
+              <Text style={styles.archiveButtonText}>아카이브</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('AddFriend')}>
               <Image source={require('../../assets/person_add.png')} style={styles.iconImage} />
             </TouchableOpacity>
@@ -245,7 +251,22 @@ const styles = StyleSheet.create({
   headerIcons: {
     flexDirection: 'row',
     gap: Spacing.md,
+    alignItems: 'center',
     transform: [{ translateY: 10 }],
+  },
+  archiveButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    justifyContent: 'center',
+    borderRadius: BorderRadius.lg,
+    borderWidth: 0.5,
+    borderColor: Colors.systemGray5,
+    backgroundColor: Colors.systemBackground,
+  },
+  archiveButtonText: {
+    ...Typography.subheadline,
+    color: Colors.label,
+    fontWeight: '600',
   },
   iconButton: {
     width: 40,

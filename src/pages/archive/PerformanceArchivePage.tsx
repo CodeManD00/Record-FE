@@ -16,6 +16,7 @@ import { useCallback } from 'react';
 import { Ticket } from '../../types/ticket';
 import { isPlaceholderTicket } from '../../utils/isPlaceholder';
 import { Colors, Typography, Spacing, BorderRadius } from '../../styles/designSystem';
+import ModalHeader from '../../components/ModalHeader';
 import HistoryTab from './tabs/HistoryTab';
 import SearchTab from './tabs/SearchTab';
 import AnalyticsTab from './tabs/AnalyticsTab';
@@ -45,10 +46,10 @@ const PerformanceArchivePage: React.FC<PerformanceArchivePageProps> = ({ navigat
   const realTickets = displayTickets.filter(ticket => !isPlaceholderTicket(ticket));
 
   const tabs = [
-    { key: 'history' as ArchiveTab, label: '히스토리', icon: '📋' },
-    { key: 'search' as ArchiveTab, label: '검색', icon: '🔍' },
-    { key: 'analytics' as ArchiveTab, label: '분석', icon: '📊' },
-    { key: 'yearInReview' as ArchiveTab, label: '연말 결산', icon: '🎉' },
+    { key: 'history' as ArchiveTab, label: '히스토리' },
+    { key: 'search' as ArchiveTab, label: '검색' },
+    { key: 'analytics' as ArchiveTab, label: '분석' },
+    { key: 'yearInReview' as ArchiveTab, label: '연말 결산' },
   ];
 
   const renderTabContent = () => {
@@ -69,16 +70,10 @@ const PerformanceArchivePage: React.FC<PerformanceArchivePageProps> = ({ navigat
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>공연 아카이브</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <ModalHeader
+        title="공연 아카이브"
+        onBack={() => navigation.goBack()}
+      />
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
@@ -92,7 +87,6 @@ const PerformanceArchivePage: React.FC<PerformanceArchivePageProps> = ({ navigat
               ]}
               onPress={() => setActiveTab(tab.key)}
             >
-              <Text style={styles.tabIcon}>{tab.icon}</Text>
               <Text
                 style={[
                   styles.tabText,
@@ -118,44 +112,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.secondarySystemBackground,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    minHeight: 44,
-    backgroundColor: Colors.systemBackground,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.separator,
-  },
-  backButton: {
-    position: 'absolute',
-    left: Spacing.lg,
-    width: 44,
-    height: 44,
-    borderRadius: BorderRadius.round,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1,
-  },
-  backButtonText: {
-    ...Typography.body,
-    color: Colors.black,
-    fontWeight: '400',
-    fontSize: 24,
-  },
-  headerTitle: {
-    ...Typography.headline,
-    color: Colors.label,
-  },
-  placeholder: {
-    position: 'absolute',
-    right: Spacing.lg,
-    width: 44,
-    height: 44,
   },
   tabContainer: {
     backgroundColor: Colors.systemBackground,
@@ -183,10 +139,6 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: Colors.primary,
-  },
-  tabIcon: {
-    fontSize: 14,
-    marginRight: 4,
   },
   tabText: {
     ...Typography.subheadline,
