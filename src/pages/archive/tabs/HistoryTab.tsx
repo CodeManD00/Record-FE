@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ticket } from '../../../types/ticket';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../styles/designSystem';
+import TicketDetailModal from '../../../components/TicketDetailModal';
 
 interface HistoryTabProps {
   tickets: Ticket[];
@@ -19,6 +20,8 @@ type FilterType = 'all' | 'recent' | 'thisMonth' | 'thisYear';
 
 const HistoryTab: React.FC<HistoryTabProps> = ({ tickets, navigation }) => {
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
 
   // 날짜별 필터링 함수 (performedAt 기준)
   const getFilteredTickets = () => {
@@ -83,8 +86,21 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ tickets, navigation }) => {
     return `${dateObj.getFullYear()}.${(dateObj.getMonth() + 1).toString().padStart(2, '0')}.${dateObj.getDate().toString().padStart(2, '0')}`;
   };
 
+  const handleTicketPress = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedTicket(null);
+  };
+
   const renderTicketItem = ({ item }: { item: Ticket }) => (
-    <TouchableOpacity style={styles.ticketItem}>
+    <TouchableOpacity 
+      style={styles.ticketItem}
+      onPress={() => handleTicketPress(item)}
+    >
       <View style={styles.ticketHeader}>
         <Text style={styles.ticketTitle} numberOfLines={1}>
           {item.title || '제목 없음'}
@@ -163,6 +179,16 @@ const HistoryTab: React.FC<HistoryTabProps> = ({ tickets, navigation }) => {
           </View>
         )}
       </View>
+
+      {/* 티켓 상세 모달 */}
+      {selectedTicket && (
+        <TicketDetailModal
+          visible={modalVisible}
+          ticket={selectedTicket}
+          onClose={handleCloseModal}
+          isMine={true}
+        />
+      )}
     </View>
   );
 };

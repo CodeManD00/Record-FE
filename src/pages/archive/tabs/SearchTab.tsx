@@ -15,6 +15,9 @@ import { ticketService } from '../../../services/api/ticketService';
 import { userProfileAtom } from '../../../atoms/userAtomsApi';
 import { useAtom } from 'jotai';
 import { Colors, Typography, Spacing, BorderRadius } from '../../../styles/designSystem';
+import TicketDetailModal from '../../../components/TicketDetailModal';
+import { resolveImageUrl } from '../../../utils/resolveImageUrl';
+import { TicketStatus } from '../../../types/enums';
 
 interface SearchTabProps {
   tickets: Ticket[];
@@ -29,6 +32,8 @@ const SearchTab: React.FC<SearchTabProps> = ({ tickets, navigation }) => {
   const [searchResults, setSearchResults] = useState<Ticket[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
   
   // 필터 상태
   const [startDate, setStartDate] = useState<string>('');
@@ -65,7 +70,59 @@ const SearchTab: React.FC<SearchTabProps> = ({ tickets, navigation }) => {
       });
 
       if (result.success && result.data) {
-        setSearchResults(result.data);
+        // 백엔드 응답을 Ticket 형식으로 변환
+        const mappedResults: Ticket[] = result.data.map((ticket: any) => {
+          // viewDate를 Date로 변환
+          const performedAt = ticket.viewDate ? new Date(ticket.viewDate) : new Date();
+          
+          // genre를 백엔드 형식에서 프론트엔드 형식으로 변환
+          let genre: string | null = null;
+          if (ticket.genre) {
+            const genreMap: Record<string, string> = {
+              'BAND': '밴드',
+              'MUSICAL': '연극/뮤지컬',
+              'PLAY': '연극/뮤지컬',
+            };
+            genre = genreMap[ticket.genre] || ticket.genre;
+          }
+          
+          // 이미지 URL 처리 (resolveImageUrl 사용)
+          const images: string[] = [];
+          if (ticket.imageUrl) {
+            const resolvedUrl = resolveImageUrl(ticket.imageUrl);
+            if (resolvedUrl) {
+              images.push(resolvedUrl);
+            }
+          }
+          if (ticket.posterUrl) {
+            const resolvedUrl = resolveImageUrl(ticket.posterUrl);
+            if (resolvedUrl) {
+              images.push(resolvedUrl);
+            }
+          }
+          
+          return {
+            id: String(ticket.id || ''),
+            user_id: ticket.userId || userId,
+            userId: ticket.userId || userId,
+            title: ticket.performanceTitle || ticket.title || '',
+            artist: ticket.artist || '',
+            venue: ticket.venue || '',
+            seat: ticket.seat || '',
+            performedAt: performedAt,
+            genre: genre || '',
+            status: ticket.isPublic ? TicketStatus.PUBLIC : TicketStatus.PRIVATE,
+            images: images,
+            review: ticket.reviewText ? {
+              reviewText: ticket.reviewText,
+              createdAt: ticket.createdAt ? new Date(ticket.createdAt) : new Date(),
+            } : undefined,
+            createdAt: ticket.createdAt ? new Date(ticket.createdAt) : new Date(),
+            updatedAt: ticket.updatedAt ? new Date(ticket.updatedAt) : new Date(),
+            bookingSite: '',
+          };
+        });
+        setSearchResults(mappedResults);
       } else {
         setSearchResults([]);
       }
@@ -77,8 +134,21 @@ const SearchTab: React.FC<SearchTabProps> = ({ tickets, navigation }) => {
     }
   };
 
+  const handleTicketPress = (ticket: Ticket) => {
+    setSelectedTicket(ticket);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedTicket(null);
+  };
+
   const renderTicketItem = ({ item }: { item: Ticket }) => (
-    <TouchableOpacity style={styles.ticketItem}>
+    <TouchableOpacity 
+      style={styles.ticketItem}
+      onPress={() => handleTicketPress(item)}
+    >
       <View style={styles.ticketHeader}>
         <Text style={styles.ticketTitle} numberOfLines={1}>
           {item.title || '제목 없음'}
@@ -88,16 +158,16 @@ const SearchTab: React.FC<SearchTabProps> = ({ tickets, navigation }) => {
         </Text>
       </View>
       <Text style={styles.ticketLocation} numberOfLines={1}>
-        📍 {item.venue || '장소 없음'}
+        {item.venue || '장소 없음'}
       </Text>
       {item.artist && (
         <Text style={styles.ticketArtist} numberOfLines={1}>
-          🎭 {item.artist}
+          {item.artist}
         </Text>
       )}
       {item.genre && (
         <Text style={styles.ticketGenre}>
-          🎪 {item.genre}
+          {item.genre}
         </Text>
       )}
     </TouchableOpacity>
@@ -251,6 +321,16 @@ const SearchTab: React.FC<SearchTabProps> = ({ tickets, navigation }) => {
           </View>
         )}
       </Animated.ScrollView>
+
+      {/* 티켓 상세 모달 */}
+      {selectedTicket && (
+        <TicketDetailModal
+          visible={modalVisible}
+          ticket={selectedTicket}
+          onClose={handleCloseModal}
+          isMine={true}
+        />
+      )}
     </View>
   );
 };
