@@ -188,6 +188,95 @@ class TicketService {
       formData
     );
   }
+
+  /**
+   * 8) 좋아요 토글
+   * POST /api/tickets/{ticketId}/like
+   * Header: X-User-Id
+   * Response: { isLiked: boolean, likeCount: number }
+   */
+  async toggleLike(
+    ticketId: string | number,
+    userId: string
+  ): Promise<Result<{ isLiked: boolean; likeCount: number }>> {
+    // ticketId를 숫자로 변환 (백엔드는 integer를 기대함)
+    const numericTicketId = typeof ticketId === 'string' ? parseInt(ticketId, 10) : ticketId;
+    
+    if (isNaN(numericTicketId)) {
+      return {
+        success: false,
+        error: {
+          code: 'INVALID_TICKET_ID',
+          message: '티켓 ID가 유효하지 않습니다.',
+        },
+      };
+    }
+    
+    return apiClient.post<{ isLiked: boolean; likeCount: number }>(
+      `/api/tickets/${numericTicketId}/like`,
+      undefined,
+      {
+        headers: { 'X-User-Id': userId },
+      }
+    );
+  }
+
+  /**
+   * 9) 좋아요한 사용자 목록 조회 (티켓 소유자만 조회 가능)
+   * GET /api/tickets/{ticketId}/likes
+   * Header: X-User-Id
+   * Response: { likedUserIds: string[] }
+   */
+  async getLikedUsers(
+    ticketId: string | number,
+    userId: string
+  ): Promise<Result<{ likedUserIds: string[] }>> {
+    // ticketId를 숫자로 변환 (백엔드는 integer를 기대함)
+    const numericTicketId = typeof ticketId === 'string' ? parseInt(ticketId, 10) : ticketId;
+    
+    if (isNaN(numericTicketId)) {
+      return {
+        success: false,
+        error: {
+          code: 'INVALID_TICKET_ID',
+          message: '티켓 ID가 유효하지 않습니다.',
+        },
+      };
+    }
+    
+    return apiClient.get<{ likedUserIds: string[] }>(
+      `/api/tickets/${numericTicketId}/likes`,
+      {
+        headers: { 'X-User-Id': userId },
+      }
+    );
+  }
+
+  /**
+   * 10) 티켓 통계 분석
+   * GET /api/tickets/user/{userId}/statistics?year={year}
+   * Response: TicketStatisticsResponse
+   */
+  async getTicketStatistics(
+    userId: string,
+    year?: number
+  ): Promise<Result<any>> {
+    const yearParam = year ? `?year=${year}` : '';
+    return apiClient.get<any>(`/api/tickets/user/${userId}/statistics${yearParam}`);
+  }
+
+  /**
+   * 11) 연말 결산 (Year-in-Review)
+   * GET /api/tickets/user/{userId}/year-in-review?year={year}
+   * Response: YearInReviewResponse
+   */
+  async getYearInReview(
+    userId: string,
+    year?: number
+  ): Promise<Result<any>> {
+    const yearParam = year ? `?year=${year}` : '';
+    return apiClient.get<any>(`/api/tickets/user/${userId}/year-in-review${yearParam}`);
+  }
 }
 
 export const ticketService = new TicketService();

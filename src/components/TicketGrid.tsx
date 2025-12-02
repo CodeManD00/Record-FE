@@ -42,6 +42,7 @@ const TicketGrid: React.FC<TicketGridProps> = ({
           !hasImages && styles.ticketCardNoImage
         ]}
         onPress={() => onTicketPress(item)}
+        activeOpacity={0.9}
       >
         {hasImages ? (
           <Image source={{ uri: item.images![0] }} style={styles.ticketImage} />

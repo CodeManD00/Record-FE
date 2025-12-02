@@ -182,13 +182,6 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ navigation }) => {
       showArrow: true,
     },
     {
-      id: 2,
-      title: '히스토리',
-      icon: '📋',
-      onPress: () => Alert.alert('알림', '아직 제공되지 않는 기능입니다.'),
-      showArrow: true,
-    },
-    {
       id: 3,
       title: '로그아웃',
       icon: '🚪',

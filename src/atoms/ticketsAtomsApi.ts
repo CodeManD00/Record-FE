@@ -180,8 +180,12 @@ export const fetchFriendTicketsAtom = atom(
 
     // 로딩 상태는 전체 맵에 대해 설정하지 않고 개별적으로 처리
     try {
+      // 현재 사용자 ID 가져오기 (좋아요 상태 확인용)
+      const userProfile = get(userProfileAtom);
+      const currentUserId = userProfile?.id;
+      
       // 백엔드가 공개 티켓만 반환하므로 필터링 불필요
-      const result = await ticketService.getFriendTickets(friendId, 0, 100);
+      const result = await ticketService.getFriendTickets(friendId, currentUserId, 0, 100);
       
       if (result.success && result.data) {
         // 백엔드 응답 형식: 배열로 직접 반환 (공개 티켓만)
@@ -577,6 +581,38 @@ export const fetchTicketsByDateAtom = atom(
       const errorMessage = error instanceof Error ? error.message : '날짜별 티켓 조회에 실패했습니다';
       return ResultFactory.failure({ message: errorMessage, code: 'FETCH_BY_DATE_ERROR' });
     }
+  }
+);
+
+/**
+ * 친구 티켓 목록의 특정 티켓 좋아요 상태 업데이트
+ */
+export const updateFriendTicketLikeAtom = atom(
+  null,
+  (get, set, friendId: string, ticketId: string, isLiked: boolean, likeCount: number) => {
+    const currentMapState = get(friendTicketsMapStateAtom);
+    const currentMap = currentMapState.data || new Map();
+    
+    if (!currentMap.has(friendId)) {
+      return; // 친구 티켓 목록이 없으면 업데이트하지 않음
+    }
+    
+    const friendTickets = currentMap.get(friendId) || [];
+    const updatedTickets = friendTickets.map(ticket => {
+      if (ticket.id === ticketId) {
+        return {
+          ...ticket,
+          isLiked,
+          likeCount,
+        };
+      }
+      return ticket;
+    });
+    
+    const newMap = new Map(currentMap);
+    newMap.set(friendId, updatedTickets);
+    
+    set(friendTicketsMapStateAtom, apiStateHelpers.setSuccess(currentMapState, newMap));
   }
 );
 
