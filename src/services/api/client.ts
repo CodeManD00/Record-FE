@@ -525,7 +525,8 @@ class ApiClient {
       case 403:
         return ResultFactory.failure(ErrorFactory.forbidden(errorMessage));
       case 404:
-        return ResultFactory.failure(ErrorFactory.notFound('리소스', errorMessage));
+        // 백엔드에서 이미 명확한 메시지를 제공하므로 그대로 사용
+        return ResultFactory.failure(ErrorFactory.notFound('사용자', errorMessage || '사용자를 찾을 수 없습니다'));
       case 500:
         if (__DEV__) {
           console.error('🔴 서버 내부 오류 (500)');
