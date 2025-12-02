@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     justifyContent: 'center',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   backButtonText: {
     fontSize: 28,
@@ -97,20 +97,24 @@ const styles = StyleSheet.create({
     fontWeight: '300',
   },
   headerTitle: {
-    ...Typography.headline,
-    fontWeight: '600',
+    ...Typography.title3,
+    fontWeight: '400',
     color: Colors.label,
     flex: 1,
     textAlign: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   rightContent: {
     width: 44,
-    alignItems: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   rightActionText: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '400',
+    alignItems: 'center',
   },
   rightActionTextDisabled: {
     color: Colors.tertiaryLabel,

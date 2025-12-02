@@ -130,8 +130,9 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.xxxl,
-    padding: Spacing.lg,
-    ...Shadows.medium,
+    padding: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.systemGray5,
   },
   calendar: {
     borderRadius: BorderRadius.lg,
