@@ -781,6 +781,7 @@ const styles = StyleSheet.create({
     padding: Spacing.cardPadding,
     ...Shadows.small,
     position: 'relative',
+    marginBottom: Spacing.xl,
   },
   closeButton: {
     position: 'absolute',
@@ -834,7 +835,7 @@ const styles = StyleSheet.create({
   reviewContainer: {
     flex: 1,
     marginHorizontal: Spacing.screenPadding,
-    marginTop: Spacing.md,
+    marginTop: Spacing.xl,
   },
   reviewInput: {
     flex: 1,
