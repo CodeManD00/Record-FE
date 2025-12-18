@@ -144,35 +144,6 @@ make fe-test
 
 ## 프로젝트 구조
 
-### Backend (Record-BE)
-```
-Record-BE/
-├── Record-BE/
-│   ├── src/
-│   │   ├── main/java/com/example/record/
-│   │   │   ├── auth/              # 인증 (JWT, 이메일, 비밀번호)
-│   │   │   ├── user/              # 사용자 관리
-│   │   │   ├── review/            # 리뷰 관리
-│   │   │   ├── ocr/               # OCR 기능
-│   │   │   ├── STTorText/         # STT 기능
-│   │   │   ├── AWS/               # S3 통합
-│   │   │   ├── application/      # 애플리케이션 설정
-│   │   │   ├── band/              # 밴드 정보
-│   │   │   ├── common/            # 공통 응답
-│   │   │   ├── config/            # 설정 (Swagger, WebConfig 등)
-│   │   │   ├── musical/           # 뮤지컬 정보
-│   │   │   ├── promptcontrol_w03/ # 프롬프트 제어 및 이미지 생성
-│   │   │   └── [루트 파일들]      # ApiKey, ApiKeyInterceptor 등
-│   │   └── resources/
-│   │       ├── application.yml
-│   │       └── static/            
-│   ├── build.gradle
-│   └── settings.gradle
-├── generate-sample-data.sh
-├── schema.sql
-└── Makefile
-```
-
 ### Frontend (Record-FE)
 ```
 Record-FE/
