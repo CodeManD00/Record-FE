@@ -2,6 +2,10 @@
 
 공연 티켓 기록 및 리뷰 관리 시스템 - Full Stack 프로젝트
 
+
+## 화면 구성
+<img width="2887" height="5810" alt="화면 구성" src="https://github.com/user-attachments/assets/160d3aad-bc44-4f05-b83f-72a9cf4f5279" />
+
 ## 목차
 
 1. [설치하기](#설치하기)
@@ -144,40 +148,39 @@ make fe-test
 
 ## 프로젝트 구조
 
-### Frontend (Record-FE)
+### Backend (Record-BE)
 ```
-Record-FE/
-├── src/
-│   ├── assets/            # 이미지 리소스
-│   ├── atoms/              # Jotai 상태 관리
-│   ├── components/         # React 컴포넌트
-│   │   └── ui/            # UI 컴포넌트
-│   ├── constants/          # 상수 정의
-│   ├── hooks/              # 커스텀 훅
-│   ├── pages/              # 페이지 컴포넌트
-│   │   ├── add-ticket/    # 티켓 추가
-│   │   ├── archive/        # 아카이브
-│   │   ├── auth/           # 인증
-│   │   ├── calendar/       # 캘린더
-│   │   ├── home/           # 홈
-│   │   └── my-page/        # 마이페이지
-│   ├── services/           # API 및 서비스
-│   │   ├── api/           # API 클라이언트
-│   │   └── auth/          # 인증 서비스
-│   ├── styles/             # 스타일 정의
-│   ├── types/              # TypeScript 타입
-│   └── utils/              # 유틸리티 함수
-├── android/                
-├── ios/                    # iOS 네이티브
-├── App.tsx                 # 앱 진입점
-├── index.js               
-├── package.json
-├── tsconfig.json
-├── app.json
+Record-BE/
+├── Record-BE/
+│   ├── src/
+│   │   ├── main/java/com/example/record/
+│   │   │   ├── auth/              # 인증 (JWT, 이메일, 비밀번호)
+│   │   │   ├── user/              # 사용자 관리
+│   │   │   ├── review/            # 리뷰 관리
+│   │   │   ├── ocr/               # OCR 기능
+│   │   │   ├── STTorText/         # STT 기능
+│   │   │   ├── AWS/               # S3 통합
+│   │   │   ├── application/      # 애플리케이션 설정
+│   │   │   ├── band/              # 밴드 정보
+│   │   │   ├── common/            # 공통 응답
+│   │   │   ├── config/            # 설정 (Swagger, WebConfig 등)
+│   │   │   ├── musical/           # 뮤지컬 정보
+│   │   │   ├── promptcontrol_w03/ # 프롬프트 제어 및 이미지 생성
+│   │   │   └── [루트 파일들]      # ApiKey, ApiKeyInterceptor 등
+│   │   └── resources/
+│   │       ├── application.yml
+│   │       └── static/            
+│   ├── build.gradle
+│   └── settings.gradle
+├── generate-sample-data.sh
+├── schema.sql
 └── Makefile
 ```
 
-## 프로젝트 개요
+## 프로젝트 개요 및 구조도
+
+<img width="1396" height="796" alt="구조도" src="https://github.com/user-attachments/assets/90c7efa8-fe40-4a9a-bc4a-ff3ec459ce27" />
+
 
 - **Backend**: Spring Boot 3.2.5 (Java 21), PostgreSQL, JWT 인증
 - **Frontend**: React Native 0.81.0 (TypeScript)
