@@ -57,15 +57,13 @@ cd Record-FE/ios && bundle exec pod install  # iOS만 (macOS)
 
 **먼저 디비 테이블을 꼭 생성하세요.**
 
-`Record-BE/Record-BE/schema.sql` 파일을 사용하여 데이터베이스 스키마를 생성하세요:
+`Record-BE/Record-BE/schema.sql` 파일을 사용하여 데이터베이스 스키마를 생성할 수 있습니다:
 
 ```bash
 psql -U recorduser -d recorddb -f "Record-BE/Record-BE/schema.sql"
 ```
 
-테이블 생성이 완료된 후, 아래 명령어로 샘플 데이터를 생성할 수 있습니다.
-
-개발 및 테스트를 위한 샘플 데이터를 생성할 수 있습니다.
+테이블 생성이 완료된 후, 아래 명령어로 개발 및 테스트를 위한 샘플 데이터를 생성할 수 있습니다.
 
 ```bash
 chmod +x generate-sample-data.sh
@@ -146,20 +144,65 @@ make fe-test
 
 ## 프로젝트 구조
 
+### Backend (Record-BE)
 ```
 Record-BE/
-├── src/
-│   ├── main/java/com/example/record/
-│   │   ├── auth/          # 인증
-│   │   ├── user/           # 사용자 관리
-│   │   ├── review/         # 리뷰 관리
-│   │   ├── ocr/            # OCR 기능
-│   │   ├── STTorText/      # STT 기능
-│   │   └── AWS/            # S3 통합
-│   └── resources/
-│       └── application.yml
+├── Record-BE/
+│   ├── src/
+│   │   ├── main/java/com/example/record/
+│   │   │   ├── auth/              # 인증 (JWT, 이메일, 비밀번호)
+│   │   │   ├── user/              # 사용자 관리
+│   │   │   ├── review/            # 리뷰 관리
+│   │   │   ├── ocr/               # OCR 기능
+│   │   │   ├── STTorText/         # STT 기능
+│   │   │   ├── AWS/               # S3 통합
+│   │   │   ├── application/      # 애플리케이션 설정
+│   │   │   ├── band/              # 밴드 정보
+│   │   │   ├── common/            # 공통 응답
+│   │   │   ├── config/            # 설정 (Swagger, WebConfig 등)
+│   │   │   ├── musical/           # 뮤지컬 정보
+│   │   │   ├── promptcontrol_w03/ # 프롬프트 제어 및 이미지 생성
+│   │   │   └── [루트 파일들]      # ApiKey, ApiKeyInterceptor 등
+│   │   └── resources/
+│   │       ├── application.yml
+│   │       └── static/            # 정적 리소스
+│   ├── build.gradle
+│   └── settings.gradle
 ├── generate-sample-data.sh
 ├── schema.sql
+└── Makefile
+```
+
+### Frontend (Record-FE)
+```
+Record-FE/
+├── src/
+│   ├── assets/            # 이미지 리소스
+│   ├── atoms/              # Jotai 상태 관리
+│   ├── components/         # React 컴포넌트
+│   │   └── ui/            # UI 컴포넌트
+│   ├── constants/          # 상수 정의
+│   ├── hooks/              # 커스텀 훅
+│   ├── pages/              # 페이지 컴포넌트
+│   │   ├── add-ticket/    # 티켓 추가
+│   │   ├── archive/        # 아카이브
+│   │   ├── auth/           # 인증
+│   │   ├── calendar/       # 캘린더
+│   │   ├── home/           # 홈
+│   │   └── my-page/        # 마이페이지
+│   ├── services/           # API 및 서비스
+│   │   ├── api/           # API 클라이언트
+│   │   └── auth/          # 인증 서비스
+│   ├── styles/             # 스타일 정의
+│   ├── types/              # TypeScript 타입
+│   └── utils/              # 유틸리티 함수
+├── android/                
+├── ios/                    # iOS 네이티브
+├── App.tsx                 # 앱 진입점
+├── index.js               
+├── package.json
+├── tsconfig.json
+├── app.json
 └── Makefile
 ```
 
